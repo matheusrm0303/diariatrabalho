@@ -159,17 +159,28 @@ function Nova() {
               />
             </div>
             {incluiAlim && (
-              <div className="grid gap-2">
-                <Label htmlFor="alim">Valor alimentação (R$)</Label>
-                <Input
-                  id="alim"
-                  type="number"
-                  inputMode="decimal"
-                  step="0.01"
-                  placeholder="0,00"
-                  value={alimentacao}
-                  onChange={(e) => setAlimentacao(e.target.value)}
-                />
+              <div className="grid gap-3">
+                <div className="grid gap-2">
+                  <Label htmlFor="alim">Valor alimentação (R$)</Label>
+                  <Input
+                    id="alim"
+                    type="number"
+                    inputMode="decimal"
+                    step="0.01"
+                    placeholder="0,00"
+                    value={alimentacao}
+                    onChange={(e) => setAlimentacao(e.target.value)}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="alim-obs">Observação</Label>
+                  <Textarea
+                    id="alim-obs"
+                    placeholder="Ex.: almoço no restaurante X"
+                    value={alimentacaoObs}
+                    onChange={(e) => setAlimentacaoObs(e.target.value)}
+                  />
+                </div>
               </div>
             )}
           </Card>
