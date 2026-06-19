@@ -35,6 +35,7 @@ function Nova() {
   const [data, setData] = useState(todayISO());
   const [incluiAlim, setIncluiAlim] = useState(false);
   const [alimentacao, setAlimentacao] = useState("");
+  const [alimentacaoObs, setAlimentacaoObs] = useState("");
 
   function selecionarTipo(p: (typeof PRESETS)[number]) {
     setTipo(p.tipo);
