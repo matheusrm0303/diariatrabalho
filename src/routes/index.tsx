@@ -87,6 +87,7 @@ function Index() {
                           <p className="mt-1 inline-flex items-center gap-1 text-xs text-muted-foreground">
                             <Utensils className="h-3 w-3" />
                             Alimentação: {fmt.format(d.alimentacao)}
+                            {d.alimentacaoObs ? ` — ${d.alimentacaoObs}` : ""}
                           </p>
                         ) : null}
                       </div>
