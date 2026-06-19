@@ -58,6 +58,7 @@ function Nova() {
       valor: v,
       tipo,
       alimentacao: incluiAlim ? parseNum(alimentacao) : 0,
+      alimentacaoObs: incluiAlim ? alimentacaoObs.trim() : "",
     });
     navigate({ to: "/" });
   }
