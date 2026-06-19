@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-export type Tipo = "rua-200" | "rua-100" | "personalizada";
+export type Tipo = "rua-200" | "deposito-100" | "personalizada";
 
 export type Diaria = {
   id: string;
@@ -10,6 +10,7 @@ export type Diaria = {
   valor: number;
   tipo: Tipo;
   alimentacao?: number;
+  alimentacaoObs?: string;
 };
 
 const STORAGE_KEY = "diarias.v2";

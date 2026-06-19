@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft } from "lucide-react";
 import { useDiarias, todayISO, fmt, type Tipo } from "@/lib/diarias-store";
 
@@ -20,7 +21,7 @@ export const Route = createFileRoute("/nova")({
 
 const PRESETS: { tipo: Tipo; label: string; valor: number }[] = [
   { tipo: "rua-200", label: "Rua R$ 200", valor: 200 },
-  { tipo: "rua-100", label: "Rua R$ 100", valor: 100 },
+  { tipo: "deposito-100", label: "Depósito R$ 100", valor: 100 },
   { tipo: "personalizada", label: "Personalizada", valor: 0 },
 ];
 
@@ -34,6 +35,7 @@ function Nova() {
   const [data, setData] = useState(todayISO());
   const [incluiAlim, setIncluiAlim] = useState(false);
   const [alimentacao, setAlimentacao] = useState("");
+  const [alimentacaoObs, setAlimentacaoObs] = useState("");
 
   function selecionarTipo(p: (typeof PRESETS)[number]) {
     setTipo(p.tipo);
@@ -56,6 +58,7 @@ function Nova() {
       valor: v,
       tipo,
       alimentacao: incluiAlim ? parseNum(alimentacao) : 0,
+      alimentacaoObs: incluiAlim ? alimentacaoObs.trim() : "",
     });
     navigate({ to: "/" });
   }
@@ -156,17 +159,28 @@ function Nova() {
               />
             </div>
             {incluiAlim && (
-              <div className="grid gap-2">
-                <Label htmlFor="alim">Valor alimentação (R$)</Label>
-                <Input
-                  id="alim"
-                  type="number"
-                  inputMode="decimal"
-                  step="0.01"
-                  placeholder="0,00"
-                  value={alimentacao}
-                  onChange={(e) => setAlimentacao(e.target.value)}
-                />
+              <div className="grid gap-3">
+                <div className="grid gap-2">
+                  <Label htmlFor="alim">Valor alimentação (R$)</Label>
+                  <Input
+                    id="alim"
+                    type="number"
+                    inputMode="decimal"
+                    step="0.01"
+                    placeholder="0,00"
+                    value={alimentacao}
+                    onChange={(e) => setAlimentacao(e.target.value)}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="alim-obs">Observação</Label>
+                  <Textarea
+                    id="alim-obs"
+                    placeholder="Ex.: almoço no restaurante X"
+                    value={alimentacaoObs}
+                    onChange={(e) => setAlimentacaoObs(e.target.value)}
+                  />
+                </div>
               </div>
             )}
           </Card>
