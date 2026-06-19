@@ -20,7 +20,7 @@ export const Route = createFileRoute("/nova")({
 
 const PRESETS: { tipo: Tipo; label: string; valor: number }[] = [
   { tipo: "rua-200", label: "Rua R$ 200", valor: 200 },
-  { tipo: "rua-100", label: "Rua R$ 100", valor: 100 },
+  { tipo: "deposito-100", label: "Depósito R$ 100", valor: 100 },
   { tipo: "personalizada", label: "Personalizada", valor: 0 },
 ];
 
