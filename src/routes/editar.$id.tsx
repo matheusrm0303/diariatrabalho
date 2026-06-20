@@ -43,6 +43,7 @@ function Editar() {
   const [valor, setValor] = useState<string>("");
   const [local, setLocal] = useState("");
   const [data, setData] = useState("");
+  const [status, setStatus] = useState<Status>("pendente");
   const [incluiAlim, setIncluiAlim] = useState(false);
   const [alimentacao, setAlimentacao] = useState("");
   const [alimentacaoObs, setAlimentacaoObs] = useState("");
