@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Trash2, Plus, Wallet, Utensils, MapPin, Calendar } from "lucide-react";
+import { Trash2, Plus, Wallet, Utensils, MapPin, Calendar, Pencil } from "lucide-react";
 import { useDiarias, fmt } from "@/lib/diarias-store";
 
 export const Route = createFileRoute("/")({
@@ -93,14 +93,26 @@ function Index() {
                       </div>
                       <div className="flex flex-col items-end gap-1">
                         <span className="font-semibold">{fmt.format(totalItem)}</span>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          onClick={() => remover(d.id)}
-                          aria-label="Remover"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        <div className="flex items-center gap-1">
+                          <Button
+                            asChild
+                            size="icon"
+                            variant="ghost"
+                            aria-label="Editar"
+                          >
+                            <Link to="/editar/$id" params={{ id: d.id }}>
+                              <Pencil className="h-4 w-4" />
+                            </Link>
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => remover(d.id)}
+                            aria-label="Remover"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   </Card>

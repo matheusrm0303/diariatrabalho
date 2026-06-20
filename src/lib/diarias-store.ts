@@ -64,5 +64,9 @@ export function useDiarias() {
     save(load().filter((d) => d.id !== id));
   }
 
-  return { diarias, adicionar, remover };
+  function atualizar(id: string, patch: Partial<Omit<Diaria, "id">>) {
+    save(load().map((d) => (d.id === id ? { ...d, ...patch } : d)));
+  }
+
+  return { diarias, adicionar, remover, atualizar };
 }
