@@ -104,6 +104,29 @@ function Nova() {
                 required
               />
             </div>
+            <div className="grid gap-2">
+              <Label htmlFor="status">Status</Label>
+              <div className="grid grid-cols-2 gap-2">
+                {(["pendente", "pago"] as Status[]).map((s) => {
+                  const active = status === s;
+                  return (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => setStatus(s)}
+                      className={
+                        "rounded-md border px-3 py-2 text-sm transition-colors capitalize " +
+                        (active
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-input bg-background hover:bg-accent")
+                      }
+                    >
+                      {s}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           </Card>
 
           <Card className="p-4 grid gap-3">
