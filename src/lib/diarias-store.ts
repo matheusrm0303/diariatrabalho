@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 
 export type Tipo = "rua-200" | "deposito-100" | "personalizada";
+export type Status = "pendente" | "pago";
 
 export type Diaria = {
   id: string;
@@ -9,6 +10,7 @@ export type Diaria = {
   descricao: string;
   valor: number;
   tipo: Tipo;
+  status: Status;
   alimentacao?: number;
   alimentacaoObs?: string;
 };
