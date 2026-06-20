@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft } from "lucide-react";
-import { useDiarias, todayISO, fmt, type Tipo } from "@/lib/diarias-store";
+import { useDiarias, todayISO, fmt, type Tipo, type Status } from "@/lib/diarias-store";
 
 export const Route = createFileRoute("/nova")({
   head: () => ({
@@ -58,6 +58,7 @@ function Nova() {
       descricao: PRESETS.find((p) => p.tipo === tipo)?.label || "Diária",
       valor: v,
       tipo,
+      status,
       alimentacao: incluiAlim ? parseNum(alimentacao) : 0,
       alimentacaoObs: incluiAlim ? alimentacaoObs.trim() : "",
     });
