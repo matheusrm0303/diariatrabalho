@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as NovaRouteImport } from './routes/nova'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as EditarIdRouteImport } from './routes/editar.$id'
 
 const NovaRoute = NovaRouteImport.update({
   id: '/nova',
@@ -22,31 +23,40 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const EditarIdRoute = EditarIdRouteImport.update({
+  id: '/editar/$id',
+  path: '/editar/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/nova': typeof NovaRoute
+  '/editar/$id': typeof EditarIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/nova': typeof NovaRoute
+  '/editar/$id': typeof EditarIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/nova': typeof NovaRoute
+  '/editar/$id': typeof EditarIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/nova'
+  fullPaths: '/' | '/nova' | '/editar/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/nova'
-  id: '__root__' | '/' | '/nova'
+  to: '/' | '/nova' | '/editar/$id'
+  id: '__root__' | '/' | '/nova' | '/editar/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   NovaRoute: typeof NovaRoute
+  EditarIdRoute: typeof EditarIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -65,12 +75,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/editar/$id': {
+      id: '/editar/$id'
+      path: '/editar/$id'
+      fullPath: '/editar/$id'
+      preLoaderRoute: typeof EditarIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   NovaRoute: NovaRoute,
+  EditarIdRoute: EditarIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

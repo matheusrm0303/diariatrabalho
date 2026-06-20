@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Trash2, Plus, Wallet, Utensils, MapPin, Calendar } from "lucide-react";
+import { Trash2, Plus, Wallet, Utensils, MapPin, Calendar, Pencil } from "lucide-react";
 import { useDiarias, fmt } from "@/lib/diarias-store";
 
 export const Route = createFileRoute("/")({
