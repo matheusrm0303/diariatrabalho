@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft } from "lucide-react";
-import { useDiarias, fmt, type Tipo } from "@/lib/diarias-store";
+import { useDiarias, fmt, type Tipo, type Status } from "@/lib/diarias-store";
 
 export const Route = createFileRoute("/editar/$id")({
   head: () => ({
@@ -43,6 +43,7 @@ function Editar() {
   const [valor, setValor] = useState<string>("");
   const [local, setLocal] = useState("");
   const [data, setData] = useState("");
+  const [status, setStatus] = useState<Status>("pendente");
   const [incluiAlim, setIncluiAlim] = useState(false);
   const [alimentacao, setAlimentacao] = useState("");
   const [alimentacaoObs, setAlimentacaoObs] = useState("");
@@ -54,6 +55,7 @@ function Editar() {
       setValor(String(atual.valor));
       setLocal(atual.local);
       setData(atual.data);
+      setStatus(atual.status);
       setIncluiAlim(!!(atual.alimentacao || atual.alimentacaoObs));
       setAlimentacao(atual.alimentacao ? String(atual.alimentacao) : "");
       setAlimentacaoObs(atual.alimentacaoObs || "");
@@ -86,6 +88,7 @@ function Editar() {
       descricao: PRESETS.find((p) => p.tipo === tipo)?.label || "Diária",
       valor: v,
       tipo,
+      status,
       alimentacao: incluiAlim ? parseNum(alimentacao) : 0,
       alimentacaoObs: incluiAlim ? alimentacaoObs.trim() : "",
     });
@@ -130,6 +133,29 @@ function Editar() {
                 onChange={(e) => setData(e.target.value)}
                 required
               />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="status">Status</Label>
+              <div className="grid grid-cols-2 gap-2">
+                {(["pendente", "pago"] as Status[]).map((s) => {
+                  const active = status === s;
+                  return (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => setStatus(s)}
+                      className={
+                        "rounded-md border px-3 py-2 text-sm transition-colors capitalize " +
+                        (active
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-input bg-background hover:bg-accent")
+                      }
+                    >
+                      {s}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </Card>
 

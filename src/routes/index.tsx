@@ -2,7 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Trash2, Plus, Wallet, Utensils, MapPin, Calendar, Pencil } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Trash2, Plus, Wallet, Utensils, Calendar, Pencil } from "lucide-react";
 import { useDiarias, fmt } from "@/lib/diarias-store";
 
 export const Route = createFileRoute("/")({
@@ -22,13 +23,14 @@ function Index() {
     () => diarias.reduce((s, d) => s + d.valor + (d.alimentacao || 0), 0),
     [diarias],
   );
-  const totalMes = useMemo(() => {
-    const now = new Date();
-    const ym = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-    return diarias
-      .filter((d) => d.data.startsWith(ym))
-      .reduce((s, d) => s + d.valor + (d.alimentacao || 0), 0);
-  }, [diarias]);
+  const totalPago = useMemo(
+    () => diarias.filter((d) => d.status === "pago").reduce((s, d) => s + d.valor + (d.alimentacao || 0), 0),
+    [diarias],
+  );
+  const totalPendente = useMemo(
+    () => diarias.filter((d) => d.status === "pendente").reduce((s, d) => s + d.valor + (d.alimentacao || 0), 0),
+    [diarias],
+  );
 
   const ordenadas = useMemo(
     () => [...diarias].sort((a, b) => b.data.localeCompare(a.data)),
@@ -52,10 +54,14 @@ function Index() {
 
         <div className="grid grid-cols-2 gap-3 mb-6">
           <Card className="p-4">
-            <p className="text-xs text-muted-foreground">Total do mês</p>
-            <p className="mt-1 text-xl font-semibold">{fmt.format(totalMes)}</p>
+            <p className="text-xs text-muted-foreground">Total pago</p>
+            <p className="mt-1 text-xl font-semibold text-emerald-600">{fmt.format(totalPago)}</p>
           </Card>
           <Card className="p-4">
+            <p className="text-xs text-muted-foreground">Total pendente</p>
+            <p className="mt-1 text-xl font-semibold text-amber-600">{fmt.format(totalPendente)}</p>
+          </Card>
+          <Card className="p-4 col-span-2">
             <p className="text-xs text-muted-foreground">Total geral</p>
             <p className="mt-1 text-xl font-semibold">{fmt.format(total)}</p>
           </Card>
@@ -75,7 +81,19 @@ function Index() {
                   <Card key={d.id} className="p-4">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <p className="font-medium truncate">{d.local}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium truncate">{d.local}</p>
+                          <Badge
+                            variant={d.status === "pago" ? "default" : "secondary"}
+                            className={
+                              d.status === "pago"
+                                ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-100"
+                                : "bg-amber-100 text-amber-700 hover:bg-amber-100"
+                            }
+                          >
+                            {d.status === "pago" ? "Pago" : "Pendente"}
+                          </Badge>
+                        </div>
                         <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
                           <span className="inline-flex items-center gap-1">
                             <Calendar className="h-3 w-3" />
