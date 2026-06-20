@@ -77,14 +77,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
+      { title: "Diaria" },
+      { name: "description", content: "Diária Fácil manages daily allowances with pre-set and custom values." },
       { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { property: "og:title", content: "Diaria" },
+      { property: "og:description", content: "Diária Fácil manages daily allowances with pre-set and custom values." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "Diaria" },
+      { name: "twitter:description", content: "Diária Fácil manages daily allowances with pre-set and custom values." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/8b6b027c-a912-443d-8f58-7fe32d0940af/id-preview-99284ff8--06e6e5da-22bc-4848-b92c-ebe9f24e1790.lovable.app-1781926534475.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/8b6b027c-a912-443d-8f58-7fe32d0940af/id-preview-99284ff8--06e6e5da-22bc-4848-b92c-ebe9f24e1790.lovable.app-1781926534475.png" },
     ],
     links: [
       {
