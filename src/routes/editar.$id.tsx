@@ -88,6 +88,7 @@ function Editar() {
       descricao: PRESETS.find((p) => p.tipo === tipo)?.label || "Diária",
       valor: v,
       tipo,
+      status,
       alimentacao: incluiAlim ? parseNum(alimentacao) : 0,
       alimentacaoObs: incluiAlim ? alimentacaoObs.trim() : "",
     });
