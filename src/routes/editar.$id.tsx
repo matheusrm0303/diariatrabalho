@@ -55,6 +55,7 @@ function Editar() {
       setValor(String(atual.valor));
       setLocal(atual.local);
       setData(atual.data);
+      setStatus(atual.status);
       setIncluiAlim(!!(atual.alimentacao || atual.alimentacaoObs));
       setAlimentacao(atual.alimentacao ? String(atual.alimentacao) : "");
       setAlimentacaoObs(atual.alimentacaoObs || "");
