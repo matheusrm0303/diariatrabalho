@@ -80,3 +80,44 @@ export function useDiarias() {
 
   return { diarias, adicionar, remover, atualizar };
 }
+
+function loadAdiant(): Adiantamento[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(ADIANT_KEY);
+    return raw ? (JSON.parse(raw) as Adiantamento[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveAdiant(list: Adiantamento[]) {
+  localStorage.setItem(ADIANT_KEY, JSON.stringify(list));
+  window.dispatchEvent(new CustomEvent("adiantamentos:changed"));
+}
+
+export function useAdiantamentos() {
+  const [adiantamentos, setAdiantamentos] = useState<Adiantamento[]>([]);
+
+  useEffect(() => {
+    setAdiantamentos(loadAdiant());
+    const onChange = () => setAdiantamentos(loadAdiant());
+    window.addEventListener("adiantamentos:changed", onChange);
+    window.addEventListener("storage", onChange);
+    return () => {
+      window.removeEventListener("adiantamentos:changed", onChange);
+      window.removeEventListener("storage", onChange);
+    };
+  }, []);
+
+  function adicionar(a: Omit<Adiantamento, "id">) {
+    const next = [{ ...a, id: crypto.randomUUID() }, ...loadAdiant()];
+    saveAdiant(next);
+  }
+
+  function remover(id: string) {
+    saveAdiant(loadAdiant().filter((a) => a.id !== id));
+  }
+
+  return { adiantamentos, adicionar, remover };
+}
