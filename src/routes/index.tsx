@@ -3,7 +3,7 @@ import { useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Trash2, Plus, Wallet, Utensils, Calendar, Pencil } from "lucide-react";
+import { Trash2, Plus, Wallet, Utensils, Calendar, Pencil, BarChart3 } from "lucide-react";
 import { useDiarias, fmt } from "@/lib/diarias-store";
 
 export const Route = createFileRoute("/")({
