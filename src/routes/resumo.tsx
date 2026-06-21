@@ -1,10 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo } from "react";
+import jsPDF from "jspdf";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, CalendarDays, Wallet } from "lucide-react";
-import { useDiarias, fmt } from "@/lib/diarias-store";
+import { ArrowLeft, CalendarDays, FileDown, MessageCircle } from "lucide-react";
+import { useDiarias, fmt, type Diaria } from "@/lib/diarias-store";
 
 export const Route = createFileRoute("/resumo")({
   head: () => ({
@@ -79,6 +80,145 @@ function Resumo() {
     [resumoPorMes]
   );
 
+  function tipoLabel(t: Diaria["tipo"]) {
+    if (t === "rua-200") return "Rua";
+    if (t === "deposito-100") return "Depósito";
+    return "Pers.";
+  }
+
+  function formatarData(iso: string) {
+    const [a, m, d] = iso.split("-");
+    return `${d}/${m}/${a}`;
+  }
+
+  function diariasOrdenadas() {
+    return [...diarias].sort((a, b) => (a.data < b.data ? 1 : -1));
+  }
+
+  function gerarTextoWhatsApp() {
+    const lista = diariasOrdenadas();
+    const linhas: string[] = [];
+    linhas.push("*Fechamento de Diárias*");
+    linhas.push("");
+
+    for (const m of resumoPorMes) {
+      linhas.push(`*${m.label}*`);
+      const dosMes = lista.filter((d) => {
+        const [a, mm] = d.data.split("-");
+        return parseInt(a, 10) === m.ano && parseInt(mm, 10) === m.mes;
+      });
+      for (const d of dosMes) {
+        const total = d.valor + (d.alimentacao || 0);
+        const st = d.status === "pago" ? "✅ Pago" : "⏳ Pendente";
+        linhas.push(
+          `• ${formatarData(d.data)} — ${d.local || "(sem local)"} [${tipoLabel(d.tipo)}] — ${fmt.format(d.valor)}${
+            d.alimentacao ? ` + alim. ${fmt.format(d.alimentacao)}` : ""
+          } = *${fmt.format(total)}* ${st}`
+        );
+        if (d.alimentacaoObs) linhas.push(`   _Obs alim.: ${d.alimentacaoObs}_`);
+        if (d.descricao) linhas.push(`   _Obs: ${d.descricao}_`);
+      }
+      linhas.push(
+        `Subtotal: pago ${fmt.format(m.totalPago)} | pendente ${fmt.format(m.totalPendente)}`
+      );
+      linhas.push("");
+    }
+
+    linhas.push(`*Total pago:* ${fmt.format(totalGeralPago)}`);
+    linhas.push(`*Total pendente:* ${fmt.format(totalGeralPendente)}`);
+    return linhas.join("\n");
+  }
+
+  function enviarWhatsApp() {
+    if (diarias.length === 0) return;
+    const texto = encodeURIComponent(gerarTextoWhatsApp());
+    window.open(`https://wa.me/?text=${texto}`, "_blank");
+  }
+
+  function gerarPDF() {
+    if (diarias.length === 0) return;
+    const doc = new jsPDF({ unit: "pt", format: "a4" });
+    const margem = 40;
+    const larguraUtil = doc.internal.pageSize.getWidth() - margem * 2;
+    let y = margem;
+
+    const novaPaginaSeNecessario = (alturaLinha = 16) => {
+      if (y + alturaLinha > doc.internal.pageSize.getHeight() - margem) {
+        doc.addPage();
+        y = margem;
+      }
+    };
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(16);
+    doc.text("Resumo de Diárias", margem, y);
+    y += 22;
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(11);
+    doc.text(`Total pago: ${fmt.format(totalGeralPago)}`, margem, y);
+    y += 14;
+    doc.text(`Total pendente: ${fmt.format(totalGeralPendente)}`, margem, y);
+    y += 20;
+
+    const lista = diariasOrdenadas();
+    for (const m of resumoPorMes) {
+      novaPaginaSeNecessario(28);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(12);
+      doc.text(m.label, margem, y);
+      y += 16;
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10);
+      const dosMes = lista.filter((d) => {
+        const [a, mm] = d.data.split("-");
+        return parseInt(a, 10) === m.ano && parseInt(mm, 10) === m.mes;
+      });
+      for (const d of dosMes) {
+        const total = d.valor + (d.alimentacao || 0);
+        const st = d.status === "pago" ? "Pago" : "Pendente";
+        const linha = `${formatarData(d.data)}  ${d.local || "(sem local)"} [${tipoLabel(d.tipo)}]  ${fmt.format(d.valor)}${
+          d.alimentacao ? ` + ${fmt.format(d.alimentacao)}` : ""
+        } = ${fmt.format(total)}  (${st})`;
+        const wrapped = doc.splitTextToSize(linha, larguraUtil);
+        novaPaginaSeNecessario(wrapped.length * 12);
+        doc.text(wrapped, margem, y);
+        y += wrapped.length * 12;
+        if (d.alimentacaoObs) {
+          const obs = doc.splitTextToSize(`   Obs alim.: ${d.alimentacaoObs}`, larguraUtil);
+          novaPaginaSeNecessario(obs.length * 11);
+          doc.text(obs, margem, y);
+          y += obs.length * 11;
+        }
+        if (d.descricao) {
+          const obs = doc.splitTextToSize(`   Obs: ${d.descricao}`, larguraUtil);
+          novaPaginaSeNecessario(obs.length * 11);
+          doc.text(obs, margem, y);
+          y += obs.length * 11;
+        }
+      }
+      y += 4;
+      novaPaginaSeNecessario();
+      doc.setFont("helvetica", "italic");
+      doc.text(
+        `Subtotal: pago ${fmt.format(m.totalPago)} | pendente ${fmt.format(m.totalPendente)}`,
+        margem,
+        y
+      );
+      doc.setFont("helvetica", "normal");
+      y += 18;
+    }
+
+    doc.save(`resumo-diarias-${todayStamp()}.pdf`);
+  }
+
+  function todayStamp() {
+    const d = new Date();
+    const p = (n: number) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}`;
+  }
+
   return (
     <div className="min-h-screen bg-background pb-8">
       <div className="mx-auto max-w-2xl px-4 py-6">
@@ -95,6 +235,25 @@ function Resumo() {
             </p>
           </div>
         </header>
+
+        <div className="mb-4 grid grid-cols-2 gap-2">
+          <Button
+            onClick={enviarWhatsApp}
+            disabled={diarias.length === 0}
+            className="bg-emerald-600 hover:bg-emerald-700 text-white"
+          >
+            <MessageCircle className="h-4 w-4" />
+            WhatsApp
+          </Button>
+          <Button
+            onClick={gerarPDF}
+            disabled={diarias.length === 0}
+            variant="outline"
+          >
+            <FileDown className="h-4 w-4" />
+            Gerar PDF
+          </Button>
+        </div>
 
         <div className="grid grid-cols-2 gap-3 mb-6">
           <Card className="p-4">
