@@ -3,7 +3,7 @@ import { useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Trash2, Plus, Wallet, Utensils, Calendar, Pencil } from "lucide-react";
+import { Trash2, Plus, Wallet, Utensils, Calendar, Pencil, BarChart3 } from "lucide-react";
 import { useDiarias, fmt } from "@/lib/diarias-store";
 
 export const Route = createFileRoute("/")({
@@ -40,16 +40,23 @@ function Index() {
   return (
     <div className="min-h-screen bg-background pb-24">
       <div className="mx-auto max-w-2xl px-4 py-8">
-        <header className="mb-8 flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <Wallet className="h-5 w-5" />
+        <header className="mb-8 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+              <Wallet className="h-5 w-5" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-semibold tracking-tight">Controle de Diárias</h1>
+              <p className="text-sm text-muted-foreground">
+                Acompanhe seus eventos e ganhos.
+              </p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight">Controle de Diárias</h1>
-            <p className="text-sm text-muted-foreground">
-              Acompanhe seus eventos e ganhos.
-            </p>
-          </div>
+          <Button asChild size="icon" variant="outline" aria-label="Resumo mensal">
+            <Link to="/resumo">
+              <BarChart3 className="h-5 w-5" />
+            </Link>
+          </Button>
         </header>
 
         <div className="grid grid-cols-2 gap-3 mb-6">

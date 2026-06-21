@@ -9,10 +9,16 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as ResumoRouteImport } from './routes/resumo'
 import { Route as NovaRouteImport } from './routes/nova'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as EditarIdRouteImport } from './routes/editar.$id'
 
+const ResumoRoute = ResumoRouteImport.update({
+  id: '/resumo',
+  path: '/resumo',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const NovaRoute = NovaRouteImport.update({
   id: '/nova',
   path: '/nova',
@@ -32,35 +38,46 @@ const EditarIdRoute = EditarIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/nova': typeof NovaRoute
+  '/resumo': typeof ResumoRoute
   '/editar/$id': typeof EditarIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/nova': typeof NovaRoute
+  '/resumo': typeof ResumoRoute
   '/editar/$id': typeof EditarIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/nova': typeof NovaRoute
+  '/resumo': typeof ResumoRoute
   '/editar/$id': typeof EditarIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/nova' | '/editar/$id'
+  fullPaths: '/' | '/nova' | '/resumo' | '/editar/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/nova' | '/editar/$id'
-  id: '__root__' | '/' | '/nova' | '/editar/$id'
+  to: '/' | '/nova' | '/resumo' | '/editar/$id'
+  id: '__root__' | '/' | '/nova' | '/resumo' | '/editar/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   NovaRoute: typeof NovaRoute
+  ResumoRoute: typeof ResumoRoute
   EditarIdRoute: typeof EditarIdRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/resumo': {
+      id: '/resumo'
+      path: '/resumo'
+      fullPath: '/resumo'
+      preLoaderRoute: typeof ResumoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/nova': {
       id: '/nova'
       path: '/nova'
@@ -88,6 +105,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   NovaRoute: NovaRoute,
+  ResumoRoute: ResumoRoute,
   EditarIdRoute: EditarIdRoute,
 }
 export const routeTree = rootRouteImport
