@@ -1,10 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo } from "react";
+import jsPDF from "jspdf";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, CalendarDays, Wallet } from "lucide-react";
-import { useDiarias, fmt } from "@/lib/diarias-store";
+import { ArrowLeft, CalendarDays, FileDown, MessageCircle } from "lucide-react";
+import { useDiarias, fmt, type Diaria } from "@/lib/diarias-store";
 
 export const Route = createFileRoute("/resumo")({
   head: () => ({
