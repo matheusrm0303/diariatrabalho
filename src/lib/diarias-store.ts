@@ -15,7 +15,15 @@ export type Diaria = {
   alimentacaoObs?: string;
 };
 
+export type Adiantamento = {
+  id: string;
+  data: string; // YYYY-MM-DD
+  valor: number;
+  observacao?: string;
+};
+
 const STORAGE_KEY = "diarias.v2";
+const ADIANT_KEY = "adiantamentos.v1";
 
 export const fmt = new Intl.NumberFormat("pt-BR", {
   style: "currency",
