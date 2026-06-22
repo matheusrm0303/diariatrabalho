@@ -1,11 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 export type Tipo = "rua-200" | "deposito-100" | "personalizada";
 export type Status = "pendente" | "pago";
 
 export type Diaria = {
   id: string;
-  data: string; // YYYY-MM-DD
+  data: string;
   local: string;
   descricao: string;
   valor: number;
@@ -17,13 +18,10 @@ export type Diaria = {
 
 export type Adiantamento = {
   id: string;
-  data: string; // YYYY-MM-DD
+  data: string;
   valor: number;
   observacao?: string;
 };
-
-const STORAGE_KEY = "diarias.v2";
-const ADIANT_KEY = "adiantamentos.v1";
 
 export const fmt = new Intl.NumberFormat("pt-BR", {
   style: "currency",
@@ -36,88 +34,151 @@ export function todayISO() {
   return new Date(d.getTime() - tz).toISOString().slice(0, 10);
 }
 
-function load(): Diaria[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? (JSON.parse(raw) as Diaria[]) : [];
-  } catch {
-    return [];
-  }
-}
+type DiariaRow = {
+  id: string;
+  data: string;
+  local: string;
+  descricao: string;
+  valor: number | string;
+  tipo: string;
+  status: string;
+  alimentacao: number | string | null;
+  alimentacao_obs: string | null;
+};
 
-function save(list: Diaria[]) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
-  window.dispatchEvent(new CustomEvent("diarias:changed"));
+function mapDiaria(r: DiariaRow): Diaria {
+  return {
+    id: r.id,
+    data: r.data,
+    local: r.local,
+    descricao: r.descricao,
+    valor: Number(r.valor),
+    tipo: r.tipo as Tipo,
+    status: r.status as Status,
+    alimentacao: r.alimentacao != null ? Number(r.alimentacao) : 0,
+    alimentacaoObs: r.alimentacao_obs ?? "",
+  };
 }
 
 export function useDiarias() {
   const [diarias, setDiarias] = useState<Diaria[]>([]);
 
-  useEffect(() => {
-    setDiarias(load());
-    const onChange = () => setDiarias(load());
-    window.addEventListener("diarias:changed", onChange);
-    window.addEventListener("storage", onChange);
-    return () => {
-      window.removeEventListener("diarias:changed", onChange);
-      window.removeEventListener("storage", onChange);
-    };
+  const recarregar = useCallback(async () => {
+    const { data, error } = await supabase
+      .from("diarias" as never)
+      .select("*")
+      .order("data", { ascending: false });
+    if (error) {
+      console.error(error);
+      return;
+    }
+    setDiarias(((data as unknown) as DiariaRow[] | null)?.map(mapDiaria) ?? []);
   }, []);
 
-  function adicionar(d: Omit<Diaria, "id">) {
-    const next = [{ ...d, id: crypto.randomUUID() }, ...load()];
-    save(next);
+  useEffect(() => {
+    recarregar();
+  }, [recarregar]);
+
+  async function adicionar(d: Omit<Diaria, "id">) {
+    const { data: userData } = await supabase.auth.getUser();
+    const user_id = userData.user?.id;
+    if (!user_id) return;
+    const { error } = await supabase.from("diarias" as never).insert({
+      user_id,
+      data: d.data,
+      local: d.local,
+      descricao: d.descricao,
+      valor: d.valor,
+      tipo: d.tipo,
+      status: d.status,
+      alimentacao: d.alimentacao ?? 0,
+      alimentacao_obs: d.alimentacaoObs ?? "",
+    } as never);
+    if (error) console.error(error);
+    await recarregar();
   }
 
-  function remover(id: string) {
-    save(load().filter((d) => d.id !== id));
+  async function remover(id: string) {
+    const { error } = await supabase.from("diarias" as never).delete().eq("id", id);
+    if (error) console.error(error);
+    await recarregar();
   }
 
-  function atualizar(id: string, patch: Partial<Omit<Diaria, "id">>) {
-    save(load().map((d) => (d.id === id ? { ...d, ...patch } : d)));
+  async function atualizar(id: string, patch: Partial<Omit<Diaria, "id">>) {
+    const payload: Record<string, unknown> = {};
+    if (patch.data !== undefined) payload.data = patch.data;
+    if (patch.local !== undefined) payload.local = patch.local;
+    if (patch.descricao !== undefined) payload.descricao = patch.descricao;
+    if (patch.valor !== undefined) payload.valor = patch.valor;
+    if (patch.tipo !== undefined) payload.tipo = patch.tipo;
+    if (patch.status !== undefined) payload.status = patch.status;
+    if (patch.alimentacao !== undefined) payload.alimentacao = patch.alimentacao ?? 0;
+    if (patch.alimentacaoObs !== undefined) payload.alimentacao_obs = patch.alimentacaoObs ?? "";
+    const { error } = await supabase
+      .from("diarias" as never)
+      .update(payload as never)
+      .eq("id", id);
+    if (error) console.error(error);
+    await recarregar();
   }
 
-  return { diarias, adicionar, remover, atualizar };
+  return { diarias, adicionar, remover, atualizar, recarregar };
 }
 
-function loadAdiant(): Adiantamento[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw = localStorage.getItem(ADIANT_KEY);
-    return raw ? (JSON.parse(raw) as Adiantamento[]) : [];
-  } catch {
-    return [];
-  }
-}
+type AdiantRow = {
+  id: string;
+  data: string;
+  valor: number | string;
+  observacao: string | null;
+};
 
-function saveAdiant(list: Adiantamento[]) {
-  localStorage.setItem(ADIANT_KEY, JSON.stringify(list));
-  window.dispatchEvent(new CustomEvent("adiantamentos:changed"));
+function mapAdiant(r: AdiantRow): Adiantamento {
+  return {
+    id: r.id,
+    data: r.data,
+    valor: Number(r.valor),
+    observacao: r.observacao ?? undefined,
+  };
 }
 
 export function useAdiantamentos() {
   const [adiantamentos, setAdiantamentos] = useState<Adiantamento[]>([]);
 
-  useEffect(() => {
-    setAdiantamentos(loadAdiant());
-    const onChange = () => setAdiantamentos(loadAdiant());
-    window.addEventListener("adiantamentos:changed", onChange);
-    window.addEventListener("storage", onChange);
-    return () => {
-      window.removeEventListener("adiantamentos:changed", onChange);
-      window.removeEventListener("storage", onChange);
-    };
+  const recarregar = useCallback(async () => {
+    const { data, error } = await supabase
+      .from("adiantamentos" as never)
+      .select("*")
+      .order("data", { ascending: false });
+    if (error) {
+      console.error(error);
+      return;
+    }
+    setAdiantamentos(((data as unknown) as AdiantRow[] | null)?.map(mapAdiant) ?? []);
   }, []);
 
-  function adicionar(a: Omit<Adiantamento, "id">) {
-    const next = [{ ...a, id: crypto.randomUUID() }, ...loadAdiant()];
-    saveAdiant(next);
+  useEffect(() => {
+    recarregar();
+  }, [recarregar]);
+
+  async function adicionar(a: Omit<Adiantamento, "id">) {
+    const { data: userData } = await supabase.auth.getUser();
+    const user_id = userData.user?.id;
+    if (!user_id) return;
+    const { error } = await supabase.from("adiantamentos" as never).insert({
+      user_id,
+      data: a.data,
+      valor: a.valor,
+      observacao: a.observacao ?? null,
+    } as never);
+    if (error) console.error(error);
+    await recarregar();
   }
 
-  function remover(id: string) {
-    saveAdiant(loadAdiant().filter((a) => a.id !== id));
+  async function remover(id: string) {
+    const { error } = await supabase.from("adiantamentos" as never).delete().eq("id", id);
+    if (error) console.error(error);
+    await recarregar();
   }
 
-  return { adiantamentos, adicionar, remover };
+  return { adiantamentos, adicionar, remover, recarregar };
 }

@@ -9,115 +9,154 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as ResumoRouteImport } from './routes/resumo'
-import { Route as NovaRouteImport } from './routes/nova'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as EditarIdRouteImport } from './routes/editar.$id'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
+import { Route as AuthenticatedResumoRouteImport } from './routes/_authenticated/resumo'
+import { Route as AuthenticatedNovaRouteImport } from './routes/_authenticated/nova'
+import { Route as AuthenticatedEditarIdRouteImport } from './routes/_authenticated/editar.$id'
 
-const ResumoRoute = ResumoRouteImport.update({
-  id: '/resumo',
-  path: '/resumo',
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
-const NovaRoute = NovaRouteImport.update({
-  id: '/nova',
-  path: '/nova',
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
+const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const EditarIdRoute = EditarIdRouteImport.update({
+const AuthenticatedResumoRoute = AuthenticatedResumoRouteImport.update({
+  id: '/resumo',
+  path: '/resumo',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedNovaRoute = AuthenticatedNovaRouteImport.update({
+  id: '/nova',
+  path: '/nova',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedEditarIdRoute = AuthenticatedEditarIdRouteImport.update({
   id: '/editar/$id',
   path: '/editar/$id',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
-  '/nova': typeof NovaRoute
-  '/resumo': typeof ResumoRoute
-  '/editar/$id': typeof EditarIdRoute
+  '/': typeof AuthenticatedIndexRoute
+  '/auth': typeof AuthRoute
+  '/nova': typeof AuthenticatedNovaRoute
+  '/resumo': typeof AuthenticatedResumoRoute
+  '/editar/$id': typeof AuthenticatedEditarIdRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
-  '/nova': typeof NovaRoute
-  '/resumo': typeof ResumoRoute
-  '/editar/$id': typeof EditarIdRoute
+  '/auth': typeof AuthRoute
+  '/nova': typeof AuthenticatedNovaRoute
+  '/resumo': typeof AuthenticatedResumoRoute
+  '/': typeof AuthenticatedIndexRoute
+  '/editar/$id': typeof AuthenticatedEditarIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
-  '/nova': typeof NovaRoute
-  '/resumo': typeof ResumoRoute
-  '/editar/$id': typeof EditarIdRoute
+  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/auth': typeof AuthRoute
+  '/_authenticated/nova': typeof AuthenticatedNovaRoute
+  '/_authenticated/resumo': typeof AuthenticatedResumoRoute
+  '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/_authenticated/editar/$id': typeof AuthenticatedEditarIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/nova' | '/resumo' | '/editar/$id'
+  fullPaths: '/' | '/auth' | '/nova' | '/resumo' | '/editar/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/nova' | '/resumo' | '/editar/$id'
-  id: '__root__' | '/' | '/nova' | '/resumo' | '/editar/$id'
+  to: '/auth' | '/nova' | '/resumo' | '/' | '/editar/$id'
+  id:
+    | '__root__'
+    | '/_authenticated'
+    | '/auth'
+    | '/_authenticated/nova'
+    | '/_authenticated/resumo'
+    | '/_authenticated/'
+    | '/_authenticated/editar/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
-  NovaRoute: typeof NovaRoute
-  ResumoRoute: typeof ResumoRoute
-  EditarIdRoute: typeof EditarIdRoute
+  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  AuthRoute: typeof AuthRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/resumo': {
-      id: '/resumo'
-      path: '/resumo'
-      fullPath: '/resumo'
-      preLoaderRoute: typeof ResumoRouteImport
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/nova': {
-      id: '/nova'
-      path: '/nova'
-      fullPath: '/nova'
-      preLoaderRoute: typeof NovaRouteImport
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
+    '/_authenticated/': {
+      id: '/_authenticated/'
       path: '/'
       fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/editar/$id': {
-      id: '/editar/$id'
+    '/_authenticated/resumo': {
+      id: '/_authenticated/resumo'
+      path: '/resumo'
+      fullPath: '/resumo'
+      preLoaderRoute: typeof AuthenticatedResumoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/nova': {
+      id: '/_authenticated/nova'
+      path: '/nova'
+      fullPath: '/nova'
+      preLoaderRoute: typeof AuthenticatedNovaRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/editar/$id': {
+      id: '/_authenticated/editar/$id'
       path: '/editar/$id'
       fullPath: '/editar/$id'
-      preLoaderRoute: typeof EditarIdRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedEditarIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
   }
 }
 
+interface AuthenticatedRouteRouteChildren {
+  AuthenticatedNovaRoute: typeof AuthenticatedNovaRoute
+  AuthenticatedResumoRoute: typeof AuthenticatedResumoRoute
+  AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+  AuthenticatedEditarIdRoute: typeof AuthenticatedEditarIdRoute
+}
+
+const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedNovaRoute: AuthenticatedNovaRoute,
+  AuthenticatedResumoRoute: AuthenticatedResumoRoute,
+  AuthenticatedIndexRoute: AuthenticatedIndexRoute,
+  AuthenticatedEditarIdRoute: AuthenticatedEditarIdRoute,
+}
+
+const AuthenticatedRouteRouteWithChildren =
+  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
-  NovaRoute: NovaRoute,
-  ResumoRoute: ResumoRoute,
-  EditarIdRoute: EditarIdRoute,
+  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  AuthRoute: AuthRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

@@ -1,5 +1,5 @@
-import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { createFileRoute, useNavigate, Link, notFound } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -7,16 +7,24 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft } from "lucide-react";
-import { useDiarias, todayISO, fmt, type Tipo, type Status } from "@/lib/diarias-store";
+import { useDiarias, fmt, type Tipo, type Status } from "@/lib/diarias-store";
 
-export const Route = createFileRoute("/nova")({
+export const Route = createFileRoute("/_authenticated/editar/$id")({
   head: () => ({
     meta: [
-      { title: "Nova diária" },
-      { name: "description", content: "Cadastre uma nova diária." },
+      { title: "Editar diária" },
+      { name: "description", content: "Edite uma diária registrada." },
     ],
   }),
-  component: Nova,
+  notFoundComponent: () => (
+    <div className="mx-auto max-w-2xl px-4 py-8">
+      <p className="text-sm text-muted-foreground">Diária não encontrada.</p>
+      <Button asChild className="mt-4">
+        <Link to="/">Voltar</Link>
+      </Button>
+    </div>
+  ),
+  component: Editar,
 });
 
 const PRESETS: { tipo: Tipo; label: string; valor: number }[] = [
@@ -25,18 +33,40 @@ const PRESETS: { tipo: Tipo; label: string; valor: number }[] = [
   { tipo: "personalizada", label: "Personalizada", valor: 0 },
 ];
 
-function Nova() {
+function Editar() {
+  const { id } = Route.useParams();
   const navigate = useNavigate();
-  const { adicionar } = useDiarias();
+  const { diarias, atualizar } = useDiarias();
+  const atual = diarias.find((d) => d.id === id);
 
   const [tipo, setTipo] = useState<Tipo>("rua-200");
-  const [valor, setValor] = useState<string>("200");
+  const [valor, setValor] = useState<string>("");
   const [local, setLocal] = useState("");
-  const [data, setData] = useState(todayISO());
+  const [data, setData] = useState("");
   const [status, setStatus] = useState<Status>("pendente");
   const [incluiAlim, setIncluiAlim] = useState(false);
   const [alimentacao, setAlimentacao] = useState("");
   const [alimentacaoObs, setAlimentacaoObs] = useState("");
+  const [carregado, setCarregado] = useState(false);
+
+  useEffect(() => {
+    if (atual && !carregado) {
+      setTipo(atual.tipo);
+      setValor(String(atual.valor));
+      setLocal(atual.local);
+      setData(atual.data);
+      setStatus(atual.status);
+      setIncluiAlim(!!(atual.alimentacao || atual.alimentacaoObs));
+      setAlimentacao(atual.alimentacao ? String(atual.alimentacao) : "");
+      setAlimentacaoObs(atual.alimentacaoObs || "");
+      setCarregado(true);
+    }
+  }, [atual, carregado]);
+
+  if (!atual && diarias.length > 0 && carregado === false) {
+    // diárias carregadas mas id inexistente
+    throw notFound();
+  }
 
   function selecionarTipo(p: (typeof PRESETS)[number]) {
     setTipo(p.tipo);
@@ -52,7 +82,7 @@ function Nova() {
     e.preventDefault();
     const v = parseNum(valor);
     if (!local.trim() || v <= 0) return;
-    adicionar({
+    atualizar(id, {
       data,
       local: local.trim(),
       descricao: PRESETS.find((p) => p.tipo === tipo)?.label || "Diária",
@@ -77,8 +107,8 @@ function Nova() {
             </Link>
           </Button>
           <div>
-            <h1 className="text-xl font-semibold tracking-tight">Nova diária</h1>
-            <p className="text-sm text-muted-foreground">Preencha os dados do evento.</p>
+            <h1 className="text-xl font-semibold tracking-tight">Editar diária</h1>
+            <p className="text-sm text-muted-foreground">Atualize os dados do evento.</p>
           </div>
         </header>
 
@@ -220,7 +250,7 @@ function Nova() {
               <Link to="/">Cancelar</Link>
             </Button>
             <Button type="submit" className="flex-1">
-              Salvar
+              Salvar alterações
             </Button>
           </div>
         </form>
