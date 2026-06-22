@@ -1,6 +1,6 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Wallet, LogOut } from "lucide-react";
+import { Wallet, LogOut, UserCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DiariasTab } from "@/components/diarias-tab";
 import { AdiantamentoTab } from "@/components/adiantamento-tab";
@@ -36,6 +36,9 @@ function Index() {
               Acompanhe seus eventos e ganhos.
             </p>
           </div>
+          <Button asChild variant="ghost" size="icon" aria-label="Minha conta">
+            <Link to="/conta"><UserCircle2 className="h-5 w-5" /></Link>
+          </Button>
           <Button variant="ghost" size="icon" onClick={sair} aria-label="Sair">
             <LogOut className="h-5 w-5" />
           </Button>
