@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft } from "lucide-react";
 import { useDiarias, fmt, type Tipo, type Status } from "@/lib/diarias-store";
 
-export const Route = createFileRoute("/editar/$id")({
+export const Route = createFileRoute("/_authenticated/editar/$id")({
   head: () => ({
     meta: [
       { title: "Editar diária" },

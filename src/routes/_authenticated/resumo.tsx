@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, CalendarDays, FileDown, MessageCircle } from "lucide-react";
 import { useDiarias, fmt, type Diaria } from "@/lib/diarias-store";
 
-export const Route = createFileRoute("/resumo")({
+export const Route = createFileRoute("/_authenticated/resumo")({
   head: () => ({
     meta: [
       { title: "Resumo mensal" },

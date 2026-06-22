@@ -5,7 +5,7 @@ import { DiariasTab } from "@/components/diarias-tab";
 import { AdiantamentoTab } from "@/components/adiantamento-tab";
 import { FechamentoTab } from "@/components/fechamento-tab";
 
-export const Route = createFileRoute("/")({
+export const Route = createFileRoute("/_authenticated/")({
   head: () => ({
     meta: [
       { title: "Controle de Diárias" },
