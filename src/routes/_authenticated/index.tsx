@@ -36,6 +36,9 @@ function Index() {
               Acompanhe seus eventos e ganhos.
             </p>
           </div>
+          <Button asChild variant="ghost" size="icon" aria-label="Minha conta">
+            <Link to="/conta"><UserCircle2 className="h-5 w-5" /></Link>
+          </Button>
           <Button variant="ghost" size="icon" onClick={sair} aria-label="Sair">
             <LogOut className="h-5 w-5" />
           </Button>
