@@ -1,12 +1,13 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { ArrowLeft, LogOut, Mail, User } from "lucide-react";
+import { ArrowLeft, LogOut, Mail, User, Download, Upload } from "lucide-react";
 import { toast } from "sonner";
+import { useDiarias, useAdiantamentos } from "@/lib/diarias-store";
 
 export const Route = createFileRoute("/_authenticated/conta")({
   head: () => ({ meta: [{ title: "Minha conta" }] }),
@@ -15,14 +16,83 @@ export const Route = createFileRoute("/_authenticated/conta")({
 
 function ContaPage() {
   const navigate = useNavigate();
+  const { diarias, adicionar: addDiaria, recarregar: recDiarias } = useDiarias();
+  const { adiantamentos, adicionar: addAdiant, recarregar: recAdiants } = useAdiantamentos();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
+  const [importing, setImporting] = useState(false);
   const [currentEmail, setCurrentEmail] = useState("");
   const [pendingEmail, setPendingEmail] = useState<string | null>(null);
   const [userId, setUserId] = useState("");
   const [createdAt, setCreatedAt] = useState("");
   const [email, setEmail] = useState("");
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  function exportar() {
+    const payload = {
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      diarias,
+      adiantamentos,
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `diarias-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast.success("Backup exportado.");
+  }
+
+  async function importar(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setImporting(true);
+    try {
+      const text = await file.text();
+      const parsed = JSON.parse(text);
+      const ds = Array.isArray(parsed?.diarias) ? parsed.diarias : [];
+      const ads = Array.isArray(parsed?.adiantamentos) ? parsed.adiantamentos : [];
+      if (!ds.length && !ads.length) {
+        toast.error("Arquivo sem dados válidos.");
+        return;
+      }
+      if (!confirm(`Importar ${ds.length} diária(s) e ${ads.length} adiantamento(s)? Os registros serão adicionados aos existentes.`)) {
+        return;
+      }
+      for (const d of ds) {
+        await addDiaria({
+          data: d.data,
+          local: d.local ?? "",
+          descricao: d.descricao ?? "",
+          valor: Number(d.valor) || 0,
+          tipo: d.tipo ?? "personalizada",
+          status: d.status ?? "pendente",
+          alimentacao: Number(d.alimentacao) || 0,
+          alimentacaoObs: d.alimentacaoObs ?? "",
+        });
+      }
+      for (const a of ads) {
+        await addAdiant({
+          data: a.data,
+          valor: Number(a.valor) || 0,
+          observacao: a.observacao ?? undefined,
+        });
+      }
+      await Promise.all([recDiarias(), recAdiants()]);
+      toast.success("Dados importados.");
+    } catch (err) {
+      console.error(err);
+      toast.error("Falha ao importar o arquivo.");
+    } finally {
+      setImporting(false);
+    }
+  }
 
   useEffect(() => {
     (async () => {
@@ -144,6 +214,38 @@ function ContaPage() {
                 {saving ? "Salvando…" : "Salvar e-mail"}
               </Button>
             </form>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Download className="h-4 w-4" /> Backup
+            </CardTitle>
+            <CardDescription>
+              Exporte ou importe seus dados em formato JSON.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <Button onClick={exportar} variant="outline" className="w-full">
+              <Download className="h-4 w-4" /> Exportar dados
+            </Button>
+            <input
+              ref={fileRef}
+              type="file"
+              accept="application/json,.json"
+              className="hidden"
+              onChange={importar}
+            />
+            <Button
+              onClick={() => fileRef.current?.click()}
+              variant="outline"
+              disabled={importing}
+              className="w-full"
+            >
+              <Upload className="h-4 w-4" />
+              {importing ? "Importando…" : "Importar dados"}
+            </Button>
           </CardContent>
         </Card>
 
