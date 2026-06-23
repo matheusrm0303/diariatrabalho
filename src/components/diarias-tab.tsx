@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Trash2, Plus, Utensils, Calendar, Pencil } from "lucide-react";
-import { useDiarias, fmt } from "@/lib/diarias-store";
+import { useDiarias, useAdiantamentos, fmt } from "@/lib/diarias-store";
 
 export function DiariasTab() {
   const { diarias, remover } = useDiarias();
