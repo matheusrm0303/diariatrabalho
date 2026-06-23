@@ -220,6 +220,38 @@ function ContaPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
+              <Download className="h-4 w-4" /> Backup
+            </CardTitle>
+            <CardDescription>
+              Exporte ou importe seus dados em formato JSON.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <Button onClick={exportar} variant="outline" className="w-full">
+              <Download className="h-4 w-4" /> Exportar dados
+            </Button>
+            <input
+              ref={fileRef}
+              type="file"
+              accept="application/json,.json"
+              className="hidden"
+              onChange={importar}
+            />
+            <Button
+              onClick={() => fileRef.current?.click()}
+              variant="outline"
+              disabled={importing}
+              className="w-full"
+            >
+              <Upload className="h-4 w-4" />
+              {importing ? "Importando…" : "Importar dados"}
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
               <LogOut className="h-4 w-4" /> Sessão
             </CardTitle>
             <CardDescription>Encerre a sessão neste dispositivo.</CardDescription>
