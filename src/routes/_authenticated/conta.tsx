@@ -1,12 +1,13 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { ArrowLeft, LogOut, Mail, User } from "lucide-react";
+import { ArrowLeft, LogOut, Mail, User, Download, Upload } from "lucide-react";
 import { toast } from "sonner";
+import { useDiarias, useAdiantamentos } from "@/lib/diarias-store";
 
 export const Route = createFileRoute("/_authenticated/conta")({
   head: () => ({ meta: [{ title: "Minha conta" }] }),
