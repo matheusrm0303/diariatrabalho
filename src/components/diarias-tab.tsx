@@ -8,6 +8,7 @@ import { useDiarias, useAdiantamentos, fmt } from "@/lib/diarias-store";
 
 export function DiariasTab() {
   const { diarias, remover } = useDiarias();
+  const { adiantamentos } = useAdiantamentos();
 
   const total = useMemo(
     () => diarias.reduce((s, d) => s + d.valor + (d.alimentacao || 0), 0),
@@ -21,6 +22,11 @@ export function DiariasTab() {
     () => diarias.filter((d) => d.status === "pendente").reduce((s, d) => s + d.valor + (d.alimentacao || 0), 0),
     [diarias],
   );
+  const totalAdiant = useMemo(
+    () => adiantamentos.reduce((s, a) => s + a.valor, 0),
+    [adiantamentos],
+  );
+  const saldo = total - totalAdiant;
 
   const ordenadas = useMemo(
     () => [...diarias].sort((a, b) => b.data.localeCompare(a.data)),
