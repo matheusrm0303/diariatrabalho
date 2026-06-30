@@ -45,16 +45,16 @@ export function DiariasTab() {
           <p className="mt-1 text-xl font-semibold text-amber-600">{fmt.format(totalPendente)}</p>
         </Card>
         <Card className="p-4 col-span-2">
-          <p className="text-xs text-muted-foreground">Saldo a receber</p>
-          <p className={`mt-1 text-xl font-semibold ${saldo < 0 ? "text-rose-600" : ""}`}>{fmt.format(saldo)}</p>
+          <p className="text-xs text-muted-foreground">Total geral</p>
+          <p className="mt-1 text-xl font-semibold">{fmt.format(total)}</p>
         </Card>
         <Card className="p-4">
           <p className="text-xs text-muted-foreground">Adiantamento</p>
           <p className="mt-1 text-xl font-semibold text-sky-600">{fmt.format(totalAdiant)}</p>
         </Card>
         <Card className="p-4">
-          <p className="text-xs text-muted-foreground">Total geral</p>
-          <p className="mt-1 text-xl font-semibold">{fmt.format(total)}</p>
+          <p className="text-xs text-muted-foreground">Saldo a receber</p>
+          <p className={`mt-1 text-xl font-semibold ${saldo < 0 ? "text-rose-600" : ""}`}>{fmt.format(saldo)}</p>
         </Card>
       </div>
 
