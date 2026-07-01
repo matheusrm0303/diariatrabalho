@@ -252,11 +252,65 @@ export function FechamentoTab() {
     doc.save(`fechamento-diarias-${todayStamp()}.pdf`);
   }
 
+  function gerarExcel() {
+    if (diarias.length === 0 && adiantamentos.length === 0) return;
+    const wb = XLSX.utils.book_new();
+
+    const linhas: (string | number)[][] = [
+      ["Data", "Local", "Tipo", "Valor", "Alimentação", "Total", "Status", "Obs alim.", "Observação"],
+    ];
+    for (const d of diariasOrdenadas()) {
+      linhas.push([
+        formatarData(d.data),
+        d.local || "",
+        tipoLabel(d.tipo),
+        d.valor,
+        d.alimentacao || 0,
+        d.valor + (d.alimentacao || 0),
+        d.status === "pago" ? "Pago" : "Pendente",
+        d.alimentacaoObs || "",
+        d.descricao || "",
+      ]);
+    }
+    const wsDiarias = XLSX.utils.aoa_to_sheet(linhas);
+    wsDiarias["!cols"] = [{ wch: 12 }, { wch: 24 }, { wch: 10 }, { wch: 10 }, { wch: 12 }, { wch: 10 }, { wch: 10 }, { wch: 24 }, { wch: 24 }];
+    XLSX.utils.book_append_sheet(wb, wsDiarias, "Diárias");
+
+    const resumoAoA: (string | number)[][] = [["Mês", "Quantidade", "Pago", "Pendente"]];
+    for (const m of resumoPorMes) {
+      resumoAoA.push([m.label, m.quantidade, m.totalPago, m.totalPendente]);
+    }
+    resumoAoA.push([]);
+    resumoAoA.push(["Total pago", "", totalGeralPago, ""]);
+    resumoAoA.push(["Total pendente", "", "", totalGeralPendente]);
+    if (totalAdiantamentos > 0) {
+      resumoAoA.push(["Adiantamentos", "", totalAdiantamentos, ""]);
+      resumoAoA.push(["Saldo a receber", "", "", saldoAReceber]);
+    }
+    const wsResumo = XLSX.utils.aoa_to_sheet(resumoAoA);
+    wsResumo["!cols"] = [{ wch: 24 }, { wch: 12 }, { wch: 14 }, { wch: 14 }];
+    XLSX.utils.book_append_sheet(wb, wsResumo, "Resumo mensal");
+
+    if (adiantamentos.length > 0) {
+      const adAoA: (string | number)[][] = [["Data", "Valor", "Observação"]];
+      for (const a of adiantOrdenados()) {
+        adAoA.push([formatarData(a.data), a.valor, a.observacao || ""]);
+      }
+      adAoA.push([]);
+      adAoA.push(["Total adiantado", totalAdiantamentos, ""]);
+      const wsAd = XLSX.utils.aoa_to_sheet(adAoA);
+      wsAd["!cols"] = [{ wch: 12 }, { wch: 14 }, { wch: 30 }];
+      XLSX.utils.book_append_sheet(wb, wsAd, "Adiantamentos");
+    }
+
+    XLSX.writeFile(wb, `fechamento-diarias-${todayStamp()}.xlsx`);
+  }
+
   const semDados = diarias.length === 0 && adiantamentos.length === 0;
 
   return (
     <div>
-      <div className="mb-4 grid grid-cols-2 gap-2">
+      <div className="mb-4 grid grid-cols-3 gap-2">
         <Button
           onClick={enviarWhatsApp}
           disabled={semDados}
@@ -267,9 +321,14 @@ export function FechamentoTab() {
         </Button>
         <Button onClick={gerarPDF} disabled={semDados} variant="outline">
           <FileDown className="h-4 w-4" />
-          Gerar PDF
+          PDF
+        </Button>
+        <Button onClick={gerarExcel} disabled={semDados} variant="outline">
+          <FileSpreadsheet className="h-4 w-4" />
+          Excel
         </Button>
       </div>
+
 
       <div className="grid grid-cols-2 gap-3 mb-6">
         <Card className="p-4">
