@@ -444,6 +444,94 @@ export function FechamentoTab() {
           </div>
         )}
       </section>
+
+      <Dialog open={waOpen} onOpenChange={setWaOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Personalizar mensagem do WhatsApp</DialogTitle>
+            <DialogDescription>
+              Ajuste a saudação, o encerramento e o texto antes de enviar.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid gap-3">
+            <div className="grid gap-1.5">
+              <Label htmlFor="wa-telefone">Telefone (opcional)</Label>
+              <Input
+                id="wa-telefone"
+                placeholder="Ex.: 5511999999999 (com DDI e DDD)"
+                value={waTelefone}
+                onChange={(e) => setWaTelefone(e.target.value)}
+                inputMode="tel"
+              />
+              <p className="text-[11px] text-muted-foreground">
+                Deixe em branco para escolher o contato no WhatsApp.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div className="grid gap-1.5">
+                <Label htmlFor="wa-saudacao">Saudação</Label>
+                <Textarea
+                  id="wa-saudacao"
+                  rows={2}
+                  value={waSaudacao}
+                  onChange={(e) => {
+                    setWaSaudacao(e.target.value);
+                    setWaMensagem(montarMensagem(e.target.value, waEncerramento));
+                  }}
+                />
+              </div>
+              <div className="grid gap-1.5">
+                <Label htmlFor="wa-encerramento">Encerramento</Label>
+                <Textarea
+                  id="wa-encerramento"
+                  rows={2}
+                  value={waEncerramento}
+                  onChange={(e) => {
+                    setWaEncerramento(e.target.value);
+                    setWaMensagem(montarMensagem(waSaudacao, e.target.value));
+                  }}
+                />
+              </div>
+            </div>
+
+            <div className="grid gap-1.5">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="wa-mensagem">Mensagem completa</Label>
+                <button
+                  type="button"
+                  className="text-xs text-muted-foreground underline-offset-2 hover:underline"
+                  onClick={() => setWaMensagem(montarMensagem(waSaudacao, waEncerramento))}
+                >
+                  Restaurar
+                </button>
+              </div>
+              <Textarea
+                id="wa-mensagem"
+                rows={10}
+                value={waMensagem}
+                onChange={(e) => setWaMensagem(e.target.value)}
+                className="font-mono text-xs"
+              />
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-2">
+            <Button variant="outline" onClick={() => setWaOpen(false)}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={enviarWhatsApp}
+              disabled={!waMensagem.trim()}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white"
+            >
+              <Send className="h-4 w-4" />
+              Enviar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
