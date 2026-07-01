@@ -85,7 +85,8 @@ function Nova() {
     navigate({ to: "/" });
   }
 
-  const total = parseNum(valor) + (incluiAlim ? parseNum(alimentacao) : 0);
+  const totalPorDia = parseNum(valor) + (incluiAlim ? parseNum(alimentacao) : 0);
+  const totalGeral = totalPorDia * dias.length;
 
   return (
     <div className="min-h-screen bg-background">
