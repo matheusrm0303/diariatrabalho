@@ -150,10 +150,40 @@ export function FechamentoTab() {
     return linhas.join("\n");
   }
 
-  function enviarWhatsApp() {
+  const [waOpen, setWaOpen] = useState(false);
+  const [waSaudacao, setWaSaudacao] = useState("Olá! Segue o fechamento das diárias:");
+  const [waEncerramento, setWaEncerramento] = useState("Qualquer dúvida, me avise. Obrigado!");
+  const [waTelefone, setWaTelefone] = useState("");
+  const [waMensagem, setWaMensagem] = useState("");
+
+  function montarMensagem(saudacao: string, encerramento: string) {
+    const partes: string[] = [];
+    if (saudacao.trim()) {
+      partes.push(saudacao.trim());
+      partes.push("");
+    }
+    partes.push(gerarTextoWhatsApp());
+    if (encerramento.trim()) {
+      partes.push("");
+      partes.push(encerramento.trim());
+    }
+    return partes.join("\n");
+  }
+
+  function abrirDialogoWhatsApp() {
     if (diarias.length === 0 && adiantamentos.length === 0) return;
-    const texto = encodeURIComponent(gerarTextoWhatsApp());
-    window.open(`https://wa.me/?text=${texto}`, "_blank");
+    setWaMensagem(montarMensagem(waSaudacao, waEncerramento));
+    setWaOpen(true);
+  }
+
+  function enviarWhatsApp() {
+    const texto = encodeURIComponent(waMensagem);
+    const somenteNumeros = waTelefone.replace(/\D/g, "");
+    const url = somenteNumeros
+      ? `https://wa.me/${somenteNumeros}?text=${texto}`
+      : `https://wa.me/?text=${texto}`;
+    window.open(url, "_blank");
+    setWaOpen(false);
   }
 
   function gerarPDF() {
