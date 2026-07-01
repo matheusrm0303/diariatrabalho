@@ -353,7 +353,7 @@ export function FechamentoTab() {
     <div>
       <div className="mb-4 grid grid-cols-3 gap-2">
         <Button
-          onClick={enviarWhatsApp}
+          onClick={abrirDialogoWhatsApp}
           disabled={semDados}
           className="bg-emerald-600 hover:bg-emerald-700 text-white"
         >
