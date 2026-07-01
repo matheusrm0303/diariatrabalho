@@ -271,9 +271,17 @@ function Nova() {
             )}
           </Card>
 
-          <Card className="p-4 flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">Total</span>
-            <span className="text-lg font-semibold">{fmt.format(total)}</span>
+          <Card className="p-4 grid gap-1">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Total por dia</span>
+              <span className="text-base font-medium">{fmt.format(totalPorDia)}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">
+                Total geral ({dias.length} {dias.length === 1 ? "dia" : "dias"})
+              </span>
+              <span className="text-lg font-semibold">{fmt.format(totalGeral)}</span>
+            </div>
           </Card>
 
           <div className="flex gap-2">
