@@ -1,9 +1,10 @@
 import { useMemo } from "react";
 import jsPDF from "jspdf";
+import * as XLSX from "xlsx";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CalendarDays, FileDown, MessageCircle } from "lucide-react";
+import { CalendarDays, FileDown, MessageCircle, FileSpreadsheet } from "lucide-react";
 import { useDiarias, useAdiantamentos, fmt, type Diaria } from "@/lib/diarias-store";
 
 type MesKey = `${number}-${string}`;
