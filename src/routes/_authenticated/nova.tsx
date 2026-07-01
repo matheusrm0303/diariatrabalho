@@ -33,6 +33,7 @@ function Nova() {
   const [valor, setValor] = useState<string>("200");
   const [local, setLocal] = useState("");
   const [data, setData] = useState(todayISO());
+  const [dias, setDias] = useState<string[]>([todayISO()]);
   const [status, setStatus] = useState<Status>("pendente");
   const [incluiAlim, setIncluiAlim] = useState(false);
   const [alimentacao, setAlimentacao] = useState("");
@@ -48,20 +49,39 @@ function Nova() {
     return parseFloat(v.replace(",", ".")) || 0;
   }
 
-  function salvar(e: React.FormEvent) {
+  function adicionarDia() {
+    if (!data) return;
+    setDias((prev) => (prev.includes(data) ? prev : [...prev, data].sort()));
+  }
+
+  function removerDia(d: string) {
+    setDias((prev) => prev.filter((x) => x !== d));
+  }
+
+  function formatarDia(iso: string) {
+    const [a, m, d] = iso.split("-");
+    return `${d}/${m}/${a}`;
+  }
+
+  async function salvar(e: React.FormEvent) {
     e.preventDefault();
     const v = parseNum(valor);
-    if (!local.trim() || v <= 0) return;
-    adicionar({
-      data,
-      local: local.trim(),
-      descricao: PRESETS.find((p) => p.tipo === tipo)?.label || "Diária",
-      valor: v,
-      tipo,
-      status,
-      alimentacao: incluiAlim ? parseNum(alimentacao) : 0,
-      alimentacaoObs: incluiAlim ? alimentacaoObs.trim() : "",
-    });
+    if (!local.trim() || v <= 0 || dias.length === 0) return;
+    const descricao = PRESETS.find((p) => p.tipo === tipo)?.label || "Diária";
+    const alim = incluiAlim ? parseNum(alimentacao) : 0;
+    const alimObs = incluiAlim ? alimentacaoObs.trim() : "";
+    for (const dia of dias) {
+      await adicionar({
+        data: dia,
+        local: local.trim(),
+        descricao,
+        valor: v,
+        tipo,
+        status,
+        alimentacao: alim,
+        alimentacaoObs: alimObs,
+      });
+    }
     navigate({ to: "/" });
   }
 
