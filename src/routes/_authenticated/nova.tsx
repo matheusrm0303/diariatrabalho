@@ -116,14 +116,54 @@ function Nova() {
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="data">Dia</Label>
-              <Input
-                id="data"
-                type="date"
-                value={data}
-                onChange={(e) => setData(e.target.value)}
-                required
-              />
+              <Label htmlFor="data">Dias</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="data"
+                  type="date"
+                  value={data}
+                  onChange={(e) => setData(e.target.value)}
+                  className="flex-1"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={adicionarDia}
+                  disabled={!data || dias.includes(data)}
+                >
+                  <Plus className="h-4 w-4" />
+                  Adicionar
+                </Button>
+              </div>
+              {dias.length === 0 ? (
+                <p className="text-xs text-muted-foreground">
+                  Selecione ao menos um dia. Cada dia é lançado como uma diária separada.
+                </p>
+              ) : (
+                <div className="flex flex-wrap gap-1.5">
+                  {dias.map((d) => (
+                    <span
+                      key={d}
+                      className="inline-flex items-center gap-1 rounded-full border border-input bg-accent/40 px-2.5 py-1 text-xs"
+                    >
+                      {formatarDia(d)}
+                      <button
+                        type="button"
+                        onClick={() => removerDia(d)}
+                        className="rounded-full p-0.5 hover:bg-accent"
+                        aria-label={`Remover ${formatarDia(d)}`}
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+              {dias.length > 1 && (
+                <p className="text-xs text-muted-foreground">
+                  Serão lançadas {dias.length} diárias separadas.
+                </p>
+              )}
             </div>
             <div className="grid gap-2">
               <Label htmlFor="status">Status</Label>
