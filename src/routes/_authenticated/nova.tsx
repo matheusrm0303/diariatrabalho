@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Plus, X } from "lucide-react";
 import { useDiarias, todayISO, fmt, type Tipo, type Status } from "@/lib/diarias-store";
 
 export const Route = createFileRoute("/_authenticated/nova")({
@@ -33,6 +33,7 @@ function Nova() {
   const [valor, setValor] = useState<string>("200");
   const [local, setLocal] = useState("");
   const [data, setData] = useState(todayISO());
+  const [dias, setDias] = useState<string[]>([todayISO()]);
   const [status, setStatus] = useState<Status>("pendente");
   const [incluiAlim, setIncluiAlim] = useState(false);
   const [alimentacao, setAlimentacao] = useState("");
@@ -48,24 +49,44 @@ function Nova() {
     return parseFloat(v.replace(",", ".")) || 0;
   }
 
-  function salvar(e: React.FormEvent) {
+  function adicionarDia() {
+    if (!data) return;
+    setDias((prev) => (prev.includes(data) ? prev : [...prev, data].sort()));
+  }
+
+  function removerDia(d: string) {
+    setDias((prev) => prev.filter((x) => x !== d));
+  }
+
+  function formatarDia(iso: string) {
+    const [a, m, d] = iso.split("-");
+    return `${d}/${m}/${a}`;
+  }
+
+  async function salvar(e: React.FormEvent) {
     e.preventDefault();
     const v = parseNum(valor);
-    if (!local.trim() || v <= 0) return;
-    adicionar({
-      data,
-      local: local.trim(),
-      descricao: PRESETS.find((p) => p.tipo === tipo)?.label || "Diária",
-      valor: v,
-      tipo,
-      status,
-      alimentacao: incluiAlim ? parseNum(alimentacao) : 0,
-      alimentacaoObs: incluiAlim ? alimentacaoObs.trim() : "",
-    });
+    if (!local.trim() || v <= 0 || dias.length === 0) return;
+    const descricao = PRESETS.find((p) => p.tipo === tipo)?.label || "Diária";
+    const alim = incluiAlim ? parseNum(alimentacao) : 0;
+    const alimObs = incluiAlim ? alimentacaoObs.trim() : "";
+    for (const dia of dias) {
+      await adicionar({
+        data: dia,
+        local: local.trim(),
+        descricao,
+        valor: v,
+        tipo,
+        status,
+        alimentacao: alim,
+        alimentacaoObs: alimObs,
+      });
+    }
     navigate({ to: "/" });
   }
 
-  const total = parseNum(valor) + (incluiAlim ? parseNum(alimentacao) : 0);
+  const totalPorDia = parseNum(valor) + (incluiAlim ? parseNum(alimentacao) : 0);
+  const totalGeral = totalPorDia * dias.length;
 
   return (
     <div className="min-h-screen bg-background">
@@ -95,14 +116,54 @@ function Nova() {
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="data">Dia</Label>
-              <Input
-                id="data"
-                type="date"
-                value={data}
-                onChange={(e) => setData(e.target.value)}
-                required
-              />
+              <Label htmlFor="data">Dias</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="data"
+                  type="date"
+                  value={data}
+                  onChange={(e) => setData(e.target.value)}
+                  className="flex-1"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={adicionarDia}
+                  disabled={!data || dias.includes(data)}
+                >
+                  <Plus className="h-4 w-4" />
+                  Adicionar
+                </Button>
+              </div>
+              {dias.length === 0 ? (
+                <p className="text-xs text-muted-foreground">
+                  Selecione ao menos um dia. Cada dia é lançado como uma diária separada.
+                </p>
+              ) : (
+                <div className="flex flex-wrap gap-1.5">
+                  {dias.map((d) => (
+                    <span
+                      key={d}
+                      className="inline-flex items-center gap-1 rounded-full border border-input bg-accent/40 px-2.5 py-1 text-xs"
+                    >
+                      {formatarDia(d)}
+                      <button
+                        type="button"
+                        onClick={() => removerDia(d)}
+                        className="rounded-full p-0.5 hover:bg-accent"
+                        aria-label={`Remover ${formatarDia(d)}`}
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+              {dias.length > 1 && (
+                <p className="text-xs text-muted-foreground">
+                  Serão lançadas {dias.length} diárias separadas.
+                </p>
+              )}
             </div>
             <div className="grid gap-2">
               <Label htmlFor="status">Status</Label>
@@ -210,9 +271,17 @@ function Nova() {
             )}
           </Card>
 
-          <Card className="p-4 flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">Total</span>
-            <span className="text-lg font-semibold">{fmt.format(total)}</span>
+          <Card className="p-4 grid gap-1">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Total por dia</span>
+              <span className="text-base font-medium">{fmt.format(totalPorDia)}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">
+                Total geral ({dias.length} {dias.length === 1 ? "dia" : "dias"})
+              </span>
+              <span className="text-lg font-semibold">{fmt.format(totalGeral)}</span>
+            </div>
           </Card>
 
           <div className="flex gap-2">
