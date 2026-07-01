@@ -1,10 +1,21 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import jsPDF from "jspdf";
 import * as XLSX from "xlsx";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CalendarDays, FileDown, MessageCircle, FileSpreadsheet } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { CalendarDays, FileDown, MessageCircle, FileSpreadsheet, Send } from "lucide-react";
 import { useDiarias, useAdiantamentos, fmt, type Diaria } from "@/lib/diarias-store";
 
 type MesKey = `${number}-${string}`;
@@ -139,10 +150,40 @@ export function FechamentoTab() {
     return linhas.join("\n");
   }
 
-  function enviarWhatsApp() {
+  const [waOpen, setWaOpen] = useState(false);
+  const [waSaudacao, setWaSaudacao] = useState("Olá! Segue o fechamento das diárias:");
+  const [waEncerramento, setWaEncerramento] = useState("Qualquer dúvida, me avise. Obrigado!");
+  const [waTelefone, setWaTelefone] = useState("");
+  const [waMensagem, setWaMensagem] = useState("");
+
+  function montarMensagem(saudacao: string, encerramento: string) {
+    const partes: string[] = [];
+    if (saudacao.trim()) {
+      partes.push(saudacao.trim());
+      partes.push("");
+    }
+    partes.push(gerarTextoWhatsApp());
+    if (encerramento.trim()) {
+      partes.push("");
+      partes.push(encerramento.trim());
+    }
+    return partes.join("\n");
+  }
+
+  function abrirDialogoWhatsApp() {
     if (diarias.length === 0 && adiantamentos.length === 0) return;
-    const texto = encodeURIComponent(gerarTextoWhatsApp());
-    window.open(`https://wa.me/?text=${texto}`, "_blank");
+    setWaMensagem(montarMensagem(waSaudacao, waEncerramento));
+    setWaOpen(true);
+  }
+
+  function enviarWhatsApp() {
+    const texto = encodeURIComponent(waMensagem);
+    const somenteNumeros = waTelefone.replace(/\D/g, "");
+    const url = somenteNumeros
+      ? `https://wa.me/${somenteNumeros}?text=${texto}`
+      : `https://wa.me/?text=${texto}`;
+    window.open(url, "_blank");
+    setWaOpen(false);
   }
 
   function gerarPDF() {
@@ -312,7 +353,7 @@ export function FechamentoTab() {
     <div>
       <div className="mb-4 grid grid-cols-3 gap-2">
         <Button
-          onClick={enviarWhatsApp}
+          onClick={abrirDialogoWhatsApp}
           disabled={semDados}
           className="bg-emerald-600 hover:bg-emerald-700 text-white"
         >
@@ -403,6 +444,94 @@ export function FechamentoTab() {
           </div>
         )}
       </section>
+
+      <Dialog open={waOpen} onOpenChange={setWaOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Personalizar mensagem do WhatsApp</DialogTitle>
+            <DialogDescription>
+              Ajuste a saudação, o encerramento e o texto antes de enviar.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid gap-3">
+            <div className="grid gap-1.5">
+              <Label htmlFor="wa-telefone">Telefone (opcional)</Label>
+              <Input
+                id="wa-telefone"
+                placeholder="Ex.: 5511999999999 (com DDI e DDD)"
+                value={waTelefone}
+                onChange={(e) => setWaTelefone(e.target.value)}
+                inputMode="tel"
+              />
+              <p className="text-[11px] text-muted-foreground">
+                Deixe em branco para escolher o contato no WhatsApp.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div className="grid gap-1.5">
+                <Label htmlFor="wa-saudacao">Saudação</Label>
+                <Textarea
+                  id="wa-saudacao"
+                  rows={2}
+                  value={waSaudacao}
+                  onChange={(e) => {
+                    setWaSaudacao(e.target.value);
+                    setWaMensagem(montarMensagem(e.target.value, waEncerramento));
+                  }}
+                />
+              </div>
+              <div className="grid gap-1.5">
+                <Label htmlFor="wa-encerramento">Encerramento</Label>
+                <Textarea
+                  id="wa-encerramento"
+                  rows={2}
+                  value={waEncerramento}
+                  onChange={(e) => {
+                    setWaEncerramento(e.target.value);
+                    setWaMensagem(montarMensagem(waSaudacao, e.target.value));
+                  }}
+                />
+              </div>
+            </div>
+
+            <div className="grid gap-1.5">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="wa-mensagem">Mensagem completa</Label>
+                <button
+                  type="button"
+                  className="text-xs text-muted-foreground underline-offset-2 hover:underline"
+                  onClick={() => setWaMensagem(montarMensagem(waSaudacao, waEncerramento))}
+                >
+                  Restaurar
+                </button>
+              </div>
+              <Textarea
+                id="wa-mensagem"
+                rows={10}
+                value={waMensagem}
+                onChange={(e) => setWaMensagem(e.target.value)}
+                className="font-mono text-xs"
+              />
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-2">
+            <Button variant="outline" onClick={() => setWaOpen(false)}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={enviarWhatsApp}
+              disabled={!waMensagem.trim()}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white"
+            >
+              <Send className="h-4 w-4" />
+              Enviar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
