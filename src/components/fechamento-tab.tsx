@@ -109,23 +109,25 @@ export function FechamentoTab() {
 
     for (const m of resumoPorMes) {
       linhas.push(`*${m.label}*`);
-      const dosMes = lista.filter((d) => {
-        const [a, mm] = d.data.split("-");
-        return parseInt(a, 10) === m.ano && parseInt(mm, 10) === m.mes;
-      });
-      for (const d of dosMes) {
+      const dosMes = lista
+        .filter((d) => {
+          const [a, mm] = d.data.split("-");
+          return parseInt(a, 10) === m.ano && parseInt(mm, 10) === m.mes;
+        })
+        .sort((a, b) => (a.data < b.data ? -1 : a.data > b.data ? 1 : 0));
+      dosMes.forEach((d, idx) => {
         const total = d.valor + (d.alimentacao || 0);
         const st = d.status === "pago" ? "✅ Pago" : "⏳ Pendente";
         linhas.push(
-          `• ${formatarData(d.data)} — ${d.local || "(sem local)"} [${tipoLabel(d.tipo)}] — ${fmt.format(d.valor)}${
+          `${idx + 1}. ${formatarData(d.data)} — ${d.local || "(sem local)"} [${tipoLabel(d.tipo)}] — ${fmt.format(d.valor)}${
             d.alimentacao ? ` + alim. ${fmt.format(d.alimentacao)}` : ""
           } = *${fmt.format(total)}* ${st}`,
         );
         if (d.alimentacaoObs) linhas.push(`   _Obs alim.: ${d.alimentacaoObs}_`);
         if (d.descricao) linhas.push(`   _Obs: ${d.descricao}_`);
-      }
+      });
       linhas.push(
-        `Subtotal: pago ${fmt.format(m.totalPago)} | pendente ${fmt.format(m.totalPendente)}`,
+        `Subtotal (${dosMes.length} ${dosMes.length === 1 ? "diária" : "diárias"}): pago ${fmt.format(m.totalPago)} | pendente ${fmt.format(m.totalPendente)}`,
       );
       linhas.push("");
     }
@@ -298,10 +300,14 @@ export function FechamentoTab() {
     const wb = XLSX.utils.book_new();
 
     const linhas: (string | number)[][] = [
-      ["Data", "Local", "Tipo", "Valor", "Alimentação", "Total", "Status", "Obs alim.", "Observação"],
+      ["#", "Data", "Local", "Tipo", "Valor", "Alimentação", "Total", "Status", "Obs alim.", "Observação"],
     ];
-    for (const d of diariasOrdenadas()) {
+    const todasOrdenadas = [...diarias].sort((a, b) =>
+      a.data < b.data ? -1 : a.data > b.data ? 1 : 0,
+    );
+    todasOrdenadas.forEach((d, idx) => {
       linhas.push([
+        idx + 1,
         formatarData(d.data),
         d.local || "",
         tipoLabel(d.tipo),
@@ -312,9 +318,9 @@ export function FechamentoTab() {
         d.alimentacaoObs || "",
         d.descricao || "",
       ]);
-    }
+    });
     const wsDiarias = XLSX.utils.aoa_to_sheet(linhas);
-    wsDiarias["!cols"] = [{ wch: 12 }, { wch: 24 }, { wch: 10 }, { wch: 10 }, { wch: 12 }, { wch: 10 }, { wch: 10 }, { wch: 24 }, { wch: 24 }];
+    wsDiarias["!cols"] = [{ wch: 5 }, { wch: 12 }, { wch: 24 }, { wch: 10 }, { wch: 10 }, { wch: 12 }, { wch: 10 }, { wch: 10 }, { wch: 24 }, { wch: 24 }];
     XLSX.utils.book_append_sheet(wb, wsDiarias, "Diárias");
 
     const resumoAoA: (string | number)[][] = [["Mês", "Quantidade", "Pago", "Pendente"]];
