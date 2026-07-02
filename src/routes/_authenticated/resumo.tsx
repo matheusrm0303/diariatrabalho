@@ -305,19 +305,19 @@ function Resumo() {
                   </div>
 
                   <div className="mt-3 grid grid-cols-2 gap-2">
-                    <div className="rounded-lg bg-emerald-50 p-2.5">
-                      <p className="text-[10px] font-medium uppercase tracking-wider text-emerald-700">
+                    <div className="rounded-lg bg-emerald-50 p-2.5 dark:bg-emerald-950/40">
+                      <p className="text-[10px] font-medium uppercase tracking-wider text-emerald-700 dark:text-emerald-300">
                         Pago
                       </p>
-                      <p className="mt-0.5 text-base font-semibold text-emerald-700">
+                      <p className="mt-0.5 text-base font-semibold text-emerald-700 dark:text-emerald-300">
                         {fmt.format(m.totalPago)}
                       </p>
                     </div>
-                    <div className="rounded-lg bg-amber-50 p-2.5">
-                      <p className="text-[10px] font-medium uppercase tracking-wider text-amber-700">
+                    <div className="rounded-lg bg-amber-50 p-2.5 dark:bg-amber-950/40">
+                      <p className="text-[10px] font-medium uppercase tracking-wider text-amber-700 dark:text-amber-300">
                         Pendente
                       </p>
-                      <p className="mt-0.5 text-base font-semibold text-amber-700">
+                      <p className="mt-0.5 text-base font-semibold text-amber-700 dark:text-amber-300">
                         {fmt.format(m.totalPendente)}
                       </p>
                     </div>
