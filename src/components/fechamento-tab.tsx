@@ -45,6 +45,41 @@ function todayStamp() {
   return `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}`;
 }
 
+function renderPreviewWhatsApp(texto: string) {
+  if (!texto.trim()) {
+    return <span className="text-muted-foreground">Nada para pré-visualizar.</span>;
+  }
+  const linhas = texto.split("\n");
+  return linhas.map((linha, i) => {
+    if (linha === "") return <div key={i} className="h-2" />;
+    const partes: React.ReactNode[] = [];
+    const regex = /(\*[^*\n]+\*|_[^_\n]+_)/g;
+    let ultimo = 0;
+    let m: RegExpExecArray | null;
+    let idx = 0;
+    while ((m = regex.exec(linha)) !== null) {
+      if (m.index > ultimo) partes.push(linha.slice(ultimo, m.index));
+      const token = m[0];
+      if (token.startsWith("*")) {
+        partes.push(
+          <strong key={`b-${i}-${idx++}`} className="font-semibold">
+            {token.slice(1, -1)}
+          </strong>,
+        );
+      } else {
+        partes.push(
+          <em key={`i-${i}-${idx++}`} className="italic text-muted-foreground">
+            {token.slice(1, -1)}
+          </em>,
+        );
+      }
+      ultimo = m.index + token.length;
+    }
+    if (ultimo < linha.length) partes.push(linha.slice(ultimo));
+    return <div key={i}>{partes}</div>;
+  });
+}
+
 export function FechamentoTab() {
   const { diarias } = useDiarias();
   const { adiantamentos } = useAdiantamentos();
@@ -503,6 +538,16 @@ export function FechamentoTab() {
             </div>
 
             <div className="grid gap-1.5">
+              <Label>Prévia</Label>
+              <div className="max-h-64 overflow-y-auto rounded-md border bg-muted/30 p-3 text-xs leading-relaxed whitespace-pre-wrap break-words">
+                {renderPreviewWhatsApp(waMensagem)}
+              </div>
+              <p className="text-[11px] text-muted-foreground">
+                Confira a lista numerada e os valores antes de enviar.
+              </p>
+            </div>
+
+            <div className="grid gap-1.5">
               <div className="flex items-center justify-between">
                 <Label htmlFor="wa-mensagem">Mensagem completa</Label>
                 <button
@@ -515,7 +560,7 @@ export function FechamentoTab() {
               </div>
               <Textarea
                 id="wa-mensagem"
-                rows={10}
+                rows={8}
                 value={waMensagem}
                 onChange={(e) => setWaMensagem(e.target.value)}
                 className="font-mono text-xs"
