@@ -1,6 +1,4 @@
 import { useMemo, useState } from "react";
-import jsPDF from "jspdf";
-import * as XLSX from "xlsx";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
