@@ -7,7 +7,7 @@ import { Trash2, Plus, Utensils, Calendar, Pencil } from "lucide-react";
 import { useDiarias, useAdiantamentos, fmt } from "@/lib/diarias-store";
 
 export function DiariasTab() {
-  const { diarias, remover } = useDiarias();
+  const { diarias, remover, atualizar } = useDiarias();
   const { adiantamentos } = useAdiantamentos();
 
   const total = useMemo(
