@@ -74,16 +74,26 @@ export function DiariasTab() {
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
                         <p className="font-medium truncate">{d.local}</p>
-                        <Badge
-                          variant={d.status === "pago" ? "default" : "secondary"}
-                          className={
-                            d.status === "pago"
-                              ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-950/50 dark:text-emerald-300 dark:hover:bg-emerald-950/50"
-                              : "bg-amber-100 text-amber-700 hover:bg-amber-100 dark:bg-amber-950/50 dark:text-amber-300 dark:hover:bg-amber-950/50"
+                        <button
+                          type="button"
+                          onClick={() =>
+                            atualizar(d.id, { status: d.status === "pago" ? "pendente" : "pago" })
                           }
+                          aria-label={`Alternar status (atual: ${d.status === "pago" ? "Pago" : "Pendente"})`}
+                          className="focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-md"
                         >
-                          {d.status === "pago" ? "Pago" : "Pendente"}
-                        </Badge>
+                          <Badge
+                            variant={d.status === "pago" ? "default" : "secondary"}
+                            className={
+                              "cursor-pointer transition-colors " +
+                              (d.status === "pago"
+                                ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-300 dark:hover:bg-emerald-950/70"
+                                : "bg-amber-100 text-amber-700 hover:bg-amber-200 dark:bg-amber-950/50 dark:text-amber-300 dark:hover:bg-amber-950/70")
+                            }
+                          >
+                            {d.status === "pago" ? "Pago" : "Pendente"}
+                          </Badge>
+                        </button>
                       </div>
                       <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
                         <span className="inline-flex items-center gap-1">
