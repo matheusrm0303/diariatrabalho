@@ -387,7 +387,12 @@ export function FechamentoTab() {
       );
     }
 
-    doc.save(`fechamento-diarias-${todayStamp()}.pdf`);
+      doc.save(`fechamento-diarias-${todayStamp()}.pdf`);
+    } catch (e) {
+      const { toast } = await import("sonner");
+      toast.error("Falha ao gerar o PDF. " + (e instanceof Error ? e.message : ""));
+      console.error("PDF generation failed", e);
+    }
   }
 
 
