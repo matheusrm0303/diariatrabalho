@@ -377,8 +377,9 @@ export function FechamentoTab() {
   }
 
 
-  function gerarExcel() {
+  async function gerarExcel() {
     if (diarias.length === 0 && adiantamentos.length === 0) return;
+    const XLSX = await import("xlsx");
     const wb = XLSX.utils.book_new();
 
     const linhas: (string | number)[][] = [
