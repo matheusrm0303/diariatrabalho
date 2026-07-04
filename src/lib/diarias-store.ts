@@ -183,20 +183,35 @@ export function useAdiantamentos() {
     const { data: userData } = await supabase.auth.getUser();
     const user_id = userData.user?.id;
     if (!user_id) return;
-    const { error } = await supabase.from("adiantamentos" as never).insert({
-      user_id,
-      data: a.data,
-      valor: a.valor,
-      observacao: a.observacao ?? null,
-    } as never);
-    if (error) console.error(error);
-    await recarregar();
+    const tempId = `tmp-${Date.now()}`;
+    setAdiantamentos((prev) => [{ ...a, id: tempId }, ...prev].sort((x, y) => y.data.localeCompare(x.data)));
+    const { data, error } = await supabase
+      .from("adiantamentos" as never)
+      .insert({
+        user_id,
+        data: a.data,
+        valor: a.valor,
+        observacao: a.observacao ?? null,
+      } as never)
+      .select()
+      .single();
+    if (error || !data) {
+      console.error(error);
+      setAdiantamentos((prev) => prev.filter((x) => x.id !== tempId));
+      return;
+    }
+    const novo = mapAdiant((data as unknown) as AdiantRow);
+    setAdiantamentos((prev) => prev.map((x) => (x.id === tempId ? novo : x)));
   }
 
   async function remover(id: string) {
+    const backup = adiantamentos;
+    setAdiantamentos((prev) => prev.filter((x) => x.id !== id));
     const { error } = await supabase.from("adiantamentos" as never).delete().eq("id", id);
-    if (error) console.error(error);
-    await recarregar();
+    if (error) {
+      console.error(error);
+      setAdiantamentos(backup);
+    }
   }
 
   return { adiantamentos, adicionar, remover, recarregar };
