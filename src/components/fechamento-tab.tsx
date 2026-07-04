@@ -337,7 +337,7 @@ export function FechamentoTab() {
           5: { cellWidth: 60, halign: "center" },
         },
         margin: { left: margem, right: margem },
-        didParseCell: (data) => {
+        didParseCell: (data: { section: string; column: { index: number }; cell: { raw: unknown; styles: { textColor: [number, number, number] } } }) => {
           if (data.section === "body" && data.column.index === 5) {
             const raw = String(data.cell.raw ?? "");
             if (raw === "Pago") data.cell.styles.textColor = [16, 122, 87];
