@@ -223,11 +223,25 @@ export function FechamentoTab() {
 
   async function gerarPDF() {
     if (diarias.length === 0 && adiantamentos.length === 0) return;
-    const [{ default: jsPDF }, autoTableMod] = await Promise.all([
-      import("jspdf"),
-      import("jspdf-autotable"),
-    ]);
-    const autoTable = autoTableMod.default;
+    let jsPDF: typeof import("jspdf").jsPDF;
+    let autoTable: (doc: unknown, opts: unknown) => void;
+    try {
+      const [jspdfMod, atMod] = await Promise.all([
+        import("jspdf"),
+        import("jspdf-autotable"),
+      ]);
+      jsPDF = (jspdfMod.jsPDF ?? jspdfMod.default) as typeof import("jspdf").jsPDF;
+      const at = (atMod as { default?: unknown; autoTable?: unknown });
+      autoTable = (at.default ?? at.autoTable) as (doc: unknown, opts: unknown) => void;
+      if (typeof autoTable !== "function") throw new Error("autoTable não é uma função");
+    } catch (e) {
+      const { toast } = await import("sonner");
+      toast.error("Não consegui carregar o gerador de PDF. Tente novamente.");
+      console.error("PDF import failed", e);
+      return;
+    }
+
+    try {
 
     const doc = new jsPDF({ unit: "pt", format: "a4" });
     const larguraPagina = doc.internal.pageSize.getWidth();
