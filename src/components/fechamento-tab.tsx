@@ -1,6 +1,4 @@
 import { useMemo, useState } from "react";
-import jsPDF from "jspdf";
-import * as XLSX from "xlsx";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -223,115 +221,165 @@ export function FechamentoTab() {
     setWaOpen(false);
   }
 
-  function gerarPDF() {
+  async function gerarPDF() {
     if (diarias.length === 0 && adiantamentos.length === 0) return;
+    const [{ default: jsPDF }, autoTableMod] = await Promise.all([
+      import("jspdf"),
+      import("jspdf-autotable"),
+    ]);
+    const autoTable = autoTableMod.default;
+
     const doc = new jsPDF({ unit: "pt", format: "a4" });
+    const larguraPagina = doc.internal.pageSize.getWidth();
     const margem = 40;
-    const larguraUtil = doc.internal.pageSize.getWidth() - margem * 2;
-    let y = margem;
 
-    const novaPaginaSeNecessario = (alturaLinha = 16) => {
-      if (y + alturaLinha > doc.internal.pageSize.getHeight() - margem) {
-        doc.addPage();
-        y = margem;
-      }
-    };
-
+    // Cabeçalho estilizado (Carvão & Brasa)
+    doc.setFillColor(28, 25, 23); // carvão
+    doc.rect(0, 0, larguraPagina, 70, "F");
+    doc.setTextColor(255, 255, 255);
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(16);
-    doc.text("Fechamento de Diárias", margem, y);
-    y += 22;
-
+    doc.setFontSize(18);
+    doc.text("Fechamento de Diárias", margem, 34);
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(11);
-    doc.text(`Total pago: ${fmt.format(totalGeralPago)}`, margem, y);
-    y += 14;
-    doc.text(`Total pendente: ${fmt.format(totalGeralPendente)}`, margem, y);
-    y += 14;
+    doc.setFontSize(10);
+    doc.setTextColor(230, 200, 170);
+    doc.text(
+      `Emitido em ${new Date().toLocaleDateString("pt-BR")}`,
+      margem,
+      54,
+    );
+
+    // Resumo em cards
+    let y = 90;
+    doc.setTextColor(28, 25, 23);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
+    doc.text("Resumo", margem, y);
+    y += 10;
+
+    const cards: Array<[string, string, [number, number, number]]> = [
+      ["Total pago", fmt.format(totalGeralPago), [16, 122, 87]],
+      ["Total pendente", fmt.format(totalGeralPendente), [180, 83, 9]],
+    ];
     if (totalAdiantamentos > 0) {
-      doc.text(`Adiantamentos: ${fmt.format(totalAdiantamentos)}`, margem, y);
-      y += 14;
-      doc.text(`Saldo a receber: ${fmt.format(saldoAReceber)}`, margem, y);
-      y += 14;
+      cards.push(["Adiantamentos", fmt.format(totalAdiantamentos), [2, 132, 199]]);
+      cards.push(["Saldo a receber", fmt.format(saldoAReceber), [217, 70, 39]]);
     }
-    y += 8;
+    const cardW = (larguraPagina - margem * 2 - (cards.length - 1) * 8) / cards.length;
+    const cardH = 50;
+    cards.forEach((c, i) => {
+      const x = margem + i * (cardW + 8);
+      doc.setFillColor(250, 246, 242);
+      doc.roundedRect(x, y, cardW, cardH, 6, 6, "F");
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      doc.setTextColor(100, 90, 80);
+      doc.text(c[0], x + 10, y + 18);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(13);
+      doc.setTextColor(c[2][0], c[2][1], c[2][2]);
+      doc.text(c[1], x + 10, y + 38);
+    });
+    y += cardH + 20;
+    doc.setTextColor(28, 25, 23);
 
     const lista = diariasOrdenadas();
     for (const m of resumoPorMes) {
-      novaPaginaSeNecessario(28);
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(12);
-      doc.text(m.label, margem, y);
-      y += 16;
+      const dosMes = lista
+        .filter((d) => {
+          const [a, mm] = d.data.split("-");
+          return parseInt(a, 10) === m.ano && parseInt(mm, 10) === m.mes;
+        })
+        .sort((a, b) => (a.data < b.data ? -1 : 1));
 
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(10);
-      const dosMes = lista.filter((d) => {
-        const [a, mm] = d.data.split("-");
-        return parseInt(a, 10) === m.ano && parseInt(mm, 10) === m.mes;
+      autoTable(doc, {
+        startY: y,
+        head: [[m.label, "", "", "", "", ""]],
+        body: dosMes.map((d, idx) => [
+          String(idx + 1),
+          formatarData(d.data),
+          `${d.local || "(sem local)"}${d.descricao ? `\n${d.descricao}` : ""}${d.alimentacaoObs ? `\nAlim.: ${d.alimentacaoObs}` : ""}`,
+          tipoLabel(d.tipo),
+          fmt.format(d.valor + (d.alimentacao || 0)),
+          d.status === "pago" ? "Pago" : "Pendente",
+        ]),
+        foot: [[
+          "",
+          "",
+          "Subtotal",
+          "",
+          `Pago ${fmt.format(m.totalPago)}  •  Pendente ${fmt.format(m.totalPendente)}`,
+          "",
+        ]],
+        styles: { font: "helvetica", fontSize: 9, cellPadding: 6, textColor: [28, 25, 23] },
+        headStyles: { fillColor: [28, 25, 23], textColor: 255, fontSize: 11, halign: "left" },
+        footStyles: { fillColor: [250, 246, 242], textColor: [80, 70, 60], fontStyle: "italic" },
+        alternateRowStyles: { fillColor: [252, 249, 246] },
+        columnStyles: {
+          0: { cellWidth: 24, halign: "center" },
+          1: { cellWidth: 60 },
+          3: { cellWidth: 55 },
+          4: { cellWidth: 75, halign: "right", fontStyle: "bold" },
+          5: { cellWidth: 60, halign: "center" },
+        },
+        margin: { left: margem, right: margem },
+        didParseCell: (data) => {
+          if (data.section === "body" && data.column.index === 5) {
+            const raw = String(data.cell.raw ?? "");
+            if (raw === "Pago") data.cell.styles.textColor = [16, 122, 87];
+            else data.cell.styles.textColor = [180, 83, 9];
+          }
+        },
       });
-      for (const d of dosMes) {
-        const total = d.valor + (d.alimentacao || 0);
-        const st = d.status === "pago" ? "Pago" : "Pendente";
-        const linha = `${formatarData(d.data)}  ${d.local || "(sem local)"} [${tipoLabel(d.tipo)}]  ${fmt.format(d.valor)}${
-          d.alimentacao ? ` + ${fmt.format(d.alimentacao)}` : ""
-        } = ${fmt.format(total)}  (${st})`;
-        const wrapped = doc.splitTextToSize(linha, larguraUtil);
-        novaPaginaSeNecessario(wrapped.length * 12);
-        doc.text(wrapped, margem, y);
-        y += wrapped.length * 12;
-        if (d.alimentacaoObs) {
-          const obs = doc.splitTextToSize(`   Obs alim.: ${d.alimentacaoObs}`, larguraUtil);
-          novaPaginaSeNecessario(obs.length * 11);
-          doc.text(obs, margem, y);
-          y += obs.length * 11;
-        }
-        if (d.descricao) {
-          const obs = doc.splitTextToSize(`   Obs: ${d.descricao}`, larguraUtil);
-          novaPaginaSeNecessario(obs.length * 11);
-          doc.text(obs, margem, y);
-          y += obs.length * 11;
-        }
-      }
-      y += 4;
-      novaPaginaSeNecessario();
-      doc.setFont("helvetica", "italic");
-      doc.text(
-        `Subtotal: pago ${fmt.format(m.totalPago)} | pendente ${fmt.format(m.totalPendente)}`,
-        margem,
-        y,
-      );
-      doc.setFont("helvetica", "normal");
-      y += 18;
+      const finalY =
+        (doc as unknown as { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY ?? y;
+      y = finalY + 16;
     }
 
     if (adiantamentos.length > 0) {
-      novaPaginaSeNecessario(28);
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(12);
-      doc.text("Adiantamentos recebidos", margem, y);
-      y += 16;
+      autoTable(doc, {
+        startY: y,
+        head: [["Adiantamentos recebidos", "", ""]],
+        body: adiantOrdenados().map((a) => [
+          formatarData(a.data),
+          a.observacao || "",
+          fmt.format(a.valor),
+        ]),
+        foot: [["Total adiantado", "", fmt.format(totalAdiantamentos)]],
+        styles: { font: "helvetica", fontSize: 9, cellPadding: 6 },
+        headStyles: { fillColor: [28, 25, 23], textColor: 255, fontSize: 11, halign: "left" },
+        footStyles: { fillColor: [250, 246, 242], fontStyle: "bold" },
+        alternateRowStyles: { fillColor: [252, 249, 246] },
+        columnStyles: {
+          0: { cellWidth: 80 },
+          2: { cellWidth: 90, halign: "right", fontStyle: "bold" },
+        },
+        margin: { left: margem, right: margem },
+      });
+    }
+
+    // Rodapé com paginação
+    const total = doc.getNumberOfPages();
+    for (let i = 1; i <= total; i++) {
+      doc.setPage(i);
       doc.setFont("helvetica", "normal");
-      doc.setFontSize(10);
-      for (const a of adiantOrdenados()) {
-        const linha = `${formatarData(a.data)}  ${fmt.format(a.valor)}${a.observacao ? `  — ${a.observacao}` : ""}`;
-        const wrapped = doc.splitTextToSize(linha, larguraUtil);
-        novaPaginaSeNecessario(wrapped.length * 12);
-        doc.text(wrapped, margem, y);
-        y += wrapped.length * 12;
-      }
-      y += 4;
-      doc.setFont("helvetica", "italic");
-      doc.text(`Total adiantado: ${fmt.format(totalAdiantamentos)}`, margem, y);
-      doc.setFont("helvetica", "normal");
-      y += 18;
+      doc.setFontSize(8);
+      doc.setTextColor(140, 130, 120);
+      doc.text(
+        `Página ${i} de ${total}`,
+        larguraPagina - margem,
+        doc.internal.pageSize.getHeight() - 20,
+        { align: "right" },
+      );
     }
 
     doc.save(`fechamento-diarias-${todayStamp()}.pdf`);
   }
 
-  function gerarExcel() {
+
+  async function gerarExcel() {
     if (diarias.length === 0 && adiantamentos.length === 0) return;
+    const XLSX = await import("xlsx");
     const wb = XLSX.utils.book_new();
 
     const linhas: (string | number)[][] = [

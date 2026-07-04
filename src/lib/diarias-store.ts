@@ -83,28 +83,45 @@ export function useDiarias() {
     const { data: userData } = await supabase.auth.getUser();
     const user_id = userData.user?.id;
     if (!user_id) return;
-    const { error } = await supabase.from("diarias" as never).insert({
-      user_id,
-      data: d.data,
-      local: d.local,
-      descricao: d.descricao,
-      valor: d.valor,
-      tipo: d.tipo,
-      status: d.status,
-      alimentacao: d.alimentacao ?? 0,
-      alimentacao_obs: d.alimentacaoObs ?? "",
-    } as never);
-    if (error) console.error(error);
-    await recarregar();
+    const tempId = `tmp-${Date.now()}`;
+    setDiarias((prev) => [{ ...d, id: tempId }, ...prev].sort((a, b) => b.data.localeCompare(a.data)));
+    const { data, error } = await supabase
+      .from("diarias" as never)
+      .insert({
+        user_id,
+        data: d.data,
+        local: d.local,
+        descricao: d.descricao,
+        valor: d.valor,
+        tipo: d.tipo,
+        status: d.status,
+        alimentacao: d.alimentacao ?? 0,
+        alimentacao_obs: d.alimentacaoObs ?? "",
+      } as never)
+      .select()
+      .single();
+    if (error || !data) {
+      console.error(error);
+      setDiarias((prev) => prev.filter((x) => x.id !== tempId));
+      return;
+    }
+    const nova = mapDiaria((data as unknown) as DiariaRow);
+    setDiarias((prev) => prev.map((x) => (x.id === tempId ? nova : x)));
   }
 
   async function remover(id: string) {
+    const backup = diarias;
+    setDiarias((prev) => prev.filter((x) => x.id !== id));
     const { error } = await supabase.from("diarias" as never).delete().eq("id", id);
-    if (error) console.error(error);
-    await recarregar();
+    if (error) {
+      console.error(error);
+      setDiarias(backup);
+    }
   }
 
   async function atualizar(id: string, patch: Partial<Omit<Diaria, "id">>) {
+    const backup = diarias;
+    setDiarias((prev) => prev.map((x) => (x.id === id ? { ...x, ...patch } : x)));
     const payload: Record<string, unknown> = {};
     if (patch.data !== undefined) payload.data = patch.data;
     if (patch.local !== undefined) payload.local = patch.local;
@@ -118,8 +135,10 @@ export function useDiarias() {
       .from("diarias" as never)
       .update(payload as never)
       .eq("id", id);
-    if (error) console.error(error);
-    await recarregar();
+    if (error) {
+      console.error(error);
+      setDiarias(backup);
+    }
   }
 
   return { diarias, adicionar, remover, atualizar, recarregar };
@@ -164,20 +183,35 @@ export function useAdiantamentos() {
     const { data: userData } = await supabase.auth.getUser();
     const user_id = userData.user?.id;
     if (!user_id) return;
-    const { error } = await supabase.from("adiantamentos" as never).insert({
-      user_id,
-      data: a.data,
-      valor: a.valor,
-      observacao: a.observacao ?? null,
-    } as never);
-    if (error) console.error(error);
-    await recarregar();
+    const tempId = `tmp-${Date.now()}`;
+    setAdiantamentos((prev) => [{ ...a, id: tempId }, ...prev].sort((x, y) => y.data.localeCompare(x.data)));
+    const { data, error } = await supabase
+      .from("adiantamentos" as never)
+      .insert({
+        user_id,
+        data: a.data,
+        valor: a.valor,
+        observacao: a.observacao ?? null,
+      } as never)
+      .select()
+      .single();
+    if (error || !data) {
+      console.error(error);
+      setAdiantamentos((prev) => prev.filter((x) => x.id !== tempId));
+      return;
+    }
+    const novo = mapAdiant((data as unknown) as AdiantRow);
+    setAdiantamentos((prev) => prev.map((x) => (x.id === tempId ? novo : x)));
   }
 
   async function remover(id: string) {
+    const backup = adiantamentos;
+    setAdiantamentos((prev) => prev.filter((x) => x.id !== id));
     const { error } = await supabase.from("adiantamentos" as never).delete().eq("id", id);
-    if (error) console.error(error);
-    await recarregar();
+    if (error) {
+      console.error(error);
+      setAdiantamentos(backup);
+    }
   }
 
   return { adiantamentos, adicionar, remover, recarregar };
