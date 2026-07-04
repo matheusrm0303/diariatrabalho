@@ -387,7 +387,24 @@ export function FechamentoTab() {
       );
     }
 
-      doc.save(`fechamento-diarias-${todayStamp()}.pdf`);
+      const nomeArquivo = `fechamento-diarias-${todayStamp()}.pdf`;
+      const blob = doc.output("blob");
+      const url = URL.createObjectURL(blob);
+      // 1) tenta abrir em nova aba (funciona mesmo em iframes que bloqueiam download)
+      const janela = window.open(url, "_blank");
+      // 2) também dispara o download tradicional
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = nomeArquivo;
+      a.rel = "noopener";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 30_000);
+      if (!janela) {
+        const { toast } = await import("sonner");
+        toast.info("Se o PDF não abrir, verifique o bloqueador de pop-ups.");
+      }
     } catch (e) {
       const { toast } = await import("sonner");
       toast.error("Falha ao gerar o PDF. " + (e instanceof Error ? e.message : ""));
