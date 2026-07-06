@@ -212,22 +212,24 @@ function Nova() {
                 );
               })}
             </div>
-            <div className="grid gap-2">
-              <Label htmlFor="valor">Valor (R$)</Label>
-              <Input
-                id="valor"
-                type="number"
-                inputMode="decimal"
-                step="0.01"
-                placeholder="0,00"
-                value={valor}
-                onChange={(e) => {
-                  setValor(e.target.value);
-                  setTipo("personalizada");
-                }}
-                required
-              />
-            </div>
+            {tipo === "personalizada" && (
+              <div className="grid gap-2">
+                <Label htmlFor="valor">Valor (R$)</Label>
+                <Input
+                  id="valor"
+                  type="number"
+                  inputMode="decimal"
+                  step="0.01"
+                  placeholder="0,00"
+                  value={valor}
+                  onChange={(e) => {
+                    setValor(e.target.value);
+                    setTipo("personalizada");
+                  }}
+                  required
+                />
+              </div>
+            )}
           </Card>
 
           <Card className="p-4 grid gap-3">
