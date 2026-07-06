@@ -341,7 +341,7 @@ export function FechamentoTab() {
           if (data.section === "body" && data.column.index === 5) {
             const raw = String(data.cell.raw ?? "");
             if (raw === "Pago") data.cell.styles.textColor = [16, 122, 87];
-            else data.cell.styles.textColor = [180, 83, 9];
+            else data.cell.styles.textColor = [37, 99, 235];
           }
         },
       });
