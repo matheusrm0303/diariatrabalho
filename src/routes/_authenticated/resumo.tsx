@@ -297,7 +297,7 @@ function Resumo() {
                         {fmt.format(m.totalPago)}
                       </p>
                       {m.totalPendente > 0 && (
-                        <p className="text-sm text-amber-600">
+                        <p className="text-sm text-blue-600">
                           {fmt.format(m.totalPendente)}
                         </p>
                       )}
