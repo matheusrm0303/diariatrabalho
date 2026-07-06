@@ -247,7 +247,7 @@ export function FechamentoTab() {
     const larguraPagina = doc.internal.pageSize.getWidth();
     const margem = 40;
 
-    // Cabeçalho estilizado (Carvão & Brasa)
+    // Cabeçalho estilizado (Carvão & Royal)
     doc.setFillColor(28, 25, 23); // carvão
     doc.rect(0, 0, larguraPagina, 70, "F");
     doc.setTextColor(255, 255, 255);
