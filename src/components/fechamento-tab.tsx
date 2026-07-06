@@ -247,7 +247,7 @@ export function FechamentoTab() {
     const larguraPagina = doc.internal.pageSize.getWidth();
     const margem = 40;
 
-    // Cabeçalho estilizado (Carvão & Brasa)
+    // Cabeçalho estilizado (Carvão & Royal)
     doc.setFillColor(28, 25, 23); // carvão
     doc.rect(0, 0, larguraPagina, 70, "F");
     doc.setTextColor(255, 255, 255);
@@ -273,7 +273,7 @@ export function FechamentoTab() {
 
     const cards: Array<[string, string, [number, number, number]]> = [
       ["Total pago", fmt.format(totalGeralPago), [16, 122, 87]],
-      ["Total pendente", fmt.format(totalGeralPendente), [180, 83, 9]],
+      ["Total pendente", fmt.format(totalGeralPendente), [37, 99, 235]],
     ];
     if (totalAdiantamentos > 0) {
       cards.push(["Adiantamentos", fmt.format(totalAdiantamentos), [2, 132, 199]]);
@@ -341,7 +341,7 @@ export function FechamentoTab() {
           if (data.section === "body" && data.column.index === 5) {
             const raw = String(data.cell.raw ?? "");
             if (raw === "Pago") data.cell.styles.textColor = [16, 122, 87];
-            else data.cell.styles.textColor = [180, 83, 9];
+            else data.cell.styles.textColor = [37, 99, 235];
           }
         },
       });
@@ -505,7 +505,7 @@ export function FechamentoTab() {
         </Card>
         <Card className="p-4">
           <p className="text-xs text-muted-foreground">Total pendente</p>
-          <p className="mt-1 text-xl font-semibold text-amber-600">
+          <p className="mt-1 text-xl font-semibold text-blue-600">
             {fmt.format(totalGeralPendente)}
           </p>
         </Card>
@@ -555,11 +555,11 @@ export function FechamentoTab() {
                       {fmt.format(m.totalPago)}
                     </p>
                   </div>
-                  <div className="rounded-lg bg-amber-50 p-2.5 dark:bg-amber-950/40">
-                    <p className="text-[10px] font-medium uppercase tracking-wider text-amber-700 dark:text-amber-300">
+                  <div className="rounded-lg bg-blue-50 p-2.5 dark:bg-blue-950/40">
+                    <p className="text-[10px] font-medium uppercase tracking-wider text-blue-700 dark:text-blue-300">
                       Pendente
                     </p>
-                    <p className="mt-0.5 text-base font-semibold text-amber-700 dark:text-amber-300">
+                    <p className="mt-0.5 text-base font-semibold text-blue-700 dark:text-blue-300">
                       {fmt.format(m.totalPendente)}
                     </p>
                   </div>

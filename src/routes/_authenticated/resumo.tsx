@@ -264,7 +264,7 @@ function Resumo() {
           </Card>
           <Card className="p-4">
             <p className="text-xs text-muted-foreground">Total pendente (geral)</p>
-            <p className="mt-1 text-xl font-semibold text-amber-600">
+            <p className="mt-1 text-xl font-semibold text-blue-600">
               {fmt.format(totalGeralPendente)}
             </p>
           </Card>
@@ -297,7 +297,7 @@ function Resumo() {
                         {fmt.format(m.totalPago)}
                       </p>
                       {m.totalPendente > 0 && (
-                        <p className="text-sm text-amber-600">
+                        <p className="text-sm text-blue-600">
                           {fmt.format(m.totalPendente)}
                         </p>
                       )}
@@ -313,11 +313,11 @@ function Resumo() {
                         {fmt.format(m.totalPago)}
                       </p>
                     </div>
-                    <div className="rounded-lg bg-amber-50 p-2.5 dark:bg-amber-950/40">
-                      <p className="text-[10px] font-medium uppercase tracking-wider text-amber-700 dark:text-amber-300">
+                    <div className="rounded-lg bg-blue-50 p-2.5 dark:bg-blue-950/40">
+                      <p className="text-[10px] font-medium uppercase tracking-wider text-blue-700 dark:text-blue-300">
                         Pendente
                       </p>
-                      <p className="mt-0.5 text-base font-semibold text-amber-700 dark:text-amber-300">
+                      <p className="mt-0.5 text-base font-semibold text-blue-700 dark:text-blue-300">
                         {fmt.format(m.totalPendente)}
                       </p>
                     </div>

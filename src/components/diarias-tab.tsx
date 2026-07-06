@@ -42,7 +42,7 @@ export function DiariasTab() {
         </Card>
         <Card className="p-4">
           <p className="text-xs text-muted-foreground">Total pendente</p>
-          <p className="mt-1 text-xl font-semibold text-amber-600">{fmt.format(totalPendente)}</p>
+          <p className="mt-1 text-xl font-semibold text-blue-600">{fmt.format(totalPendente)}</p>
         </Card>
         <Card className="p-4 col-span-2">
           <p className="text-xs text-muted-foreground">Total geral</p>
@@ -88,7 +88,7 @@ export function DiariasTab() {
                               "cursor-pointer transition-colors " +
                               (d.status === "pago"
                                 ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-300 dark:hover:bg-emerald-950/70"
-                                : "bg-amber-100 text-amber-700 hover:bg-amber-200 dark:bg-amber-950/50 dark:text-amber-300 dark:hover:bg-amber-950/70")
+                                : "bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-950/50 dark:text-blue-300 dark:hover:bg-blue-950/70")
                             }
                           >
                             {d.status === "pago" ? "Pago" : "Pendente"}
