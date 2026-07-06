@@ -273,7 +273,7 @@ export function FechamentoTab() {
 
     const cards: Array<[string, string, [number, number, number]]> = [
       ["Total pago", fmt.format(totalGeralPago), [16, 122, 87]],
-      ["Total pendente", fmt.format(totalGeralPendente), [180, 83, 9]],
+      ["Total pendente", fmt.format(totalGeralPendente), [37, 99, 235]],
     ];
     if (totalAdiantamentos > 0) {
       cards.push(["Adiantamentos", fmt.format(totalAdiantamentos), [2, 132, 199]]);
