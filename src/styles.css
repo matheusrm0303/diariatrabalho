@@ -156,6 +156,51 @@
   --sidebar-ring: oklch(0.7 0.19 260);
 }
 
+/* Sky — lighter, airier blue palette (light mode variant) */
+.theme-sky {
+  --background: oklch(0.98 0.012 235);
+  --foreground: oklch(0.22 0.03 240);
+
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.22 0.03 240);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.22 0.03 240);
+
+  --primary: oklch(0.75 0.14 230);
+  --primary-foreground: oklch(0.15 0.03 240);
+
+  --secondary: oklch(0.95 0.02 230);
+  --secondary-foreground: oklch(0.25 0.04 235);
+
+  --muted: oklch(0.95 0.02 230);
+  --muted-foreground: oklch(0.5 0.04 235);
+
+  --accent: oklch(0.92 0.05 225);
+  --accent-foreground: oklch(0.25 0.04 235);
+
+  --destructive: oklch(0.62 0.22 27);
+  --destructive-foreground: oklch(0.99 0.005 60);
+
+  --border: oklch(0.88 0.02 230);
+  --input: oklch(0.88 0.02 230);
+  --ring: oklch(0.75 0.14 230);
+
+  --chart-1: oklch(0.75 0.14 230);
+  --chart-2: oklch(0.65 0.12 225);
+  --chart-3: oklch(0.55 0.1 220);
+  --chart-4: oklch(0.82 0.1 235);
+  --chart-5: oklch(0.4 0.06 235);
+
+  --sidebar: oklch(0.97 0.015 230);
+  --sidebar-foreground: oklch(0.22 0.03 240);
+  --sidebar-primary: oklch(0.75 0.14 230);
+  --sidebar-primary-foreground: oklch(0.15 0.03 240);
+  --sidebar-accent: oklch(0.92 0.05 225);
+  --sidebar-accent-foreground: oklch(0.25 0.04 235);
+  --sidebar-border: oklch(0.88 0.02 230);
+  --sidebar-ring: oklch(0.75 0.14 230);
+}
+
 @layer base {
   * {
     border-color: var(--color-border);
