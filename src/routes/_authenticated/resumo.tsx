@@ -313,11 +313,11 @@ function Resumo() {
                         {fmt.format(m.totalPago)}
                       </p>
                     </div>
-                    <div className="rounded-lg bg-amber-50 p-2.5 dark:bg-amber-950/40">
-                      <p className="text-[10px] font-medium uppercase tracking-wider text-amber-700 dark:text-amber-300">
+                    <div className="rounded-lg bg-blue-50 p-2.5 dark:bg-blue-950/40">
+                      <p className="text-[10px] font-medium uppercase tracking-wider text-blue-700 dark:text-blue-300">
                         Pendente
                       </p>
-                      <p className="mt-0.5 text-base font-semibold text-amber-700 dark:text-amber-300">
+                      <p className="mt-0.5 text-base font-semibold text-blue-700 dark:text-blue-300">
                         {fmt.format(m.totalPendente)}
                       </p>
                     </div>
