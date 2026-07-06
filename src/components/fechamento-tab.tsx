@@ -505,7 +505,7 @@ export function FechamentoTab() {
         </Card>
         <Card className="p-4">
           <p className="text-xs text-muted-foreground">Total pendente</p>
-          <p className="mt-1 text-xl font-semibold text-amber-600">
+          <p className="mt-1 text-xl font-semibold text-blue-600">
             {fmt.format(totalGeralPendente)}
           </p>
         </Card>
