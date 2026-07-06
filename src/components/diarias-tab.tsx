@@ -42,7 +42,7 @@ export function DiariasTab() {
         </Card>
         <Card className="p-4">
           <p className="text-xs text-muted-foreground">Total pendente</p>
-          <p className="mt-1 text-xl font-semibold text-amber-600">{fmt.format(totalPendente)}</p>
+          <p className="mt-1 text-xl font-semibold text-blue-600">{fmt.format(totalPendente)}</p>
         </Card>
         <Card className="p-4 col-span-2">
           <p className="text-xs text-muted-foreground">Total geral</p>
