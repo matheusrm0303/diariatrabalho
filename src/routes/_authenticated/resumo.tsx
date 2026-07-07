@@ -271,6 +271,8 @@ function Resumo() {
           </Card>
         </div>
 
+        <ChartsResumo diarias={diarias} resumoPorMes={resumoPorMes} />
+
         <section>
           <h2 className="mb-3 text-sm font-medium text-muted-foreground">
             Por mês
