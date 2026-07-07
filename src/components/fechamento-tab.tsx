@@ -15,7 +15,20 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { CalendarDays, FileDown, MessageCircle, FileSpreadsheet, Send } from "lucide-react";
 import { useDiarias, useAdiantamentos, fmt, type Diaria } from "@/lib/diarias-store";
-import { ChartComparativoMensal } from "@/components/charts-resumo";
+import {
+  ChartComparativoMensal,
+  capturarGraficosParaPDF,
+  filtrarPorPeriodo,
+  periodoOptions,
+  type PeriodoKey,
+} from "@/components/charts-resumo";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 type MesKey = `${number}-${string}`;
 interface MesResumo {
@@ -80,8 +93,17 @@ function renderPreviewWhatsApp(texto: string) {
 }
 
 export function FechamentoTab() {
-  const { diarias } = useDiarias();
-  const { adiantamentos } = useAdiantamentos();
+  const { diarias: todasDiarias } = useDiarias();
+  const { adiantamentos: todosAdiantamentos } = useAdiantamentos();
+  const [periodo, setPeriodo] = useState<PeriodoKey>("todos");
+  const diarias = useMemo(
+    () => filtrarPorPeriodo(todasDiarias, periodo),
+    [todasDiarias, periodo],
+  );
+  const adiantamentos = useMemo(
+    () => filtrarPorPeriodo(todosAdiantamentos, periodo),
+    [todosAdiantamentos, periodo],
+  );
 
   const resumoPorMes = useMemo(() => {
     const map = new Map<MesKey, MesResumo>();
@@ -296,6 +318,26 @@ export function FechamentoTab() {
       doc.text(c[1], x + 10, y + 38);
     });
     y += cardH + 20;
+
+    // Inserir gráficos
+    try {
+      const imgs = await capturarGraficosParaPDF("fechamento");
+      const larguraUtil = larguraPagina - margem * 2;
+      const alturaPagina = doc.internal.pageSize.getHeight();
+      for (const dataUrl of imgs) {
+        const props = doc.getImageProperties(dataUrl);
+        const w = larguraUtil;
+        const h = (props.height * w) / props.width;
+        if (y + h > alturaPagina - margem) {
+          doc.addPage();
+          y = margem;
+        }
+        doc.addImage(dataUrl, "PNG", margem, y, w, h);
+        y += h + 12;
+      }
+    } catch (e) {
+      console.warn("Falha ao inserir gráficos no PDF", e);
+    }
     doc.setTextColor(28, 25, 23);
 
     const lista = diariasOrdenadas();
@@ -477,6 +519,24 @@ export function FechamentoTab() {
 
   return (
     <div>
+      <div className="mb-4">
+        <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
+          Período
+        </label>
+        <Select value={periodo} onValueChange={(v) => setPeriodo(v as PeriodoKey)}>
+          <SelectTrigger className="w-full">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {periodoOptions.map((o) => (
+              <SelectItem key={o.value} value={o.value}>
+                {o.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
       <div className="mb-4 grid grid-cols-3 gap-2">
         <Button
           onClick={abrirDialogoWhatsApp}

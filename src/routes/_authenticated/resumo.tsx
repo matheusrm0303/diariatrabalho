@@ -1,12 +1,25 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import jsPDF from "jspdf";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { ArrowLeft, CalendarDays, FileDown, MessageCircle } from "lucide-react";
 import { useDiarias, fmt, type Diaria } from "@/lib/diarias-store";
-import { ChartsResumo } from "@/components/charts-resumo";
+import {
+  ChartsResumo,
+  capturarGraficosParaPDF,
+  filtrarPorPeriodo,
+  periodoOptions,
+  type PeriodoKey,
+} from "@/components/charts-resumo";
 
 export const Route = createFileRoute("/_authenticated/resumo")({
   head: () => ({
@@ -30,7 +43,12 @@ interface MesResumo {
 }
 
 function Resumo() {
-  const { diarias } = useDiarias();
+  const { diarias: todasDiarias } = useDiarias();
+  const [periodo, setPeriodo] = useState<PeriodoKey>("todos");
+  const diarias = useMemo(
+    () => filtrarPorPeriodo(todasDiarias, periodo),
+    [todasDiarias, periodo],
+  );
 
   const resumoPorMes = useMemo(() => {
     const map = new Map<MesKey, MesResumo>();
@@ -136,7 +154,7 @@ function Resumo() {
     window.open(`https://wa.me/?text=${texto}`, "_blank");
   }
 
-  function gerarPDF() {
+  async function gerarPDF() {
     if (diarias.length === 0) return;
     const doc = new jsPDF({ unit: "pt", format: "a4" });
     const margem = 40;
@@ -161,6 +179,21 @@ function Resumo() {
     y += 14;
     doc.text(`Total pendente: ${fmt.format(totalGeralPendente)}`, margem, y);
     y += 20;
+
+    // Inserir gráficos
+    try {
+      const imgs = await capturarGraficosParaPDF("resumo");
+      for (const dataUrl of imgs) {
+        const props = doc.getImageProperties(dataUrl);
+        const w = larguraUtil;
+        const h = (props.height * w) / props.width;
+        novaPaginaSeNecessario(h + 10);
+        doc.addImage(dataUrl, "PNG", margem, y, w, h);
+        y += h + 12;
+      }
+    } catch (e) {
+      console.warn("Falha ao inserir gráficos no PDF", e);
+    }
 
     const lista = diariasOrdenadas();
     for (const m of resumoPorMes) {
@@ -236,6 +269,24 @@ function Resumo() {
             </p>
           </div>
         </header>
+
+        <div className="mb-4">
+          <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
+            Período
+          </label>
+          <Select value={periodo} onValueChange={(v) => setPeriodo(v as PeriodoKey)}>
+            <SelectTrigger className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {periodoOptions.map((o) => (
+                <SelectItem key={o.value} value={o.value}>
+                  {o.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
         <div className="mb-4 grid grid-cols-2 gap-2">
           <Button
