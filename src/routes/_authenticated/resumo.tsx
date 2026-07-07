@@ -43,7 +43,12 @@ interface MesResumo {
 }
 
 function Resumo() {
-  const { diarias } = useDiarias();
+  const { diarias: todasDiarias } = useDiarias();
+  const [periodo, setPeriodo] = useState<PeriodoKey>("todos");
+  const diarias = useMemo(
+    () => filtrarPorPeriodo(todasDiarias, periodo),
+    [todasDiarias, periodo],
+  );
 
   const resumoPorMes = useMemo(() => {
     const map = new Map<MesKey, MesResumo>();
