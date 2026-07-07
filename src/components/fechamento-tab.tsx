@@ -519,6 +519,24 @@ export function FechamentoTab() {
 
   return (
     <div>
+      <div className="mb-4">
+        <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
+          Período
+        </label>
+        <Select value={periodo} onValueChange={(v) => setPeriodo(v as PeriodoKey)}>
+          <SelectTrigger className="w-full">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {periodoOptions.map((o) => (
+              <SelectItem key={o.value} value={o.value}>
+                {o.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
       <div className="mb-4 grid grid-cols-3 gap-2">
         <Button
           onClick={abrirDialogoWhatsApp}
