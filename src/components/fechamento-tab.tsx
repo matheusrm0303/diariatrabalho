@@ -528,7 +528,6 @@ export function FechamentoTab() {
         )}
       </div>
 
-      <section>
       <ChartComparativoMensal resumoPorMes={resumoPorMes} />
 
       <section>
