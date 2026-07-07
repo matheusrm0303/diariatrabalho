@@ -154,7 +154,7 @@ function Resumo() {
     window.open(`https://wa.me/?text=${texto}`, "_blank");
   }
 
-  function gerarPDF() {
+  async function gerarPDF() {
     if (diarias.length === 0) return;
     const doc = new jsPDF({ unit: "pt", format: "a4" });
     const margem = 40;
@@ -179,6 +179,21 @@ function Resumo() {
     y += 14;
     doc.text(`Total pendente: ${fmt.format(totalGeralPendente)}`, margem, y);
     y += 20;
+
+    // Inserir gráficos
+    try {
+      const imgs = await capturarGraficosParaPDF("resumo");
+      for (const dataUrl of imgs) {
+        const props = doc.getImageProperties(dataUrl);
+        const w = larguraUtil;
+        const h = (props.height * w) / props.width;
+        novaPaginaSeNecessario(h + 10);
+        doc.addImage(dataUrl, "PNG", margem, y, w, h);
+        y += h + 12;
+      }
+    } catch (e) {
+      console.warn("Falha ao inserir gráficos no PDF", e);
+    }
 
     const lista = diariasOrdenadas();
     for (const m of resumoPorMes) {
