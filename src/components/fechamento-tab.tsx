@@ -15,7 +15,20 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { CalendarDays, FileDown, MessageCircle, FileSpreadsheet, Send } from "lucide-react";
 import { useDiarias, useAdiantamentos, fmt, type Diaria } from "@/lib/diarias-store";
-import { ChartComparativoMensal } from "@/components/charts-resumo";
+import {
+  ChartComparativoMensal,
+  capturarGraficosParaPDF,
+  filtrarPorPeriodo,
+  periodoOptions,
+  type PeriodoKey,
+} from "@/components/charts-resumo";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 type MesKey = `${number}-${string}`;
 interface MesResumo {
