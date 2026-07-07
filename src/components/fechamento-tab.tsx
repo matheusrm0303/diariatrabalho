@@ -93,8 +93,17 @@ function renderPreviewWhatsApp(texto: string) {
 }
 
 export function FechamentoTab() {
-  const { diarias } = useDiarias();
-  const { adiantamentos } = useAdiantamentos();
+  const { diarias: todasDiarias } = useDiarias();
+  const { adiantamentos: todosAdiantamentos } = useAdiantamentos();
+  const [periodo, setPeriodo] = useState<PeriodoKey>("todos");
+  const diarias = useMemo(
+    () => filtrarPorPeriodo(todasDiarias, periodo),
+    [todasDiarias, periodo],
+  );
+  const adiantamentos = useMemo(
+    () => filtrarPorPeriodo(todosAdiantamentos, periodo),
+    [todosAdiantamentos, periodo],
+  );
 
   const resumoPorMes = useMemo(() => {
     const map = new Map<MesKey, MesResumo>();
