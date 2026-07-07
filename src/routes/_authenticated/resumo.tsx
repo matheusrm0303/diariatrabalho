@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, CalendarDays, FileDown, MessageCircle } from "lucide-react";
 import { useDiarias, fmt, type Diaria } from "@/lib/diarias-store";
+import { ChartsResumo } from "@/components/charts-resumo";
 
 export const Route = createFileRoute("/_authenticated/resumo")({
   head: () => ({
@@ -269,6 +270,8 @@ function Resumo() {
             </p>
           </Card>
         </div>
+
+        <ChartsResumo diarias={diarias} resumoPorMes={resumoPorMes} />
 
         <section>
           <h2 className="mb-3 text-sm font-medium text-muted-foreground">
