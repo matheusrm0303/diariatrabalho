@@ -529,6 +529,9 @@ export function FechamentoTab() {
       </div>
 
       <section>
+      <ChartComparativoMensal resumoPorMes={resumoPorMes} />
+
+      <section>
         <h2 className="mb-3 text-sm font-medium text-muted-foreground">Por mês</h2>
         {resumoPorMes.length === 0 ? (
           <Card className="p-8 text-center text-sm text-muted-foreground">
