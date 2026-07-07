@@ -14,6 +14,7 @@ import {
   Line,
   CartesianGrid,
 } from "recharts";
+import html2canvas from "html2canvas-pro";
 import { Card } from "@/components/ui/card";
 import { fmt, type Diaria } from "@/lib/diarias-store";
 
@@ -28,6 +29,12 @@ const nomesMes = [
   "Jul", "Ago", "Set", "Out", "Nov", "Dez",
 ];
 
+const brl = (v: number) => fmt.format(v);
+const shortMoney = (v: number) => {
+  if (v >= 1000) return `${(v / 1000).toFixed(v >= 10000 ? 0 : 1)}k`;
+  return String(v);
+};
+
 interface MesData {
   ano: number;
   mes: number;
@@ -39,9 +46,10 @@ interface MesData {
 interface Props {
   diarias: Diaria[];
   resumoPorMes: MesData[];
+  scope?: string;
 }
 
-export function ChartsResumo({ diarias, resumoPorMes }: Props) {
+export function ChartsResumo({ diarias, resumoPorMes, scope = "resumo" }: Props) {
   const mounted = useMounted();
 
   const ganhosPorMes = useMemo(
@@ -72,7 +80,6 @@ export function ChartsResumo({ diarias, resumoPorMes }: Props) {
 
   const evolucaoDiaria = useMemo(() => {
     if (diarias.length === 0) return [];
-    // Mês mais recente
     const ordenadas = [...diarias].sort((a, b) => (a.data < b.data ? 1 : -1));
     const [ano, mes] = ordenadas[0].data.split("-");
     const filtro = diarias.filter((d) => d.data.startsWith(`${ano}-${mes}`));
@@ -88,20 +95,30 @@ export function ChartsResumo({ diarias, resumoPorMes }: Props) {
 
   if (!mounted || diarias.length === 0) return null;
 
-  const tooltipFmt = (v: number) => fmt.format(v);
+  const barChartHeight = ganhosPorMes.length > 6 ? 260 : 220;
 
   return (
     <div className="grid gap-4 mb-6">
       {ganhosPorMes.length > 0 && (
-        <Card className="p-4">
+        <Card className="p-3 sm:p-4" data-chart-export={scope}>
           <p className="text-sm font-medium mb-3">Ganhos por mês</p>
-          <div className="h-56 w-full">
+          <div style={{ width: "100%", height: barChartHeight }}>
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={ganhosPorMes}>
+              <BarChart
+                data={ganhosPorMes}
+                margin={{ top: 8, right: 8, left: 0, bottom: 24 }}
+              >
                 <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                <XAxis dataKey="nome" fontSize={11} />
-                <YAxis fontSize={11} />
-                <Tooltip formatter={tooltipFmt} />
+                <XAxis
+                  dataKey="nome"
+                  fontSize={10}
+                  angle={-35}
+                  textAnchor="end"
+                  interval={0}
+                  height={50}
+                />
+                <YAxis fontSize={10} tickFormatter={shortMoney} width={44} />
+                <Tooltip formatter={brl} />
                 <Legend wrapperStyle={{ fontSize: 12 }} />
                 <Bar dataKey="Pago" fill="#059669" radius={[4, 4, 0, 0]} />
                 <Bar dataKey="Pendente" fill="#2563eb" radius={[4, 4, 0, 0]} />
@@ -112,18 +129,18 @@ export function ChartsResumo({ diarias, resumoPorMes }: Props) {
       )}
 
       {statusData.length > 0 && (
-        <Card className="p-4">
+        <Card className="p-3 sm:p-4" data-chart-export={scope}>
           <p className="text-sm font-medium mb-3">Distribuição por status</p>
-          <div className="h-56 w-full">
+          <div style={{ width: "100%", height: 240 }}>
             <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
+              <PieChart margin={{ top: 8, right: 8, left: 8, bottom: 8 }}>
                 <Pie
                   data={statusData}
                   dataKey="value"
                   nameKey="name"
                   cx="50%"
                   cy="50%"
-                  outerRadius={80}
+                  outerRadius="70%"
                   label={(entry) => entry.name}
                 >
                   {statusData.map((entry, i) => (
@@ -133,7 +150,8 @@ export function ChartsResumo({ diarias, resumoPorMes }: Props) {
                     />
                   ))}
                 </Pie>
-                <Tooltip formatter={tooltipFmt} />
+                <Tooltip formatter={brl} />
+                <Legend wrapperStyle={{ fontSize: 12 }} />
               </PieChart>
             </ResponsiveContainer>
           </div>
@@ -141,18 +159,19 @@ export function ChartsResumo({ diarias, resumoPorMes }: Props) {
       )}
 
       {evolucaoDiaria.length > 1 && (
-        <Card className="p-4">
+        <Card className="p-3 sm:p-4" data-chart-export={scope}>
           <p className="text-sm font-medium mb-1">Evolução diária</p>
-          <p className="text-xs text-muted-foreground mb-3">
-            Mês mais recente
-          </p>
-          <div className="h-56 w-full">
+          <p className="text-xs text-muted-foreground mb-3">Mês mais recente</p>
+          <div style={{ width: "100%", height: 240 }}>
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={evolucaoDiaria}>
+              <LineChart
+                data={evolucaoDiaria}
+                margin={{ top: 8, right: 8, left: 0, bottom: 8 }}
+              >
                 <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                <XAxis dataKey="dia" fontSize={11} />
-                <YAxis fontSize={11} />
-                <Tooltip formatter={tooltipFmt} labelFormatter={(l) => `Dia ${l}`} />
+                <XAxis dataKey="dia" fontSize={10} interval="preserveStartEnd" />
+                <YAxis fontSize={10} tickFormatter={shortMoney} width={44} />
+                <Tooltip formatter={brl} labelFormatter={(l) => `Dia ${l}`} />
                 <Line
                   type="monotone"
                   dataKey="valor"
@@ -169,7 +188,13 @@ export function ChartsResumo({ diarias, resumoPorMes }: Props) {
   );
 }
 
-export function ChartComparativoMensal({ resumoPorMes }: { resumoPorMes: MesData[] }) {
+export function ChartComparativoMensal({
+  resumoPorMes,
+  scope = "fechamento",
+}: {
+  resumoPorMes: MesData[];
+  scope?: string;
+}) {
   const mounted = useMounted();
 
   const data = useMemo(
@@ -180,23 +205,34 @@ export function ChartComparativoMensal({ resumoPorMes }: { resumoPorMes: MesData
           nome: `${nomesMes[m.mes - 1]}/${String(m.ano).slice(2)}`,
           Pago: Math.round(m.totalPago),
           Pendente: Math.round(m.totalPendente),
-          Total: Math.round(m.totalPago + m.totalPendente),
         })),
     [resumoPorMes],
   );
 
   if (!mounted || data.length === 0) return null;
 
+  const height = data.length > 6 ? 280 : 240;
+
   return (
-    <Card className="p-4 mb-6">
+    <Card className="p-3 sm:p-4 mb-6" data-chart-export={scope}>
       <p className="text-sm font-medium mb-3">Comparativo mensal</p>
-      <div className="h-64 w-full">
+      <div style={{ width: "100%", height }}>
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data}>
+          <BarChart
+            data={data}
+            margin={{ top: 8, right: 8, left: 0, bottom: 24 }}
+          >
             <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-            <XAxis dataKey="nome" fontSize={11} />
-            <YAxis fontSize={11} />
-            <Tooltip formatter={(v: number) => fmt.format(v)} />
+            <XAxis
+              dataKey="nome"
+              fontSize={10}
+              angle={-35}
+              textAnchor="end"
+              interval={0}
+              height={50}
+            />
+            <YAxis fontSize={10} tickFormatter={shortMoney} width={44} />
+            <Tooltip formatter={brl} />
             <Legend wrapperStyle={{ fontSize: 12 }} />
             <Bar dataKey="Pago" stackId="a" fill="#059669" />
             <Bar dataKey="Pendente" stackId="a" fill="#2563eb" />
@@ -205,4 +241,58 @@ export function ChartComparativoMensal({ resumoPorMes }: { resumoPorMes: MesData
       </div>
     </Card>
   );
+}
+
+// -------- Period filter --------
+
+export type PeriodoKey = "todos" | "este_mes" | "ultimos_3" | "ultimos_6" | "este_ano";
+
+export const periodoOptions: { value: PeriodoKey; label: string }[] = [
+  { value: "todos", label: "Todos" },
+  { value: "este_mes", label: "Este mês" },
+  { value: "ultimos_3", label: "Últimos 3 meses" },
+  { value: "ultimos_6", label: "Últimos 6 meses" },
+  { value: "este_ano", label: "Este ano" },
+];
+
+export function filtrarPorPeriodo<T extends { data: string }>(
+  itens: T[],
+  periodo: PeriodoKey,
+): T[] {
+  if (periodo === "todos") return itens;
+  const hoje = new Date();
+  const ano = hoje.getFullYear();
+  const mes = hoje.getMonth();
+
+  let inicio: Date;
+  if (periodo === "este_mes") inicio = new Date(ano, mes, 1);
+  else if (periodo === "ultimos_3") inicio = new Date(ano, mes - 2, 1);
+  else if (periodo === "ultimos_6") inicio = new Date(ano, mes - 5, 1);
+  else inicio = new Date(ano, 0, 1);
+
+  const iso = `${inicio.getFullYear()}-${String(inicio.getMonth() + 1).padStart(2, "0")}-${String(inicio.getDate()).padStart(2, "0")}`;
+  return itens.filter((i) => i.data >= iso);
+}
+
+// -------- PDF chart capture --------
+
+export async function capturarGraficosParaPDF(scope: string): Promise<string[]> {
+  if (typeof document === "undefined") return [];
+  const nodes = Array.from(
+    document.querySelectorAll<HTMLElement>(`[data-chart-export="${scope}"]`),
+  );
+  const imgs: string[] = [];
+  for (const node of nodes) {
+    try {
+      const canvas = await html2canvas(node, {
+        backgroundColor: "#ffffff",
+        scale: 2,
+        useCORS: true,
+      });
+      imgs.push(canvas.toDataURL("image/png"));
+    } catch (e) {
+      console.warn("Falha ao capturar gráfico", e);
+    }
+  }
+  return imgs;
 }
