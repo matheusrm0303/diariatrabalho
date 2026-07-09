@@ -251,7 +251,7 @@ function Resumo() {
       y += 18;
     }
 
-    doc.save(`resumo-diarias-${todayStamp()}.pdf`);
+    doc.save(`resumo-diarias-${periodo}-${todayStamp()}.pdf`);
   }
 
   function todayStamp() {
