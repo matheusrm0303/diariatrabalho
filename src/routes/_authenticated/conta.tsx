@@ -1,12 +1,13 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { ArrowLeft, LogOut, Mail, User } from "lucide-react";
+import { ArrowLeft, LogOut, Mail, User, Download, Upload } from "lucide-react";
 import { toast } from "sonner";
+import { exportarBackup, baixarBackupJSON, importarBackup, type BackupPayload } from "@/lib/backup";
 
 export const Route = createFileRoute("/_authenticated/conta")({
   head: () => ({ meta: [{ title: "Minha conta" }] }),
@@ -65,6 +66,56 @@ function ContaPage() {
     setSigningOut(true);
     await supabase.auth.signOut();
     navigate({ to: "/auth", replace: true });
+  }
+
+  const [exportando, setExportando] = useState(false);
+  const [importando, setImportando] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  async function baixarBackup() {
+    setExportando(true);
+    try {
+      const payload = await exportarBackup();
+      baixarBackupJSON(payload);
+      toast.success(
+        `Backup gerado: ${payload.diarias.length} diárias e ${payload.adiantamentos.length} adiantamentos.`,
+      );
+    } catch (e) {
+      toast.error("Falha ao exportar. " + (e instanceof Error ? e.message : ""));
+    } finally {
+      setExportando(false);
+    }
+  }
+
+  async function aoSelecionarArquivo(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    let payload: BackupPayload;
+    try {
+      payload = JSON.parse(await file.text()) as BackupPayload;
+    } catch {
+      toast.error("Arquivo inválido (não é JSON).");
+      return;
+    }
+    const modo = window.confirm(
+      "Deseja SUBSTITUIR os dados atuais pelo backup?\n\n" +
+        "OK = substituir (apaga tudo e importa)\n" +
+        "Cancelar = mesclar (mantém os atuais e adiciona os do backup)",
+    )
+      ? "substituir"
+      : "mesclar";
+    setImportando(true);
+    try {
+      const r = await importarBackup(payload, modo);
+      toast.success(
+        `Importado: ${r.diariasInseridas} diárias e ${r.adiantInseridos} adiantamentos.`,
+      );
+    } catch (err) {
+      toast.error("Falha ao importar. " + (err instanceof Error ? err.message : ""));
+    } finally {
+      setImportando(false);
+    }
   }
 
   if (loading) {
@@ -146,6 +197,48 @@ function ContaPage() {
             </form>
           </CardContent>
         </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Download className="h-4 w-4" /> Backup e restauração
+            </CardTitle>
+            <CardDescription>
+              Exporte todos os seus dados em JSON ou restaure a partir de um backup.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <Button
+              onClick={baixarBackup}
+              disabled={exportando}
+              variant="outline"
+              className="w-full"
+            >
+              <Download className="h-4 w-4" />
+              {exportando ? "Exportando…" : "Exportar backup (.json)"}
+            </Button>
+            <input
+              ref={fileRef}
+              type="file"
+              accept="application/json,.json"
+              className="hidden"
+              onChange={aoSelecionarArquivo}
+            />
+            <Button
+              onClick={() => fileRef.current?.click()}
+              disabled={importando}
+              variant="outline"
+              className="w-full"
+            >
+              <Upload className="h-4 w-4" />
+              {importando ? "Importando…" : "Restaurar backup"}
+            </Button>
+            <p className="text-xs text-muted-foreground">
+              Na restauração você pode mesclar (mantém o que já tem) ou substituir (apaga tudo antes de importar).
+            </p>
+          </CardContent>
+        </Card>
+
 
         <Card>
           <CardHeader>
