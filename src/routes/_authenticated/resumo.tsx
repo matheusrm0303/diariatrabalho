@@ -173,6 +173,13 @@ function Resumo() {
     doc.text("Resumo de Diárias", margem, y);
     y += 22;
 
+    const periodoLabel =
+      periodoOptions.find((o) => o.value === periodo)?.label ?? "Todos";
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(10);
+    doc.text(`Período: ${periodoLabel}`, margem, y);
+    y += 16;
+
     doc.setFont("helvetica", "normal");
     doc.setFontSize(11);
     doc.text(`Total pago: ${fmt.format(totalGeralPago)}`, margem, y);
