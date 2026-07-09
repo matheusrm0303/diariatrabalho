@@ -438,7 +438,7 @@ export function FechamentoTab() {
       );
     }
 
-      const nomeArquivo = `fechamento-diarias-${todayStamp()}.pdf`;
+      const nomeArquivo = `fechamento-diarias-${periodo}-${todayStamp()}.pdf`;
       const blob = doc.output("blob");
       const url = URL.createObjectURL(blob);
       // 1) tenta abrir em nova aba (funciona mesmo em iframes que bloqueiam download)
