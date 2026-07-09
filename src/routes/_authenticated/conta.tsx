@@ -68,6 +68,56 @@ function ContaPage() {
     navigate({ to: "/auth", replace: true });
   }
 
+  const [exportando, setExportando] = useState(false);
+  const [importando, setImportando] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  async function baixarBackup() {
+    setExportando(true);
+    try {
+      const payload = await exportarBackup();
+      baixarBackupJSON(payload);
+      toast.success(
+        `Backup gerado: ${payload.diarias.length} diárias e ${payload.adiantamentos.length} adiantamentos.`,
+      );
+    } catch (e) {
+      toast.error("Falha ao exportar. " + (e instanceof Error ? e.message : ""));
+    } finally {
+      setExportando(false);
+    }
+  }
+
+  async function aoSelecionarArquivo(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    let payload: BackupPayload;
+    try {
+      payload = JSON.parse(await file.text()) as BackupPayload;
+    } catch {
+      toast.error("Arquivo inválido (não é JSON).");
+      return;
+    }
+    const modo = window.confirm(
+      "Deseja SUBSTITUIR os dados atuais pelo backup?\n\n" +
+        "OK = substituir (apaga tudo e importa)\n" +
+        "Cancelar = mesclar (mantém os atuais e adiciona os do backup)",
+    )
+      ? "substituir"
+      : "mesclar";
+    setImportando(true);
+    try {
+      const r = await importarBackup(payload, modo);
+      toast.success(
+        `Importado: ${r.diariasInseridas} diárias e ${r.adiantInseridos} adiantamentos.`,
+      );
+    } catch (err) {
+      toast.error("Falha ao importar. " + (err instanceof Error ? err.message : ""));
+    } finally {
+      setImportando(false);
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
