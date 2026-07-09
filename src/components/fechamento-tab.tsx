@@ -285,6 +285,14 @@ export function FechamentoTab() {
       margem,
       54,
     );
+    const periodoLabel =
+      periodoOptions.find((o) => o.value === periodo)?.label ?? "Todos";
+    doc.text(
+      `Período: ${periodoLabel}`,
+      larguraPagina - margem,
+      54,
+      { align: "right" },
+    );
 
     // Resumo em cards
     let y = 90;
