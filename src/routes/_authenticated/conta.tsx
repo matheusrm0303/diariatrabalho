@@ -201,6 +201,48 @@ function ContaPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
+              <Download className="h-4 w-4" /> Backup e restauração
+            </CardTitle>
+            <CardDescription>
+              Exporte todos os seus dados em JSON ou restaure a partir de um backup.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <Button
+              onClick={baixarBackup}
+              disabled={exportando}
+              variant="outline"
+              className="w-full"
+            >
+              <Download className="h-4 w-4" />
+              {exportando ? "Exportando…" : "Exportar backup (.json)"}
+            </Button>
+            <input
+              ref={fileRef}
+              type="file"
+              accept="application/json,.json"
+              className="hidden"
+              onChange={aoSelecionarArquivo}
+            />
+            <Button
+              onClick={() => fileRef.current?.click()}
+              disabled={importando}
+              variant="outline"
+              className="w-full"
+            >
+              <Upload className="h-4 w-4" />
+              {importando ? "Importando…" : "Restaurar backup"}
+            </Button>
+            <p className="text-xs text-muted-foreground">
+              Na restauração você pode mesclar (mantém o que já tem) ou substituir (apaga tudo antes de importar).
+            </p>
+          </CardContent>
+        </Card>
+
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
               <LogOut className="h-4 w-4" /> Sessão
             </CardTitle>
             <CardDescription>Encerre a sessão neste dispositivo.</CardDescription>
