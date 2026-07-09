@@ -285,6 +285,14 @@ export function FechamentoTab() {
       margem,
       54,
     );
+    const periodoLabel =
+      periodoOptions.find((o) => o.value === periodo)?.label ?? "Todos";
+    doc.text(
+      `Período: ${periodoLabel}`,
+      larguraPagina - margem,
+      54,
+      { align: "right" },
+    );
 
     // Resumo em cards
     let y = 90;
@@ -430,7 +438,7 @@ export function FechamentoTab() {
       );
     }
 
-      const nomeArquivo = `fechamento-diarias-${todayStamp()}.pdf`;
+      const nomeArquivo = `fechamento-diarias-${periodo}-${todayStamp()}.pdf`;
       const blob = doc.output("blob");
       const url = URL.createObjectURL(blob);
       // 1) tenta abrir em nova aba (funciona mesmo em iframes que bloqueiam download)
