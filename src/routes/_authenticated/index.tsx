@@ -21,6 +21,7 @@ export const Route = createFileRoute("/_authenticated/")({
 
 function Index() {
   const navigate = useNavigate();
+  const { isAdmin } = useIsAdmin();
   async function sair() {
     await supabase.auth.signOut();
     navigate({ to: "/auth", replace: true });
@@ -39,6 +40,11 @@ function Index() {
             </p>
           </div>
           <ThemeToggle />
+          {isAdmin && (
+            <Button asChild variant="ghost" size="icon" aria-label="Administração">
+              <Link to="/admin"><Shield className="h-5 w-5" /></Link>
+            </Button>
+          )}
           <Button asChild variant="ghost" size="icon" aria-label="Minha conta">
             <Link to="/conta"><UserCircle2 className="h-5 w-5" /></Link>
           </Button>

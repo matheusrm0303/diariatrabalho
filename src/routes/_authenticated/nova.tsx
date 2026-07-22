@@ -8,6 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft, Plus, X } from "lucide-react";
 import { useDiarias, todayISO, fmt, type Tipo, type Status } from "@/lib/diarias-store";
+import { useMyDefaults } from "@/lib/admin";
 
 export const Route = createFileRoute("/_authenticated/nova")({
   head: () => ({
@@ -19,18 +20,22 @@ export const Route = createFileRoute("/_authenticated/nova")({
   component: Nova,
 });
 
-const PRESETS: { tipo: Tipo; label: string; valor: number }[] = [
-  { tipo: "rua-200", label: "Rua R$ 200", valor: 200 },
-  { tipo: "deposito-100", label: "Depósito R$ 100", valor: 100 },
-  { tipo: "personalizada", label: "Personalizada", valor: 0 },
-];
-
 function Nova() {
   const navigate = useNavigate();
   const { adicionar } = useDiarias();
+  const defaults = useMyDefaults();
+
+  const valorRua = defaults?.valor_rua ?? 200;
+  const valorDep = defaults?.valor_deposito ?? 100;
+
+  const PRESETS: { tipo: Tipo; label: string; valor: number }[] = [
+    { tipo: "rua-200", label: `Rua ${fmt.format(valorRua)}`, valor: valorRua },
+    { tipo: "deposito-100", label: `Depósito ${fmt.format(valorDep)}`, valor: valorDep },
+    { tipo: "personalizada", label: "Personalizada", valor: 0 },
+  ];
 
   const [tipo, setTipo] = useState<Tipo>("rua-200");
-  const [valor, setValor] = useState<string>("200");
+  const [valor, setValor] = useState<string>(String(valorRua));
   const [local, setLocal] = useState("");
   const [data, setData] = useState(todayISO());
   const [dias, setDias] = useState<string[]>([todayISO()]);
@@ -38,6 +43,12 @@ function Nova() {
   const [incluiAlim, setIncluiAlim] = useState(false);
   const [alimentacao, setAlimentacao] = useState("");
   const [alimentacaoObs, setAlimentacaoObs] = useState("");
+
+  // Sync valor with preset when defaults arrive
+  const currentPresetValor = tipo === "rua-200" ? valorRua : tipo === "deposito-100" ? valorDep : null;
+  if (currentPresetValor !== null && valor === "" && defaults) {
+    setValor(String(currentPresetValor));
+  }
 
   function selecionarTipo(p: (typeof PRESETS)[number]) {
     setTipo(p.tipo);
