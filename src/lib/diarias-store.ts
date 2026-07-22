@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useSyncExternalStore, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 export type Tipo = "rua-200" | "deposito-100" | "personalizada";
@@ -34,6 +34,10 @@ export function todayISO() {
   return new Date(d.getTime() - tz).toISOString().slice(0, 10);
 }
 
+// ---------- Singleton store ----------
+// One shared cache across all components and routes. Switching tabs or
+// navigating between routes doesn't trigger new fetches.
+
 type DiariaRow = {
   id: string;
   data: string;
@@ -44,6 +48,13 @@ type DiariaRow = {
   status: string;
   alimentacao: number | string | null;
   alimentacao_obs: string | null;
+};
+
+type AdiantRow = {
+  id: string;
+  data: string;
+  valor: number | string;
+  observacao: string | null;
 };
 
 function mapDiaria(r: DiariaRow): Diaria {
@@ -60,10 +71,44 @@ function mapDiaria(r: DiariaRow): Diaria {
   };
 }
 
-export function useDiarias() {
-  const [diarias, setDiarias] = useState<Diaria[]>([]);
+function mapAdiant(r: AdiantRow): Adiantamento {
+  return {
+    id: r.id,
+    data: r.data,
+    valor: Number(r.valor),
+    observacao: r.observacao ?? undefined,
+  };
+}
 
-  const recarregar = useCallback(async () => {
+function createStore<T>(initial: T) {
+  let value = initial;
+  const listeners = new Set<() => void>();
+  return {
+    get: () => value,
+    set: (next: T | ((prev: T) => T)) => {
+      value =
+        typeof next === "function"
+          ? (next as (p: T) => T)(value)
+          : next;
+      listeners.forEach((l) => l());
+    },
+    subscribe: (l: () => void) => {
+      listeners.add(l);
+      return () => listeners.delete(l);
+    },
+  };
+}
+
+const diariasStore = createStore<Diaria[]>([]);
+const adiantStore = createStore<Adiantamento[]>([]);
+let diariasLoaded = false;
+let adiantLoaded = false;
+let diariasPromise: Promise<void> | null = null;
+let adiantPromise: Promise<void> | null = null;
+
+async function fetchDiarias() {
+  if (diariasPromise) return diariasPromise;
+  diariasPromise = (async () => {
     const { data, error } = await supabase
       .from("diarias" as never)
       .select("*")
@@ -72,19 +117,80 @@ export function useDiarias() {
       console.error(error);
       return;
     }
-    setDiarias(((data as unknown) as DiariaRow[] | null)?.map(mapDiaria) ?? []);
+    diariasStore.set(
+      ((data as unknown) as DiariaRow[] | null)?.map(mapDiaria) ?? [],
+    );
+    diariasLoaded = true;
+  })();
+  try {
+    await diariasPromise;
+  } finally {
+    diariasPromise = null;
+  }
+}
+
+async function fetchAdiantamentos() {
+  if (adiantPromise) return adiantPromise;
+  adiantPromise = (async () => {
+    const { data, error } = await supabase
+      .from("adiantamentos" as never)
+      .select("*")
+      .order("data", { ascending: false });
+    if (error) {
+      console.error(error);
+      return;
+    }
+    adiantStore.set(
+      ((data as unknown) as AdiantRow[] | null)?.map(mapAdiant) ?? [],
+    );
+    adiantLoaded = true;
+  })();
+  try {
+    await adiantPromise;
+  } finally {
+    adiantPromise = null;
+  }
+}
+
+// Reset caches on sign-out/sign-in so users don't see stale data.
+supabase.auth.onAuthStateChange((event) => {
+  if (event === "SIGNED_OUT" || event === "SIGNED_IN") {
+    diariasLoaded = false;
+    adiantLoaded = false;
+    diariasStore.set([]);
+    adiantStore.set([]);
+  }
+});
+
+// ---------- Hooks ----------
+
+export function useDiarias() {
+  const diarias = useSyncExternalStore(
+    diariasStore.subscribe,
+    diariasStore.get,
+    diariasStore.get,
+  );
+
+  if (!diariasLoaded && !diariasPromise) {
+    // Kick off the first fetch on first read; subsequent mounts reuse cache.
+    void fetchDiarias();
+  }
+
+  const recarregar = useCallback(async () => {
+    diariasLoaded = false;
+    await fetchDiarias();
   }, []);
 
-  useEffect(() => {
-    recarregar();
-  }, [recarregar]);
-
-  async function adicionar(d: Omit<Diaria, "id">) {
+  const adicionar = useCallback(async (d: Omit<Diaria, "id">) => {
     const { data: userData } = await supabase.auth.getUser();
     const user_id = userData.user?.id;
     if (!user_id) return;
     const tempId = `tmp-${Date.now()}`;
-    setDiarias((prev) => [{ ...d, id: tempId }, ...prev].sort((a, b) => b.data.localeCompare(a.data)));
+    diariasStore.set((prev) =>
+      [{ ...d, id: tempId }, ...prev].sort((a, b) =>
+        b.data.localeCompare(a.data),
+      ),
+    );
     const { data, error } = await supabase
       .from("diarias" as never)
       .insert({
@@ -102,89 +208,84 @@ export function useDiarias() {
       .single();
     if (error || !data) {
       console.error(error);
-      setDiarias((prev) => prev.filter((x) => x.id !== tempId));
+      diariasStore.set((prev) => prev.filter((x) => x.id !== tempId));
       return;
     }
     const nova = mapDiaria((data as unknown) as DiariaRow);
-    setDiarias((prev) => prev.map((x) => (x.id === tempId ? nova : x)));
-  }
+    diariasStore.set((prev) => prev.map((x) => (x.id === tempId ? nova : x)));
+  }, []);
 
-  async function remover(id: string) {
-    const backup = diarias;
-    setDiarias((prev) => prev.filter((x) => x.id !== id));
-    const { error } = await supabase.from("diarias" as never).delete().eq("id", id);
-    if (error) {
-      console.error(error);
-      setDiarias(backup);
-    }
-  }
-
-  async function atualizar(id: string, patch: Partial<Omit<Diaria, "id">>) {
-    const backup = diarias;
-    setDiarias((prev) => prev.map((x) => (x.id === id ? { ...x, ...patch } : x)));
-    const payload: Record<string, unknown> = {};
-    if (patch.data !== undefined) payload.data = patch.data;
-    if (patch.local !== undefined) payload.local = patch.local;
-    if (patch.descricao !== undefined) payload.descricao = patch.descricao;
-    if (patch.valor !== undefined) payload.valor = patch.valor;
-    if (patch.tipo !== undefined) payload.tipo = patch.tipo;
-    if (patch.status !== undefined) payload.status = patch.status;
-    if (patch.alimentacao !== undefined) payload.alimentacao = patch.alimentacao ?? 0;
-    if (patch.alimentacaoObs !== undefined) payload.alimentacao_obs = patch.alimentacaoObs ?? "";
+  const remover = useCallback(async (id: string) => {
+    const backup = diariasStore.get();
+    diariasStore.set((prev) => prev.filter((x) => x.id !== id));
     const { error } = await supabase
       .from("diarias" as never)
-      .update(payload as never)
+      .delete()
       .eq("id", id);
     if (error) {
       console.error(error);
-      setDiarias(backup);
+      diariasStore.set(backup);
     }
-  }
+  }, []);
+
+  const atualizar = useCallback(
+    async (id: string, patch: Partial<Omit<Diaria, "id">>) => {
+      const backup = diariasStore.get();
+      diariasStore.set((prev) =>
+        prev.map((x) => (x.id === id ? { ...x, ...patch } : x)),
+      );
+      const payload: Record<string, unknown> = {};
+      if (patch.data !== undefined) payload.data = patch.data;
+      if (patch.local !== undefined) payload.local = patch.local;
+      if (patch.descricao !== undefined) payload.descricao = patch.descricao;
+      if (patch.valor !== undefined) payload.valor = patch.valor;
+      if (patch.tipo !== undefined) payload.tipo = patch.tipo;
+      if (patch.status !== undefined) payload.status = patch.status;
+      if (patch.alimentacao !== undefined)
+        payload.alimentacao = patch.alimentacao ?? 0;
+      if (patch.alimentacaoObs !== undefined)
+        payload.alimentacao_obs = patch.alimentacaoObs ?? "";
+      const { error } = await supabase
+        .from("diarias" as never)
+        .update(payload as never)
+        .eq("id", id);
+      if (error) {
+        console.error(error);
+        diariasStore.set(backup);
+      }
+    },
+    [],
+  );
 
   return { diarias, adicionar, remover, atualizar, recarregar };
 }
 
-type AdiantRow = {
-  id: string;
-  data: string;
-  valor: number | string;
-  observacao: string | null;
-};
-
-function mapAdiant(r: AdiantRow): Adiantamento {
-  return {
-    id: r.id,
-    data: r.data,
-    valor: Number(r.valor),
-    observacao: r.observacao ?? undefined,
-  };
-}
-
 export function useAdiantamentos() {
-  const [adiantamentos, setAdiantamentos] = useState<Adiantamento[]>([]);
+  const adiantamentos = useSyncExternalStore(
+    adiantStore.subscribe,
+    adiantStore.get,
+    adiantStore.get,
+  );
+
+  if (!adiantLoaded && !adiantPromise) {
+    void fetchAdiantamentos();
+  }
 
   const recarregar = useCallback(async () => {
-    const { data, error } = await supabase
-      .from("adiantamentos" as never)
-      .select("*")
-      .order("data", { ascending: false });
-    if (error) {
-      console.error(error);
-      return;
-    }
-    setAdiantamentos(((data as unknown) as AdiantRow[] | null)?.map(mapAdiant) ?? []);
+    adiantLoaded = false;
+    await fetchAdiantamentos();
   }, []);
 
-  useEffect(() => {
-    recarregar();
-  }, [recarregar]);
-
-  async function adicionar(a: Omit<Adiantamento, "id">) {
+  const adicionar = useCallback(async (a: Omit<Adiantamento, "id">) => {
     const { data: userData } = await supabase.auth.getUser();
     const user_id = userData.user?.id;
     if (!user_id) return;
     const tempId = `tmp-${Date.now()}`;
-    setAdiantamentos((prev) => [{ ...a, id: tempId }, ...prev].sort((x, y) => y.data.localeCompare(x.data)));
+    adiantStore.set((prev) =>
+      [{ ...a, id: tempId }, ...prev].sort((x, y) =>
+        y.data.localeCompare(x.data),
+      ),
+    );
     const { data, error } = await supabase
       .from("adiantamentos" as never)
       .insert({
@@ -197,22 +298,25 @@ export function useAdiantamentos() {
       .single();
     if (error || !data) {
       console.error(error);
-      setAdiantamentos((prev) => prev.filter((x) => x.id !== tempId));
+      adiantStore.set((prev) => prev.filter((x) => x.id !== tempId));
       return;
     }
     const novo = mapAdiant((data as unknown) as AdiantRow);
-    setAdiantamentos((prev) => prev.map((x) => (x.id === tempId ? novo : x)));
-  }
+    adiantStore.set((prev) => prev.map((x) => (x.id === tempId ? novo : x)));
+  }, []);
 
-  async function remover(id: string) {
-    const backup = adiantamentos;
-    setAdiantamentos((prev) => prev.filter((x) => x.id !== id));
-    const { error } = await supabase.from("adiantamentos" as never).delete().eq("id", id);
+  const remover = useCallback(async (id: string) => {
+    const backup = adiantStore.get();
+    adiantStore.set((prev) => prev.filter((x) => x.id !== id));
+    const { error } = await supabase
+      .from("adiantamentos" as never)
+      .delete()
+      .eq("id", id);
     if (error) {
       console.error(error);
-      setAdiantamentos(backup);
+      adiantStore.set(backup);
     }
-  }
+  }, []);
 
   return { adiantamentos, adicionar, remover, recarregar };
 }
