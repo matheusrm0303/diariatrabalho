@@ -1,13 +1,23 @@
 import { createFileRoute, useNavigate, Link, Navigate } from "@tanstack/react-router";
+import { lazy, Suspense } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Wallet, LogOut, UserCircle2, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DiariasTab } from "@/components/diarias-tab";
-import { AdiantamentoTab } from "@/components/adiantamento-tab";
-import { FechamentoTab } from "@/components/fechamento-tab";
 import { supabase } from "@/integrations/supabase/client";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useIsAdmin } from "@/lib/admin";
+
+const AdiantamentoTab = lazy(() =>
+  import("@/components/adiantamento-tab").then((m) => ({ default: m.AdiantamentoTab })),
+);
+const FechamentoTab = lazy(() =>
+  import("@/components/fechamento-tab").then((m) => ({ default: m.FechamentoTab })),
+);
+
+function TabFallback() {
+  return <div className="py-8 text-center text-sm text-muted-foreground">Carregando…</div>;
+}
 
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({
