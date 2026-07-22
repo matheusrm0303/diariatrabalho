@@ -1,6 +1,6 @@
 import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { ArrowLeft, Shield, ShieldOff, Trash2, Save, RefreshCw, ChevronDown, ChevronUp, LogOut } from "lucide-react";
+import { ArrowLeft, Shield, ShieldOff, Trash2, Save, RefreshCw, ChevronDown, ChevronUp, LogOut, FileText } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
