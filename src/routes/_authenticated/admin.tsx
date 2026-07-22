@@ -79,6 +79,10 @@ function AdminPage() {
           <Button size="icon" variant="ghost" onClick={recarregar} aria-label="Recarregar">
             <RefreshCw className="h-5 w-5" />
           </Button>
+          <Button size="icon" variant="ghost" onClick={handleSignOut} aria-label="Sair">
+            <LogOut className="h-5 w-5" />
+          </Button>
+
         </header>
 
         <Card className="p-3 mb-4">
