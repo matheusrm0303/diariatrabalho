@@ -76,10 +76,14 @@ function Index() {
             <DiariasTab />
           </TabsContent>
           <TabsContent value="adiantamento">
-            <AdiantamentoTab />
+            <Suspense fallback={<TabFallback />}>
+              <AdiantamentoTab />
+            </Suspense>
           </TabsContent>
           <TabsContent value="fechamento">
-            <FechamentoTab />
+            <Suspense fallback={<TabFallback />}>
+              <FechamentoTab />
+            </Suspense>
           </TabsContent>
         </Tabs>
       </div>
