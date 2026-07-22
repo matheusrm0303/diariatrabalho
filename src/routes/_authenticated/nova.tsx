@@ -6,9 +6,20 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Plus, X } from "lucide-react";
+import { ArrowLeft, X } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import { ptBR } from "date-fns/locale";
 import { useDiarias, todayISO, fmt, type Tipo, type Status } from "@/lib/diarias-store";
 import { useMyDefaults } from "@/lib/admin";
+
+function isoFromDate(d: Date) {
+  const tz = d.getTimezoneOffset() * 60000;
+  return new Date(d.getTime() - tz).toISOString().slice(0, 10);
+}
+function dateFromIso(iso: string) {
+  const [y, m, d] = iso.split("-").map(Number);
+  return new Date(y, m - 1, d);
+}
 
 export const Route = createFileRoute("/_authenticated/nova")({
   head: () => ({
@@ -37,7 +48,6 @@ function Nova() {
   const [tipo, setTipo] = useState<Tipo>("rua-200");
   const [valor, setValor] = useState<string>(String(valorRua));
   const [local, setLocal] = useState("");
-  const [data, setData] = useState(todayISO());
   const [dias, setDias] = useState<string[]>([todayISO()]);
   const [status, setStatus] = useState<Status>("pendente");
   const [incluiAlim, setIncluiAlim] = useState(false);
@@ -60,11 +70,6 @@ function Nova() {
 
   function parseNum(v: string) {
     return parseFloat(v.replace(",", ".")) || 0;
-  }
-
-  function adicionarDia() {
-    if (!data) return;
-    setDias((prev) => (prev.includes(data) ? prev : [...prev, data].sort()));
   }
 
   function removerDia(d: string) {
@@ -129,24 +134,15 @@ function Nova() {
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="data">Dias</Label>
-              <div className="flex gap-2">
-                <Input
-                  id="data"
-                  type="date"
-                  value={data}
-                  onChange={(e) => setData(e.target.value)}
-                  className="flex-1"
+              <Label>Dias</Label>
+              <div className="rounded-md border p-2 flex justify-center">
+                <Calendar
+                  mode="multiple"
+                  locale={ptBR}
+                  selected={dias.map(dateFromIso)}
+                  onSelect={(dates) => setDias((dates ?? []).map(isoFromDate).sort())}
+                  className="pointer-events-auto"
                 />
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={adicionarDia}
-                  disabled={!data || dias.includes(data)}
-                >
-                  <Plus className="h-4 w-4" />
-                  Adicionar
-                </Button>
               </div>
               {dias.length === 0 ? (
                 <p className="text-xs text-muted-foreground">
