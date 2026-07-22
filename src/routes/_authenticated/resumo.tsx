@@ -1,6 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import jsPDF from "jspdf";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -15,11 +14,11 @@ import { ArrowLeft, CalendarDays, FileDown, MessageCircle } from "lucide-react";
 import { useDiarias, fmt, type Diaria } from "@/lib/diarias-store";
 import {
   ChartsResumo,
-  capturarGraficosParaPDF,
   filtrarPorPeriodo,
   periodoOptions,
   type PeriodoKey,
 } from "@/components/charts-resumo";
+
 
 export const Route = createFileRoute("/_authenticated/resumo")({
   head: () => ({
@@ -156,103 +155,29 @@ function Resumo() {
 
   async function gerarPDF() {
     if (diarias.length === 0) return;
-    const doc = new jsPDF({ unit: "pt", format: "a4" });
-    const margem = 40;
-    const larguraUtil = doc.internal.pageSize.getWidth() - margem * 2;
-    let y = margem;
-
-    const novaPaginaSeNecessario = (alturaLinha = 16) => {
-      if (y + alturaLinha > doc.internal.pageSize.getHeight() - margem) {
-        doc.addPage();
-        y = margem;
-      }
-    };
-
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(16);
-    doc.text("Resumo de Diárias", margem, y);
-    y += 22;
-
-    const periodoLabel =
-      periodoOptions.find((o) => o.value === periodo)?.label ?? "Todos";
-    doc.setFont("helvetica", "italic");
-    doc.setFontSize(10);
-    doc.text(`Período: ${periodoLabel}`, margem, y);
-    y += 16;
-
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(11);
-    doc.text(`Total pago: ${fmt.format(totalGeralPago)}`, margem, y);
-    y += 14;
-    doc.text(`Total pendente: ${fmt.format(totalGeralPendente)}`, margem, y);
-    y += 20;
-
-    // Inserir gráficos
     try {
-      const imgs = await capturarGraficosParaPDF("resumo");
-      for (const dataUrl of imgs) {
-        const props = doc.getImageProperties(dataUrl);
-        const w = larguraUtil;
-        const h = (props.height * w) / props.width;
-        novaPaginaSeNecessario(h + 10);
-        doc.addImage(dataUrl, "PNG", margem, y, w, h);
-        y += h + 12;
-      }
-    } catch (e) {
-      console.warn("Falha ao inserir gráficos no PDF", e);
-    }
-
-    const lista = diariasOrdenadas();
-    for (const m of resumoPorMes) {
-      novaPaginaSeNecessario(28);
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(12);
-      doc.text(m.label, margem, y);
-      y += 16;
-
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(10);
-      const dosMes = lista.filter((d) => {
-        const [a, mm] = d.data.split("-");
-        return parseInt(a, 10) === m.ano && parseInt(mm, 10) === m.mes;
+      const { gerarRelatorioPDF } = await import("@/lib/pdf-report");
+      const periodoLabel =
+        periodoOptions.find((o) => o.value === periodo)?.label ?? "Todos";
+      await gerarRelatorioPDF({
+        titulo: "Resumo de Diárias",
+        periodoLabel,
+        diarias,
+        resumoPorMes,
+        totais: {
+          pago: totalGeralPago,
+          pendente: totalGeralPendente,
+        },
+        chartsScope: "resumo",
+        nomeArquivo: `resumo-diarias-${periodo}-${todayStamp()}.pdf`,
       });
-      for (const d of dosMes) {
-        const total = d.valor + (d.alimentacao || 0);
-        const st = d.status === "pago" ? "Pago" : "Pendente";
-        const linha = `${formatarData(d.data)}  ${d.local || "(sem local)"} [${tipoLabel(d.tipo)}]  ${fmt.format(d.valor)}${
-          d.alimentacao ? ` + ${fmt.format(d.alimentacao)}` : ""
-        } = ${fmt.format(total)}  (${st})`;
-        const wrapped = doc.splitTextToSize(linha, larguraUtil);
-        novaPaginaSeNecessario(wrapped.length * 12);
-        doc.text(wrapped, margem, y);
-        y += wrapped.length * 12;
-        if (d.alimentacaoObs) {
-          const obs = doc.splitTextToSize(`   Obs alim.: ${d.alimentacaoObs}`, larguraUtil);
-          novaPaginaSeNecessario(obs.length * 11);
-          doc.text(obs, margem, y);
-          y += obs.length * 11;
-        }
-        if (d.descricao) {
-          const obs = doc.splitTextToSize(`   Obs: ${d.descricao}`, larguraUtil);
-          novaPaginaSeNecessario(obs.length * 11);
-          doc.text(obs, margem, y);
-          y += obs.length * 11;
-        }
-      }
-      y += 4;
-      novaPaginaSeNecessario();
-      doc.setFont("helvetica", "italic");
-      doc.text(
-        `Subtotal: pago ${fmt.format(m.totalPago)} | pendente ${fmt.format(m.totalPendente)}`,
-        margem,
-        y
-      );
-      doc.setFont("helvetica", "normal");
-      y += 18;
+    } catch (e) {
+      const { toast } = await import("sonner");
+      toast.error("Falha ao gerar o PDF. " + (e instanceof Error ? e.message : ""));
+      console.error("PDF generation failed", e);
     }
-
-    doc.save(`resumo-diarias-${periodo}-${todayStamp()}.pdf`);
   }
+
 
   function todayStamp() {
     const d = new Date();
