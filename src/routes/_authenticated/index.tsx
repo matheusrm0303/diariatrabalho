@@ -1,12 +1,13 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Wallet, LogOut, UserCircle2 } from "lucide-react";
+import { Wallet, LogOut, UserCircle2, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DiariasTab } from "@/components/diarias-tab";
 import { AdiantamentoTab } from "@/components/adiantamento-tab";
 import { FechamentoTab } from "@/components/fechamento-tab";
 import { supabase } from "@/integrations/supabase/client";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { useIsAdmin } from "@/lib/admin";
 
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({

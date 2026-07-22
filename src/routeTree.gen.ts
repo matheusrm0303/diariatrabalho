@@ -15,6 +15,7 @@ import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedResumoRouteImport } from './routes/_authenticated/resumo'
 import { Route as AuthenticatedNovaRouteImport } from './routes/_authenticated/nova'
 import { Route as AuthenticatedContaRouteImport } from './routes/_authenticated/conta'
+import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedEditarIdRouteImport } from './routes/_authenticated/editar.$id'
 
 const AuthRoute = AuthRouteImport.update({
@@ -46,6 +47,11 @@ const AuthenticatedContaRoute = AuthenticatedContaRouteImport.update({
   path: '/conta',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedEditarIdRoute = AuthenticatedEditarIdRouteImport.update({
   id: '/editar/$id',
   path: '/editar/$id',
@@ -55,6 +61,7 @@ const AuthenticatedEditarIdRoute = AuthenticatedEditarIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/auth': typeof AuthRoute
+  '/admin': typeof AuthenticatedAdminRoute
   '/conta': typeof AuthenticatedContaRoute
   '/nova': typeof AuthenticatedNovaRoute
   '/resumo': typeof AuthenticatedResumoRoute
@@ -62,6 +69,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
+  '/admin': typeof AuthenticatedAdminRoute
   '/conta': typeof AuthenticatedContaRoute
   '/nova': typeof AuthenticatedNovaRoute
   '/resumo': typeof AuthenticatedResumoRoute
@@ -72,6 +80,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/conta': typeof AuthenticatedContaRoute
   '/_authenticated/nova': typeof AuthenticatedNovaRoute
   '/_authenticated/resumo': typeof AuthenticatedResumoRoute
@@ -80,13 +89,21 @@ export interface FileRoutesById {
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/conta' | '/nova' | '/resumo' | '/editar/$id'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/admin'
+    | '/conta'
+    | '/nova'
+    | '/resumo'
+    | '/editar/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/auth' | '/conta' | '/nova' | '/resumo' | '/' | '/editar/$id'
+  to: '/auth' | '/admin' | '/conta' | '/nova' | '/resumo' | '/' | '/editar/$id'
   id:
     | '__root__'
     | '/_authenticated'
     | '/auth'
+    | '/_authenticated/admin'
     | '/_authenticated/conta'
     | '/_authenticated/nova'
     | '/_authenticated/resumo'
@@ -143,6 +160,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedContaRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin': {
+      id: '/_authenticated/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AuthenticatedAdminRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/editar/$id': {
       id: '/_authenticated/editar/$id'
       path: '/editar/$id'
@@ -154,6 +178,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedContaRoute: typeof AuthenticatedContaRoute
   AuthenticatedNovaRoute: typeof AuthenticatedNovaRoute
   AuthenticatedResumoRoute: typeof AuthenticatedResumoRoute
@@ -162,6 +187,7 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedContaRoute: AuthenticatedContaRoute,
   AuthenticatedNovaRoute: AuthenticatedNovaRoute,
   AuthenticatedResumoRoute: AuthenticatedResumoRoute,
