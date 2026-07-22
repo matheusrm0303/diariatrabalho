@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link, Navigate } from "@tanstack/react-router";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Wallet, LogOut, UserCircle2, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -21,11 +21,13 @@ export const Route = createFileRoute("/_authenticated/")({
 
 function Index() {
   const navigate = useNavigate();
-  const { isAdmin } = useIsAdmin();
+  const { isAdmin, loading } = useIsAdmin();
   async function sair() {
     await supabase.auth.signOut();
     navigate({ to: "/auth", replace: true });
   }
+  if (loading) return null;
+  if (isAdmin) return <Navigate to="/admin" replace />;
   return (
     <div className="min-h-screen bg-background">
       <div className="mx-auto max-w-2xl px-4 py-8">
