@@ -1,6 +1,6 @@
 import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { ArrowLeft, Shield, ShieldOff, Trash2, Save, RefreshCw, ChevronDown, ChevronUp, LogOut } from "lucide-react";
+import { ArrowLeft, Shield, ShieldOff, Trash2, Save, RefreshCw, ChevronDown, ChevronUp, LogOut, FileText } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
-import { useAdminUsers, type AdminUser } from "@/lib/admin";
+import { useAdminUsers, gerarPDFDoUsuario, type AdminUser } from "@/lib/admin";
 import { deleteUser } from "@/lib/admin.functions";
 import { fmt } from "@/lib/diarias-store";
 
@@ -192,6 +192,20 @@ function UserCard({
             <Button size="sm" onClick={() => onSave(parseNum(rua), parseNum(dep))}>
               <Save className="h-4 w-4" /> Salvar valores
             </Button>
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={async () => {
+                try {
+                  toast.info("Gerando PDF…");
+                  await gerarPDFDoUsuario(user);
+                } catch (e) {
+                  toast.error((e as Error).message);
+                }
+              }}
+            >
+              <FileText className="h-4 w-4" /> Gerar PDF
+            </Button>
             <Button size="sm" variant="outline" onClick={() => onToggleAdmin(!user.is_admin)}>
               {user.is_admin ? <><ShieldOff className="h-4 w-4" /> Remover admin</> : <><Shield className="h-4 w-4" /> Tornar admin</>}
             </Button>
@@ -199,6 +213,7 @@ function UserCard({
               <Trash2 className="h-4 w-4" /> Excluir
             </Button>
           </div>
+
         </>
       )}
     </Card>
