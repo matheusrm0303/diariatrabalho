@@ -1,6 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import jsPDF from "jspdf";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -15,11 +14,11 @@ import { ArrowLeft, CalendarDays, FileDown, MessageCircle } from "lucide-react";
 import { useDiarias, fmt, type Diaria } from "@/lib/diarias-store";
 import {
   ChartsResumo,
-  capturarGraficosParaPDF,
   filtrarPorPeriodo,
   periodoOptions,
   type PeriodoKey,
 } from "@/components/charts-resumo";
+
 
 export const Route = createFileRoute("/_authenticated/resumo")({
   head: () => ({
