@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -44,11 +44,13 @@ function Nova() {
   const [alimentacao, setAlimentacao] = useState("");
   const [alimentacaoObs, setAlimentacaoObs] = useState("");
 
-  // Sync valor with preset when defaults arrive
-  const currentPresetValor = tipo === "rua-200" ? valorRua : tipo === "deposito-100" ? valorDep : null;
-  if (currentPresetValor !== null && valor === "" && defaults) {
-    setValor(String(currentPresetValor));
-  }
+  // When defaults load, refresh preset value if user hasn't chosen custom
+  useEffect(() => {
+    if (!defaults) return;
+    if (tipo === "rua-200") setValor(String(defaults.valor_rua));
+    else if (tipo === "deposito-100") setValor(String(defaults.valor_deposito));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [defaults]);
 
   function selecionarTipo(p: (typeof PRESETS)[number]) {
     setTipo(p.tipo);
