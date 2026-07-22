@@ -246,222 +246,32 @@ export function FechamentoTab() {
 
   async function gerarPDF() {
     if (diarias.length === 0 && adiantamentos.length === 0) return;
-    let jsPDF: typeof import("jspdf").jsPDF;
-    let autoTable: (doc: unknown, opts: unknown) => void;
     try {
-      const [jspdfMod, atMod] = await Promise.all([
-        import("jspdf"),
-        import("jspdf-autotable"),
-      ]);
-      jsPDF = (jspdfMod.jsPDF ?? jspdfMod.default) as typeof import("jspdf").jsPDF;
-      const at = (atMod as { default?: unknown; autoTable?: unknown });
-      autoTable = (at.default ?? at.autoTable) as (doc: unknown, opts: unknown) => void;
-      if (typeof autoTable !== "function") throw new Error("autoTable não é uma função");
-    } catch (e) {
-      const { toast } = await import("sonner");
-      toast.error("Não consegui carregar o gerador de PDF. Tente novamente.");
-      console.error("PDF import failed", e);
-      return;
-    }
-
-    try {
-
-    const doc = new jsPDF({ unit: "pt", format: "a4" });
-    const larguraPagina = doc.internal.pageSize.getWidth();
-    const margem = 40;
-
-    // Cabeçalho estilizado (Carvão & Royal)
-    doc.setFillColor(28, 25, 23); // carvão
-    doc.rect(0, 0, larguraPagina, 70, "F");
-    doc.setTextColor(255, 255, 255);
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(18);
-    doc.text("Fechamento de Diárias", margem, 34);
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(10);
-    doc.setTextColor(230, 200, 170);
-    doc.text(
-      `Emitido em ${new Date().toLocaleDateString("pt-BR")}`,
-      margem,
-      54,
-    );
-    const periodoLabel =
-      periodoOptions.find((o) => o.value === periodo)?.label ?? "Todos";
-    doc.text(
-      `Período: ${periodoLabel}`,
-      larguraPagina - margem,
-      54,
-      { align: "right" },
-    );
-
-    // Resumo em cards
-    let y = 90;
-    doc.setTextColor(28, 25, 23);
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(12);
-    doc.text("Resumo", margem, y);
-    y += 10;
-
-    const cards: Array<[string, string, [number, number, number]]> = [
-      ["Total pago", fmt.format(totalGeralPago), [16, 122, 87]],
-      ["Total pendente", fmt.format(totalGeralPendente), [37, 99, 235]],
-    ];
-    if (totalAdiantamentos > 0) {
-      cards.push(["Adiantamentos", fmt.format(totalAdiantamentos), [2, 132, 199]]);
-      cards.push(["Saldo a receber", fmt.format(saldoAReceber), [217, 70, 39]]);
-    }
-    const cardW = (larguraPagina - margem * 2 - (cards.length - 1) * 8) / cards.length;
-    const cardH = 50;
-    cards.forEach((c, i) => {
-      const x = margem + i * (cardW + 8);
-      doc.setFillColor(250, 246, 242);
-      doc.roundedRect(x, y, cardW, cardH, 6, 6, "F");
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(9);
-      doc.setTextColor(100, 90, 80);
-      doc.text(c[0], x + 10, y + 18);
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(13);
-      doc.setTextColor(c[2][0], c[2][1], c[2][2]);
-      doc.text(c[1], x + 10, y + 38);
-    });
-    y += cardH + 20;
-
-    // Inserir gráficos
-    try {
-      const imgs = await capturarGraficosParaPDF("fechamento");
-      const larguraUtil = larguraPagina - margem * 2;
-      const alturaPagina = doc.internal.pageSize.getHeight();
-      for (const dataUrl of imgs) {
-        const props = doc.getImageProperties(dataUrl);
-        const w = larguraUtil;
-        const h = (props.height * w) / props.width;
-        if (y + h > alturaPagina - margem) {
-          doc.addPage();
-          y = margem;
-        }
-        doc.addImage(dataUrl, "PNG", margem, y, w, h);
-        y += h + 12;
-      }
-    } catch (e) {
-      console.warn("Falha ao inserir gráficos no PDF", e);
-    }
-    doc.setTextColor(28, 25, 23);
-
-    const lista = diariasOrdenadas();
-    for (const m of resumoPorMes) {
-      const dosMes = lista
-        .filter((d) => {
-          const [a, mm] = d.data.split("-");
-          return parseInt(a, 10) === m.ano && parseInt(mm, 10) === m.mes;
-        })
-        .sort((a, b) => (a.data < b.data ? -1 : 1));
-
-      autoTable(doc, {
-        startY: y,
-        head: [[m.label, "", "", "", "", ""]],
-        body: dosMes.map((d, idx) => [
-          String(idx + 1),
-          formatarData(d.data),
-          `${d.local || "(sem local)"}${d.descricao ? `\n${d.descricao}` : ""}${d.alimentacaoObs ? `\nAlim.: ${d.alimentacaoObs}` : ""}`,
-          tipoLabel(d.tipo),
-          fmt.format(d.valor + (d.alimentacao || 0)),
-          d.status === "pago" ? "Pago" : "Pendente",
-        ]),
-        foot: [[
-          "",
-          "",
-          "Subtotal",
-          "",
-          `Pago ${fmt.format(m.totalPago)}  •  Pendente ${fmt.format(m.totalPendente)}`,
-          "",
-        ]],
-        styles: { font: "helvetica", fontSize: 9, cellPadding: 6, textColor: [28, 25, 23] },
-        headStyles: { fillColor: [28, 25, 23], textColor: 255, fontSize: 11, halign: "left" },
-        footStyles: { fillColor: [250, 246, 242], textColor: [80, 70, 60], fontStyle: "italic" },
-        alternateRowStyles: { fillColor: [252, 249, 246] },
-        columnStyles: {
-          0: { cellWidth: 24, halign: "center" },
-          1: { cellWidth: 60 },
-          3: { cellWidth: 55 },
-          4: { cellWidth: 75, halign: "right", fontStyle: "bold" },
-          5: { cellWidth: 60, halign: "center" },
+      const { gerarRelatorioPDF } = await import("@/lib/pdf-report");
+      const periodoLabel =
+        periodoOptions.find((o) => o.value === periodo)?.label ?? "Todos";
+      await gerarRelatorioPDF({
+        titulo: "Fechamento de Diárias",
+        periodoLabel,
+        diarias,
+        resumoPorMes,
+        adiantamentos,
+        totais: {
+          pago: totalGeralPago,
+          pendente: totalGeralPendente,
+          adiantamentos: totalAdiantamentos,
+          saldo: saldoAReceber,
         },
-        margin: { left: margem, right: margem },
-        didParseCell: (data: { section: string; column: { index: number }; cell: { raw: unknown; styles: { textColor: [number, number, number] } } }) => {
-          if (data.section === "body" && data.column.index === 5) {
-            const raw = String(data.cell.raw ?? "");
-            if (raw === "Pago") data.cell.styles.textColor = [16, 122, 87];
-            else data.cell.styles.textColor = [37, 99, 235];
-          }
-        },
+        chartsScope: "fechamento",
+        nomeArquivo: `fechamento-diarias-${periodo}-${todayStamp()}.pdf`,
       });
-      const finalY =
-        (doc as unknown as { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY ?? y;
-      y = finalY + 16;
-    }
-
-    if (adiantamentos.length > 0) {
-      autoTable(doc, {
-        startY: y,
-        head: [["Adiantamentos recebidos", "", ""]],
-        body: adiantOrdenados().map((a) => [
-          formatarData(a.data),
-          a.observacao || "",
-          fmt.format(a.valor),
-        ]),
-        foot: [["Total adiantado", "", fmt.format(totalAdiantamentos)]],
-        styles: { font: "helvetica", fontSize: 9, cellPadding: 6 },
-        headStyles: { fillColor: [28, 25, 23], textColor: 255, fontSize: 11, halign: "left" },
-        footStyles: { fillColor: [250, 246, 242], fontStyle: "bold" },
-        alternateRowStyles: { fillColor: [252, 249, 246] },
-        columnStyles: {
-          0: { cellWidth: 80 },
-          2: { cellWidth: 90, halign: "right", fontStyle: "bold" },
-        },
-        margin: { left: margem, right: margem },
-      });
-    }
-
-    // Rodapé com paginação
-    const total = doc.getNumberOfPages();
-    for (let i = 1; i <= total; i++) {
-      doc.setPage(i);
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(8);
-      doc.setTextColor(140, 130, 120);
-      doc.text(
-        `Página ${i} de ${total}`,
-        larguraPagina - margem,
-        doc.internal.pageSize.getHeight() - 20,
-        { align: "right" },
-      );
-    }
-
-      const nomeArquivo = `fechamento-diarias-${periodo}-${todayStamp()}.pdf`;
-      const blob = doc.output("blob");
-      const url = URL.createObjectURL(blob);
-      // 1) tenta abrir em nova aba (funciona mesmo em iframes que bloqueiam download)
-      const janela = window.open(url, "_blank");
-      // 2) também dispara o download tradicional
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = nomeArquivo;
-      a.rel = "noopener";
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 30_000);
-      if (!janela) {
-        const { toast } = await import("sonner");
-        toast.info("Se o PDF não abrir, verifique o bloqueador de pop-ups.");
-      }
     } catch (e) {
       const { toast } = await import("sonner");
       toast.error("Falha ao gerar o PDF. " + (e instanceof Error ? e.message : ""));
       console.error("PDF generation failed", e);
     }
   }
+
 
 
   async function gerarExcel() {
