@@ -192,6 +192,20 @@ function UserCard({
             <Button size="sm" onClick={() => onSave(parseNum(rua), parseNum(dep))}>
               <Save className="h-4 w-4" /> Salvar valores
             </Button>
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={async () => {
+                try {
+                  toast.info("Gerando PDF…");
+                  await gerarPDFDoUsuario(user);
+                } catch (e) {
+                  toast.error((e as Error).message);
+                }
+              }}
+            >
+              <FileText className="h-4 w-4" /> Gerar PDF
+            </Button>
             <Button size="sm" variant="outline" onClick={() => onToggleAdmin(!user.is_admin)}>
               {user.is_admin ? <><ShieldOff className="h-4 w-4" /> Remover admin</> : <><Shield className="h-4 w-4" /> Tornar admin</>}
             </Button>
@@ -199,6 +213,7 @@ function UserCard({
               <Trash2 className="h-4 w-4" /> Excluir
             </Button>
           </div>
+
         </>
       )}
     </Card>
