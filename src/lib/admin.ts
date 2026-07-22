@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import type { Diaria, Adiantamento } from "@/lib/diarias-store";
+
 
 export type AdminUser = {
   id: string;
