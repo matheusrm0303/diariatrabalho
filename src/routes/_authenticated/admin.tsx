@@ -39,6 +39,7 @@ function AdminPage() {
   const { users, loading, recarregar, setDefaults, toggleAdmin } = useAdminUsers();
   const deleteUserFn = useServerFn(deleteUser);
   const [busca, setBusca] = useState("");
+  const navigate = useNavigate();
 
   const filtrados = useMemo(() => {
     const q = busca.trim().toLowerCase();
@@ -56,6 +57,13 @@ function AdminPage() {
       toast.error((e as Error).message);
     }
   }
+
+  async function handleSignOut() {
+    await supabase.auth.signOut();
+    toast.success("Sessão encerrada");
+    navigate({ to: "/auth" });
+  }
+
 
   return (
     <div className="min-h-screen bg-background">
