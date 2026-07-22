@@ -134,24 +134,15 @@ function Nova() {
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="data">Dias</Label>
-              <div className="flex gap-2">
-                <Input
-                  id="data"
-                  type="date"
-                  value={data}
-                  onChange={(e) => setData(e.target.value)}
-                  className="flex-1"
+              <Label>Dias</Label>
+              <div className="rounded-md border p-2 flex justify-center">
+                <Calendar
+                  mode="multiple"
+                  locale={ptBR}
+                  selected={dias.map(dateFromIso)}
+                  onSelect={(dates) => setDias((dates ?? []).map(isoFromDate).sort())}
+                  className="pointer-events-auto"
                 />
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={adicionarDia}
-                  disabled={!data || dias.includes(data)}
-                >
-                  <Plus className="h-4 w-4" />
-                  Adicionar
-                </Button>
               </div>
               {dias.length === 0 ? (
                 <p className="text-xs text-muted-foreground">
