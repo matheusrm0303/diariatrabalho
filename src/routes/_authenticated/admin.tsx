@@ -128,6 +128,7 @@ function UserCard({
 }) {
   const [rua, setRua] = useState(String(user.valor_rua));
   const [dep, setDep] = useState(String(user.valor_deposito));
+  const [aberto, setAberto] = useState(false);
 
   function parseNum(v: string) {
     return parseFloat(v.replace(",", ".")) || 0;
@@ -137,55 +138,70 @@ function UserCard({
 
   return (
     <Card className="p-4 grid gap-3">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <div className="flex items-center gap-2">
+      <button
+        type="button"
+        onClick={() => setAberto((v) => !v)}
+        className="flex items-start justify-between gap-3 text-left"
+        aria-expanded={aberto}
+      >
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2 flex-wrap">
             <p className="font-medium truncate">{user.email}</p>
             {user.is_admin && <Badge variant="secondary">Admin</Badge>}
           </div>
-          <p className="text-xs text-muted-foreground">
-            Cadastro: {new Date(user.created_at).toLocaleDateString("pt-BR")}
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Saldo: <span className={saldo < 0 ? "text-rose-600 font-medium" : "font-medium"}>{fmt.format(saldo)}</span>
           </p>
         </div>
-      </div>
+        {aberto ? <ChevronUp className="h-5 w-5 shrink-0 text-muted-foreground" /> : <ChevronDown className="h-5 w-5 shrink-0 text-muted-foreground" />}
+      </button>
 
-      <div className="grid grid-cols-3 gap-2 text-xs">
-        <div className="rounded-md border p-2">
-          <p className="text-muted-foreground">Diárias</p>
-          <p className="font-semibold">{fmt.format(user.total_diarias)}</p>
-        </div>
-        <div className="rounded-md border p-2">
-          <p className="text-muted-foreground">Adiantamentos</p>
-          <p className="font-semibold">{fmt.format(user.total_adiantamentos)}</p>
-        </div>
-        <div className="rounded-md border p-2">
-          <p className="text-muted-foreground">Saldo</p>
-          <p className={"font-semibold " + (saldo < 0 ? "text-rose-600" : "")}>{fmt.format(saldo)}</p>
-        </div>
-      </div>
+      {aberto && (
+        <>
+          <p className="text-xs text-muted-foreground -mt-1">
+            Cadastro: {new Date(user.created_at).toLocaleDateString("pt-BR")}
+          </p>
 
-      <div className="grid grid-cols-2 gap-2">
-        <div className="grid gap-1">
-          <Label htmlFor={`rua-${user.id}`} className="text-xs">Diária Rua (R$)</Label>
-          <Input id={`rua-${user.id}`} type="number" step="0.01" value={rua} onChange={(e) => setRua(e.target.value)} />
-        </div>
-        <div className="grid gap-1">
-          <Label htmlFor={`dep-${user.id}`} className="text-xs">Diária Depósito (R$)</Label>
-          <Input id={`dep-${user.id}`} type="number" step="0.01" value={dep} onChange={(e) => setDep(e.target.value)} />
-        </div>
-      </div>
+          <div className="grid grid-cols-3 gap-2 text-xs">
+            <div className="rounded-md border p-2">
+              <p className="text-muted-foreground">Diárias</p>
+              <p className="font-semibold">{fmt.format(user.total_diarias)}</p>
+            </div>
+            <div className="rounded-md border p-2">
+              <p className="text-muted-foreground">Adiantamentos</p>
+              <p className="font-semibold">{fmt.format(user.total_adiantamentos)}</p>
+            </div>
+            <div className="rounded-md border p-2">
+              <p className="text-muted-foreground">Saldo</p>
+              <p className={"font-semibold " + (saldo < 0 ? "text-rose-600" : "")}>{fmt.format(saldo)}</p>
+            </div>
+          </div>
 
-      <div className="flex flex-wrap gap-2">
-        <Button size="sm" onClick={() => onSave(parseNum(rua), parseNum(dep))}>
-          <Save className="h-4 w-4" /> Salvar valores
-        </Button>
-        <Button size="sm" variant="outline" onClick={() => onToggleAdmin(!user.is_admin)}>
-          {user.is_admin ? <><ShieldOff className="h-4 w-4" /> Remover admin</> : <><Shield className="h-4 w-4" /> Tornar admin</>}
-        </Button>
-        <Button size="sm" variant="destructive" className="ml-auto" onClick={onDelete}>
-          <Trash2 className="h-4 w-4" /> Excluir
-        </Button>
-      </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="grid gap-1">
+              <Label htmlFor={`rua-${user.id}`} className="text-xs">Diária Rua (R$)</Label>
+              <Input id={`rua-${user.id}`} type="number" step="0.01" value={rua} onChange={(e) => setRua(e.target.value)} />
+            </div>
+            <div className="grid gap-1">
+              <Label htmlFor={`dep-${user.id}`} className="text-xs">Diária Depósito (R$)</Label>
+              <Input id={`dep-${user.id}`} type="number" step="0.01" value={dep} onChange={(e) => setDep(e.target.value)} />
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            <Button size="sm" onClick={() => onSave(parseNum(rua), parseNum(dep))}>
+              <Save className="h-4 w-4" /> Salvar valores
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => onToggleAdmin(!user.is_admin)}>
+              {user.is_admin ? <><ShieldOff className="h-4 w-4" /> Remover admin</> : <><Shield className="h-4 w-4" /> Tornar admin</>}
+            </Button>
+            <Button size="sm" variant="destructive" className="ml-auto" onClick={onDelete}>
+              <Trash2 className="h-4 w-4" /> Excluir
+            </Button>
+          </div>
+        </>
+      )}
     </Card>
   );
 }
+
