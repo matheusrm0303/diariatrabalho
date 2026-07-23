@@ -552,7 +552,7 @@ export function FechamentoTab() {
                   value={waSaudacao}
                   onChange={(e) => {
                     setWaSaudacao(e.target.value);
-                    setWaMensagem(montarMensagem(e.target.value, waEncerramento));
+                    setWaMensagem(montarMensagem(e.target.value, waEncerramento, opcoesAtuais()));
                   }}
                 />
               </div>
