@@ -586,7 +586,7 @@ export function FechamentoTab() {
                 <button
                   type="button"
                   className="text-xs text-muted-foreground underline-offset-2 hover:underline"
-                  onClick={() => setWaMensagem(montarMensagem(waSaudacao, waEncerramento))}
+                  onClick={() => setWaMensagem(montarMensagem(waSaudacao, waEncerramento, opcoesAtuais()))}
                 >
                   Restaurar
                 </button>
