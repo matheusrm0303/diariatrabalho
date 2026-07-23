@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate, Link, Navigate } from "@tanstack/react-router";
 import { lazy, Suspense } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Wallet, LogOut, UserCircle2, Shield } from "lucide-react";
+import { LogOut, UserCircle2, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DiariasTab } from "@/components/diarias-tab";
 import { supabase } from "@/integrations/supabase/client";
