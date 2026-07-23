@@ -543,6 +543,113 @@ export function FechamentoTab() {
               </p>
             </div>
 
+            <div className="grid gap-2 rounded-md border p-3">
+              <Label className="text-xs font-medium text-muted-foreground">
+                O que enviar
+              </Label>
+
+              {resumoPorMes.length > 0 && (
+                <div className="grid gap-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium">Meses</span>
+                    <div className="flex gap-2 text-[11px]">
+                      <button
+                        type="button"
+                        className="text-primary underline-offset-2 hover:underline"
+                        onClick={() => {
+                          const todos = new Set(
+                            resumoPorMes.map(
+                              (m) => `${m.ano}-${String(m.mes).padStart(2, "0")}`,
+                            ),
+                          );
+                          setWaMesesSel(todos);
+                          atualizarComOpts({ meses: todos });
+                        }}
+                      >
+                        Todos
+                      </button>
+                      <button
+                        type="button"
+                        className="text-muted-foreground underline-offset-2 hover:underline"
+                        onClick={() => {
+                          const vazio = new Set<string>();
+                          setWaMesesSel(vazio);
+                          atualizarComOpts({ meses: vazio });
+                        }}
+                      >
+                        Nenhum
+                      </button>
+                    </div>
+                  </div>
+                  <div className="grid max-h-32 grid-cols-1 gap-1 overflow-y-auto sm:grid-cols-2">
+                    {resumoPorMes.map((m) => {
+                      const key = `${m.ano}-${String(m.mes).padStart(2, "0")}`;
+                      return (
+                        <label
+                          key={key}
+                          className="flex items-center gap-2 rounded px-1.5 py-1 text-xs hover:bg-muted/50"
+                        >
+                          <Checkbox
+                            checked={waMesesSel.has(key)}
+                            onCheckedChange={(v) => toggleMes(key, v === true)}
+                          />
+                          <span className="capitalize">{m.label}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-1.5">
+                <label className="flex items-center gap-2 text-xs">
+                  <Checkbox
+                    checked={waIncluirPagas}
+                    onCheckedChange={(v) => {
+                      const val = v === true;
+                      setWaIncluirPagas(val);
+                      atualizarComOpts({ incluirPagas: val });
+                    }}
+                  />
+                  Diárias pagas
+                </label>
+                <label className="flex items-center gap-2 text-xs">
+                  <Checkbox
+                    checked={waIncluirPendentes}
+                    onCheckedChange={(v) => {
+                      const val = v === true;
+                      setWaIncluirPendentes(val);
+                      atualizarComOpts({ incluirPendentes: val });
+                    }}
+                  />
+                  Diárias pendentes
+                </label>
+                <label className="flex items-center gap-2 text-xs">
+                  <Checkbox
+                    checked={waIncluirAdiant}
+                    disabled={adiantamentos.length === 0}
+                    onCheckedChange={(v) => {
+                      const val = v === true;
+                      setWaIncluirAdiant(val);
+                      atualizarComOpts({ incluirAdiantamentos: val });
+                    }}
+                  />
+                  Adiantamentos
+                </label>
+                <label className="flex items-center gap-2 text-xs">
+                  <Checkbox
+                    checked={waIncluirTotais}
+                    onCheckedChange={(v) => {
+                      const val = v === true;
+                      setWaIncluirTotais(val);
+                      atualizarComOpts({ incluirTotais: val });
+                    }}
+                  />
+                  Totais
+                </label>
+              </div>
+            </div>
+
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="grid gap-1.5">
                 <Label htmlFor="wa-saudacao">Saudação</Label>
