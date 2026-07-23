@@ -40,36 +40,54 @@ function Index() {
   if (isAdmin) return <Navigate to="/admin" replace />;
   return (
     <div className="min-h-screen bg-background">
-      <div className="mx-auto max-w-2xl px-4 py-8">
-        <header className="mb-6 flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <Wallet className="h-5 w-5" />
+      <div className="mx-auto max-w-2xl px-4 pt-8 pb-4">
+        <header className="mb-6 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
+          <div className="min-w-0">
+            <p className="text-xs font-medium text-primary/80">Bem-vindo de volta,</p>
+            <h1 className="truncate font-display text-2xl font-bold tracking-tight">
+              Controle de Diárias
+            </h1>
           </div>
-          <div className="flex-1 min-w-0">
-            <h1 className="text-2xl font-semibold tracking-tight">Controle de Diárias</h1>
-            <p className="text-sm text-muted-foreground">
-              Acompanhe seus eventos e ganhos.
-            </p>
-          </div>
-          <ThemeToggle />
-          {isAdmin && (
-            <Button asChild variant="ghost" size="icon" aria-label="Administração">
-              <Link to="/admin"><Shield className="h-5 w-5" /></Link>
+          <div className="flex shrink-0 items-center gap-1">
+            <ThemeToggle />
+            {isAdmin && (
+              <Button asChild variant="ghost" size="icon" aria-label="Administração">
+                <Link to="/admin">
+                  <Shield className="h-5 w-5" />
+                </Link>
+              </Button>
+            )}
+            <Button asChild variant="ghost" size="icon" aria-label="Minha conta">
+              <Link to="/conta">
+                <UserCircle2 className="h-5 w-5" />
+              </Link>
             </Button>
-          )}
-          <Button asChild variant="ghost" size="icon" aria-label="Minha conta">
-            <Link to="/conta"><UserCircle2 className="h-5 w-5" /></Link>
-          </Button>
-          <Button variant="ghost" size="icon" onClick={sair} aria-label="Sair">
-            <LogOut className="h-5 w-5" />
-          </Button>
+            <Button variant="ghost" size="icon" onClick={sair} aria-label="Sair">
+              <LogOut className="h-5 w-5" />
+            </Button>
+          </div>
         </header>
 
         <Tabs defaultValue="diarias" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-6">
-            <TabsTrigger value="diarias">Diárias</TabsTrigger>
-            <TabsTrigger value="adiantamento">Adiantamento</TabsTrigger>
-            <TabsTrigger value="fechamento">Fechamento</TabsTrigger>
+          <TabsList className="mb-6 grid h-11 w-full grid-cols-3 rounded-2xl bg-muted/70 p-1">
+            <TabsTrigger
+              value="diarias"
+              className="rounded-xl text-sm font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"
+            >
+              Diárias
+            </TabsTrigger>
+            <TabsTrigger
+              value="adiantamento"
+              className="rounded-xl text-sm font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"
+            >
+              Adiantamento
+            </TabsTrigger>
+            <TabsTrigger
+              value="fechamento"
+              className="rounded-xl text-sm font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"
+            >
+              Fechamento
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="diarias">
@@ -90,3 +108,4 @@ function Index() {
     </div>
   );
 }
+
