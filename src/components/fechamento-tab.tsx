@@ -13,6 +13,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { CalendarDays, FileDown, MessageCircle, FileSpreadsheet, Send } from "lucide-react";
 import { useDiarias, useAdiantamentos, fmt, type Diaria } from "@/lib/diarias-store";
 import {
