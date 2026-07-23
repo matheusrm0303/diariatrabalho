@@ -158,23 +158,48 @@ export function FechamentoTab() {
   const adiantOrdenados = () =>
     [...adiantamentos].sort((a, b) => (a.data < b.data ? 1 : -1));
 
-  function gerarTextoWhatsApp() {
+  interface WaOpts {
+    meses: Set<string>; // MesKey "YYYY-MM"
+    incluirAdiantamentos: boolean;
+    incluirTotais: boolean;
+    incluirPagas: boolean;
+    incluirPendentes: boolean;
+  }
+
+  function gerarTextoWhatsApp(opts: WaOpts) {
     const lista = diariasOrdenadas();
     const linhas: string[] = [];
     linhas.push("*Fechamento de Diárias*");
     linhas.push("");
 
-    for (const m of resumoPorMes) {
-      linhas.push(`*${m.label}*`);
+    const mesesFiltrados = resumoPorMes.filter((m) =>
+      opts.meses.has(`${m.ano}-${String(m.mes).padStart(2, "0")}`),
+    );
+
+    let totalPagoSel = 0;
+    let totalPendenteSel = 0;
+
+    for (const m of mesesFiltrados) {
       const dosMes = lista
         .filter((d) => {
           const [a, mm] = d.data.split("-");
           return parseInt(a, 10) === m.ano && parseInt(mm, 10) === m.mes;
         })
+        .filter((d) =>
+          d.status === "pago" ? opts.incluirPagas : opts.incluirPendentes,
+        )
         .sort((a, b) => (a.data < b.data ? -1 : a.data > b.data ? 1 : 0));
+
+      if (dosMes.length === 0) continue;
+
+      linhas.push(`*${m.label}*`);
+      let subPago = 0;
+      let subPendente = 0;
       dosMes.forEach((d, idx) => {
         const total = d.valor + (d.alimentacao || 0);
         const st = d.status === "pago" ? "✅ Pago" : "⏳ Pendente";
+        if (d.status === "pago") subPago += total;
+        else subPendente += total;
         linhas.push(
           `${idx + 1}. ${formatarData(d.data)} — ${d.local || "(sem local)"} [${tipoLabel(d.tipo)}] — ${fmt.format(d.valor)}${
             d.alimentacao ? ` + alim. ${fmt.format(d.alimentacao)}` : ""
@@ -183,13 +208,15 @@ export function FechamentoTab() {
         if (d.alimentacaoObs) linhas.push(`   _Obs alim.: ${d.alimentacaoObs}_`);
         if (d.descricao) linhas.push(`   _Obs: ${d.descricao}_`);
       });
+      totalPagoSel += subPago;
+      totalPendenteSel += subPendente;
       linhas.push(
-        `Subtotal (${dosMes.length} ${dosMes.length === 1 ? "diária" : "diárias"}): pago ${fmt.format(m.totalPago)} | pendente ${fmt.format(m.totalPendente)}`,
+        `Subtotal (${dosMes.length} ${dosMes.length === 1 ? "diária" : "diárias"}): pago ${fmt.format(subPago)} | pendente ${fmt.format(subPendente)}`,
       );
       linhas.push("");
     }
 
-    if (adiantamentos.length > 0) {
+    if (opts.incluirAdiantamentos && adiantamentos.length > 0) {
       linhas.push("*Adiantamentos recebidos*");
       for (const a of adiantOrdenados()) {
         linhas.push(
@@ -200,11 +227,13 @@ export function FechamentoTab() {
       linhas.push("");
     }
 
-    linhas.push(`*Total pago:* ${fmt.format(totalGeralPago)}`);
-    linhas.push(`*Total pendente:* ${fmt.format(totalGeralPendente)}`);
-    if (totalAdiantamentos > 0) {
-      linhas.push(`*Adiantamentos:* ${fmt.format(totalAdiantamentos)}`);
-      linhas.push(`*Saldo a receber:* ${fmt.format(saldoAReceber)}`);
+    if (opts.incluirTotais) {
+      if (opts.incluirPagas) linhas.push(`*Total pago:* ${fmt.format(totalPagoSel)}`);
+      if (opts.incluirPendentes) linhas.push(`*Total pendente:* ${fmt.format(totalPendenteSel)}`);
+      if (opts.incluirAdiantamentos && totalAdiantamentos > 0) {
+        linhas.push(`*Adiantamentos:* ${fmt.format(totalAdiantamentos)}`);
+        linhas.push(`*Saldo a receber:* ${fmt.format(totalPendenteSel - totalAdiantamentos)}`);
+      }
     }
     return linhas.join("\n");
   }
@@ -214,14 +243,33 @@ export function FechamentoTab() {
   const [waEncerramento, setWaEncerramento] = useState("Qualquer dúvida, me avise. Obrigado!");
   const [waTelefone, setWaTelefone] = useState("");
   const [waMensagem, setWaMensagem] = useState("");
+  const [waMesesSel, setWaMesesSel] = useState<Set<string>>(new Set());
+  const [waIncluirAdiant, setWaIncluirAdiant] = useState(true);
+  const [waIncluirTotais, setWaIncluirTotais] = useState(true);
+  const [waIncluirPagas, setWaIncluirPagas] = useState(true);
+  const [waIncluirPendentes, setWaIncluirPendentes] = useState(true);
 
-  function montarMensagem(saudacao: string, encerramento: string) {
+  function opcoesAtuais(overrides?: Partial<WaOpts>): WaOpts {
+    return {
+      meses: overrides?.meses ?? waMesesSel,
+      incluirAdiantamentos: overrides?.incluirAdiantamentos ?? waIncluirAdiant,
+      incluirTotais: overrides?.incluirTotais ?? waIncluirTotais,
+      incluirPagas: overrides?.incluirPagas ?? waIncluirPagas,
+      incluirPendentes: overrides?.incluirPendentes ?? waIncluirPendentes,
+    };
+  }
+
+  function montarMensagem(
+    saudacao: string,
+    encerramento: string,
+    opts: WaOpts,
+  ) {
     const partes: string[] = [];
     if (saudacao.trim()) {
       partes.push(saudacao.trim());
       partes.push("");
     }
-    partes.push(gerarTextoWhatsApp());
+    partes.push(gerarTextoWhatsApp(opts));
     if (encerramento.trim()) {
       partes.push("");
       partes.push(encerramento.trim());
@@ -231,9 +279,28 @@ export function FechamentoTab() {
 
   function abrirDialogoWhatsApp() {
     if (diarias.length === 0 && adiantamentos.length === 0) return;
-    setWaMensagem(montarMensagem(waSaudacao, waEncerramento));
+    const todosMeses = new Set(
+      resumoPorMes.map((m) => `${m.ano}-${String(m.mes).padStart(2, "0")}`),
+    );
+    setWaMesesSel(todosMeses);
+    const opts = opcoesAtuais({ meses: todosMeses });
+    setWaMensagem(montarMensagem(waSaudacao, waEncerramento, opts));
     setWaOpen(true);
   }
+
+  function atualizarComOpts(next: Partial<WaOpts>) {
+    const opts = opcoesAtuais(next);
+    setWaMensagem(montarMensagem(waSaudacao, waEncerramento, opts));
+  }
+
+  function toggleMes(key: string, checked: boolean) {
+    const novo = new Set(waMesesSel);
+    if (checked) novo.add(key);
+    else novo.delete(key);
+    setWaMesesSel(novo);
+    atualizarComOpts({ meses: novo });
+  }
+
 
   function enviarWhatsApp() {
     const texto = encodeURIComponent(waMensagem);
