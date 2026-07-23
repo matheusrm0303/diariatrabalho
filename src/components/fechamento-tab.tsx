@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -14,11 +14,21 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { CalendarDays, FileDown, MessageCircle, FileSpreadsheet, Send } from "lucide-react";
+import {
+  CalendarDays,
+  FileDown,
+  MessageCircle,
+  FileSpreadsheet,
+  Send,
+  ChevronDown,
+  ChevronUp,
+  Bookmark,
+  Save,
+  Trash2,
+} from "lucide-react";
 import { useDiarias, useAdiantamentos, fmt, type Diaria } from "@/lib/diarias-store";
 import {
   ChartComparativoMensal,
-  capturarGraficosParaPDF,
   filtrarPorPeriodo,
   periodoOptions,
   type PeriodoKey,
@@ -93,6 +103,36 @@ function renderPreviewWhatsApp(texto: string) {
   });
 }
 
+interface WaTemplate {
+  nome: string;
+  saudacao: string;
+  encerramento: string;
+  incluirAdiant: boolean;
+  incluirTotais: boolean;
+  incluirPagas: boolean;
+  incluirPendentes: boolean;
+  incluirAlim: boolean;
+  incluirObs: boolean;
+}
+const TPL_KEY = "wa-templates-v1";
+function loadTpls(): WaTemplate[] {
+  try {
+    const raw = localStorage.getItem(TPL_KEY);
+    if (!raw) return [];
+    const arr = JSON.parse(raw);
+    return Array.isArray(arr) ? arr : [];
+  } catch {
+    return [];
+  }
+}
+function saveTpls(t: WaTemplate[]) {
+  try {
+    localStorage.setItem(TPL_KEY, JSON.stringify(t));
+  } catch {
+    // ignore
+  }
+}
+
 export function FechamentoTab() {
   const { diarias: todasDiarias } = useDiarias();
   const { adiantamentos: todosAdiantamentos } = useAdiantamentos();
@@ -153,154 +193,285 @@ export function FechamentoTab() {
   );
   const saldoAReceber = totalGeralPendente - totalAdiantamentos;
 
-  const diariasOrdenadas = () =>
-    [...diarias].sort((a, b) => (a.data < b.data ? 1 : -1));
   const adiantOrdenados = () =>
     [...adiantamentos].sort((a, b) => (a.data < b.data ? 1 : -1));
 
-  interface WaOpts {
-    meses: Set<string>; // MesKey "YYYY-MM"
-    incluirAdiantamentos: boolean;
-    incluirTotais: boolean;
-    incluirPagas: boolean;
-    incluirPendentes: boolean;
-  }
+  // ------- WhatsApp state -------
+  const [waOpen, setWaOpen] = useState(false);
+  const [waSaudacao, setWaSaudacao] = useState("Olá! Segue o fechamento das diárias:");
+  const [waEncerramento, setWaEncerramento] = useState("Qualquer dúvida, me avise. Obrigado!");
+  const [waTelefone, setWaTelefone] = useState("");
+  const [waMensagem, setWaMensagem] = useState("");
+  const [waDataDe, setWaDataDe] = useState<string>("");
+  const [waDataAte, setWaDataAte] = useState<string>("");
+  const [waDiariasSel, setWaDiariasSel] = useState<Set<string>>(new Set());
+  const [waIncluirAdiant, setWaIncluirAdiant] = useState(true);
+  const [waIncluirTotais, setWaIncluirTotais] = useState(true);
+  const [waIncluirPagas, setWaIncluirPagas] = useState(true);
+  const [waIncluirPendentes, setWaIncluirPendentes] = useState(true);
+  const [waIncluirAlim, setWaIncluirAlim] = useState(true);
+  const [waIncluirObs, setWaIncluirObs] = useState(true);
+  const [mesesExpandidos, setMesesExpandidos] = useState<Set<string>>(new Set());
+  const [templates, setTemplates] = useState<WaTemplate[]>([]);
+  const [tplNome, setTplNome] = useState("");
 
-  function gerarTextoWhatsApp(opts: WaOpts) {
-    const lista = diariasOrdenadas();
+  useEffect(() => {
+    setTemplates(loadTpls());
+  }, []);
+
+  // Diárias disponíveis para o WhatsApp (respeitando período + faixa de datas)
+  const diariasDisponiveis = useMemo(() => {
+    return diarias
+      .filter((d) => {
+        if (waDataDe && d.data < waDataDe) return false;
+        if (waDataAte && d.data > waDataAte) return false;
+        return true;
+      })
+      .sort((a, b) => (a.data < b.data ? -1 : a.data > b.data ? 1 : 0));
+  }, [diarias, waDataDe, waDataAte]);
+
+  // Agrupamento por mês das disponíveis
+  const gruposMes = useMemo(() => {
+    const map = new Map<string, { ano: number; mes: number; label: string; items: Diaria[] }>();
+    for (const d of diariasDisponiveis) {
+      const [aStr, mStr] = d.data.split("-");
+      const ano = parseInt(aStr, 10);
+      const mes = parseInt(mStr, 10);
+      const key = `${ano}-${String(mes).padStart(2, "0")}`;
+      const label = new Date(ano, mes - 1, 1).toLocaleDateString("pt-BR", {
+        month: "long",
+        year: "numeric",
+      });
+      const existente = map.get(key);
+      if (existente) existente.items.push(d);
+      else
+        map.set(key, {
+          ano,
+          mes,
+          label: label.charAt(0).toUpperCase() + label.slice(1),
+          items: [d],
+        });
+    }
+    return Array.from(map.entries())
+      .sort(([, a], [, b]) => (b.ano !== a.ano ? b.ano - a.ano : b.mes - a.mes))
+      .map(([key, v]) => ({ key, ...v }));
+  }, [diariasDisponiveis]);
+
+  // Sincroniza seleção quando a lista disponível muda: mantém apenas ids válidos
+  useEffect(() => {
+    setWaDiariasSel((prev) => {
+      const validos = new Set(diariasDisponiveis.map((d) => d.id));
+      let mudou = false;
+      const proximo = new Set<string>();
+      for (const id of prev) {
+        if (validos.has(id)) proximo.add(id);
+        else mudou = true;
+      }
+      return mudou ? proximo : prev;
+    });
+  }, [diariasDisponiveis]);
+
+  function gerarTexto() {
     const linhas: string[] = [];
     linhas.push("*Fechamento de Diárias*");
+    if (waDataDe || waDataAte) {
+      const de = waDataDe ? formatarData(waDataDe) : "início";
+      const ate = waDataAte ? formatarData(waDataAte) : "hoje";
+      linhas.push(`_Período: ${de} → ${ate}_`);
+    }
     linhas.push("");
-
-    const mesesFiltrados = resumoPorMes.filter((m) =>
-      opts.meses.has(`${m.ano}-${String(m.mes).padStart(2, "0")}`),
-    );
 
     let totalPagoSel = 0;
     let totalPendenteSel = 0;
+    let qtdIncluidas = 0;
 
-    for (const m of mesesFiltrados) {
-      const dosMes = lista
-        .filter((d) => {
-          const [a, mm] = d.data.split("-");
-          return parseInt(a, 10) === m.ano && parseInt(mm, 10) === m.mes;
-        })
-        .filter((d) =>
-          d.status === "pago" ? opts.incluirPagas : opts.incluirPendentes,
-        )
-        .sort((a, b) => (a.data < b.data ? -1 : a.data > b.data ? 1 : 0));
+    for (const g of gruposMes) {
+      const itens = g.items
+        .filter((d) => waDiariasSel.has(d.id))
+        .filter((d) => (d.status === "pago" ? waIncluirPagas : waIncluirPendentes));
+      if (itens.length === 0) continue;
 
-      if (dosMes.length === 0) continue;
-
-      linhas.push(`*${m.label}*`);
+      linhas.push(`*${g.label}*`);
       let subPago = 0;
       let subPendente = 0;
-      dosMes.forEach((d, idx) => {
+      itens.forEach((d, idx) => {
         const total = d.valor + (d.alimentacao || 0);
         const st = d.status === "pago" ? "✅ Pago" : "⏳ Pendente";
         if (d.status === "pago") subPago += total;
         else subPendente += total;
+        const alimTxt =
+          waIncluirAlim && d.alimentacao ? ` + alim. ${fmt.format(d.alimentacao)}` : "";
         linhas.push(
-          `${idx + 1}. ${formatarData(d.data)} — ${d.local || "(sem local)"} [${tipoLabel(d.tipo)}] — ${fmt.format(d.valor)}${
-            d.alimentacao ? ` + alim. ${fmt.format(d.alimentacao)}` : ""
-          } = *${fmt.format(total)}* ${st}`,
+          `${idx + 1}. ${formatarData(d.data)} — ${d.local || "(sem local)"} [${tipoLabel(d.tipo)}] — ${fmt.format(d.valor)}${alimTxt} = *${fmt.format(total)}* ${st}`,
         );
-        if (d.alimentacaoObs) linhas.push(`   _Obs alim.: ${d.alimentacaoObs}_`);
-        if (d.descricao) linhas.push(`   _Obs: ${d.descricao}_`);
+        if (waIncluirObs && waIncluirAlim && d.alimentacaoObs)
+          linhas.push(`   _Obs alim.: ${d.alimentacaoObs}_`);
+        if (waIncluirObs && d.descricao) linhas.push(`   _Obs: ${d.descricao}_`);
       });
       totalPagoSel += subPago;
       totalPendenteSel += subPendente;
+      qtdIncluidas += itens.length;
       linhas.push(
-        `Subtotal (${dosMes.length} ${dosMes.length === 1 ? "diária" : "diárias"}): pago ${fmt.format(subPago)} | pendente ${fmt.format(subPendente)}`,
+        `Subtotal (${itens.length} ${itens.length === 1 ? "diária" : "diárias"}): pago ${fmt.format(subPago)} | pendente ${fmt.format(subPendente)}`,
       );
       linhas.push("");
     }
 
-    if (opts.incluirAdiantamentos && adiantamentos.length > 0) {
+    if (qtdIncluidas === 0) {
+      linhas.push("_Nenhuma diária selecionada._");
+      linhas.push("");
+    }
+
+    if (waIncluirAdiant && adiantamentos.length > 0) {
       linhas.push("*Adiantamentos recebidos*");
       for (const a of adiantOrdenados()) {
         linhas.push(
-          `• ${formatarData(a.data)} — *${fmt.format(a.valor)}*${a.observacao ? ` — _${a.observacao}_` : ""}`,
+          `• ${formatarData(a.data)} — *${fmt.format(a.valor)}*${
+            waIncluirObs && a.observacao ? ` — _${a.observacao}_` : ""
+          }`,
         );
       }
       linhas.push(`Total adiantado: *${fmt.format(totalAdiantamentos)}*`);
       linhas.push("");
     }
 
-    if (opts.incluirTotais) {
-      if (opts.incluirPagas) linhas.push(`*Total pago:* ${fmt.format(totalPagoSel)}`);
-      if (opts.incluirPendentes) linhas.push(`*Total pendente:* ${fmt.format(totalPendenteSel)}`);
-      if (opts.incluirAdiantamentos && totalAdiantamentos > 0) {
+    if (waIncluirTotais) {
+      if (waIncluirPagas) linhas.push(`*Total pago:* ${fmt.format(totalPagoSel)}`);
+      if (waIncluirPendentes)
+        linhas.push(`*Total pendente:* ${fmt.format(totalPendenteSel)}`);
+      if (waIncluirAdiant && totalAdiantamentos > 0) {
         linhas.push(`*Adiantamentos:* ${fmt.format(totalAdiantamentos)}`);
-        linhas.push(`*Saldo a receber:* ${fmt.format(totalPendenteSel - totalAdiantamentos)}`);
+        linhas.push(
+          `*Saldo a receber:* ${fmt.format(totalPendenteSel - totalAdiantamentos)}`,
+        );
       }
     }
     return linhas.join("\n");
   }
 
-  const [waOpen, setWaOpen] = useState(false);
-  const [waSaudacao, setWaSaudacao] = useState("Olá! Segue o fechamento das diárias:");
-  const [waEncerramento, setWaEncerramento] = useState("Qualquer dúvida, me avise. Obrigado!");
-  const [waTelefone, setWaTelefone] = useState("");
-  const [waMensagem, setWaMensagem] = useState("");
-  const [waMesesSel, setWaMesesSel] = useState<Set<string>>(new Set());
-  const [waIncluirAdiant, setWaIncluirAdiant] = useState(true);
-  const [waIncluirTotais, setWaIncluirTotais] = useState(true);
-  const [waIncluirPagas, setWaIncluirPagas] = useState(true);
-  const [waIncluirPendentes, setWaIncluirPendentes] = useState(true);
-
-  function opcoesAtuais(overrides?: Partial<WaOpts>): WaOpts {
-    return {
-      meses: overrides?.meses ?? waMesesSel,
-      incluirAdiantamentos: overrides?.incluirAdiantamentos ?? waIncluirAdiant,
-      incluirTotais: overrides?.incluirTotais ?? waIncluirTotais,
-      incluirPagas: overrides?.incluirPagas ?? waIncluirPagas,
-      incluirPendentes: overrides?.incluirPendentes ?? waIncluirPendentes,
-    };
-  }
-
-  function montarMensagem(
-    saudacao: string,
-    encerramento: string,
-    opts: WaOpts,
-  ) {
+  function montarMensagem() {
     const partes: string[] = [];
-    if (saudacao.trim()) {
-      partes.push(saudacao.trim());
+    if (waSaudacao.trim()) {
+      partes.push(waSaudacao.trim());
       partes.push("");
     }
-    partes.push(gerarTextoWhatsApp(opts));
-    if (encerramento.trim()) {
+    partes.push(gerarTexto());
+    if (waEncerramento.trim()) {
       partes.push("");
-      partes.push(encerramento.trim());
+      partes.push(waEncerramento.trim());
     }
     return partes.join("\n");
   }
 
+  // Recalcula mensagem sempre que qualquer opção mudar
+  useEffect(() => {
+    if (!waOpen) return;
+    setWaMensagem(montarMensagem());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    waOpen,
+    waSaudacao,
+    waEncerramento,
+    waDataDe,
+    waDataAte,
+    waDiariasSel,
+    waIncluirAdiant,
+    waIncluirTotais,
+    waIncluirPagas,
+    waIncluirPendentes,
+    waIncluirAlim,
+    waIncluirObs,
+  ]);
+
   function abrirDialogoWhatsApp() {
     if (diarias.length === 0 && adiantamentos.length === 0) return;
-    const todosMeses = new Set(
-      resumoPorMes.map((m) => `${m.ano}-${String(m.mes).padStart(2, "0")}`),
-    );
-    setWaMesesSel(todosMeses);
-    const opts = opcoesAtuais({ meses: todosMeses });
-    setWaMensagem(montarMensagem(waSaudacao, waEncerramento, opts));
+    // Reset faixa: início e fim das diárias existentes
+    if (!waDataDe && !waDataAte && diarias.length > 0) {
+      const datas = diarias.map((d) => d.data).sort();
+      setWaDataDe(datas[0]);
+      setWaDataAte(datas[datas.length - 1]);
+    }
+    // Seleciona todas por padrão
+    setWaDiariasSel(new Set(diarias.map((d) => d.id)));
+    // Expande todos os meses no primeiro abrir
+    setMesesExpandidos(new Set());
     setWaOpen(true);
   }
 
-  function atualizarComOpts(next: Partial<WaOpts>) {
-    const opts = opcoesAtuais(next);
-    setWaMensagem(montarMensagem(waSaudacao, waEncerramento, opts));
+  function toggleMes(key: string, items: Diaria[], checked: boolean) {
+    setWaDiariasSel((prev) => {
+      const novo = new Set(prev);
+      for (const it of items) {
+        if (checked) novo.add(it.id);
+        else novo.delete(it.id);
+      }
+      return novo;
+    });
   }
 
-  function toggleMes(key: string, checked: boolean) {
-    const novo = new Set(waMesesSel);
-    if (checked) novo.add(key);
-    else novo.delete(key);
-    setWaMesesSel(novo);
-    atualizarComOpts({ meses: novo });
+  function toggleDiaria(id: string, checked: boolean) {
+    setWaDiariasSel((prev) => {
+      const novo = new Set(prev);
+      if (checked) novo.add(id);
+      else novo.delete(id);
+      return novo;
+    });
   }
 
+  function toggleExpandir(key: string) {
+    setMesesExpandidos((prev) => {
+      const novo = new Set(prev);
+      if (novo.has(key)) novo.delete(key);
+      else novo.add(key);
+      return novo;
+    });
+  }
+
+  function selecionarTodas() {
+    setWaDiariasSel(new Set(diariasDisponiveis.map((d) => d.id)));
+  }
+  function limparSelecao() {
+    setWaDiariasSel(new Set());
+  }
+
+  // Templates
+  function salvarTemplate() {
+    const nome = tplNome.trim();
+    if (!nome) return;
+    const novo: WaTemplate = {
+      nome,
+      saudacao: waSaudacao,
+      encerramento: waEncerramento,
+      incluirAdiant: waIncluirAdiant,
+      incluirTotais: waIncluirTotais,
+      incluirPagas: waIncluirPagas,
+      incluirPendentes: waIncluirPendentes,
+      incluirAlim: waIncluirAlim,
+      incluirObs: waIncluirObs,
+    };
+    const restantes = templates.filter((t) => t.nome !== nome);
+    const proximo = [...restantes, novo].sort((a, b) => a.nome.localeCompare(b.nome));
+    setTemplates(proximo);
+    saveTpls(proximo);
+    setTplNome("");
+  }
+  function aplicarTemplate(nome: string) {
+    const t = templates.find((x) => x.nome === nome);
+    if (!t) return;
+    setWaSaudacao(t.saudacao);
+    setWaEncerramento(t.encerramento);
+    setWaIncluirAdiant(t.incluirAdiant);
+    setWaIncluirTotais(t.incluirTotais);
+    setWaIncluirPagas(t.incluirPagas);
+    setWaIncluirPendentes(t.incluirPendentes);
+    setWaIncluirAlim(t.incluirAlim);
+    setWaIncluirObs(t.incluirObs);
+  }
+  function excluirTemplate(nome: string) {
+    const proximo = templates.filter((t) => t.nome !== nome);
+    setTemplates(proximo);
+    saveTpls(proximo);
+  }
 
   function enviarWhatsApp() {
     const texto = encodeURIComponent(waMensagem);
@@ -340,8 +511,6 @@ export function FechamentoTab() {
     }
   }
 
-
-
   async function gerarExcel() {
     if (diarias.length === 0 && adiantamentos.length === 0) return;
     const XLSX = await import("xlsx");
@@ -368,7 +537,10 @@ export function FechamentoTab() {
       ]);
     });
     const wsDiarias = XLSX.utils.aoa_to_sheet(linhas);
-    wsDiarias["!cols"] = [{ wch: 5 }, { wch: 12 }, { wch: 24 }, { wch: 10 }, { wch: 10 }, { wch: 12 }, { wch: 10 }, { wch: 10 }, { wch: 24 }, { wch: 24 }];
+    wsDiarias["!cols"] = [
+      { wch: 5 }, { wch: 12 }, { wch: 24 }, { wch: 10 }, { wch: 10 },
+      { wch: 12 }, { wch: 10 }, { wch: 10 }, { wch: 24 }, { wch: 24 },
+    ];
     XLSX.utils.book_append_sheet(wb, wsDiarias, "Diárias");
 
     const resumoAoA: (string | number)[][] = [["Mês", "Quantidade", "Pago", "Pendente"]];
@@ -442,29 +614,28 @@ export function FechamentoTab() {
         </Button>
       </div>
 
-
       <div className="grid grid-cols-2 gap-3 mb-6">
-        <Card className="p-4">
+        <Card className="rounded-2xl p-4">
           <p className="text-xs text-muted-foreground">Total pago</p>
           <p className="mt-1 text-xl font-semibold text-emerald-600">
             {fmt.format(totalGeralPago)}
           </p>
         </Card>
-        <Card className="p-4">
+        <Card className="rounded-2xl p-4">
           <p className="text-xs text-muted-foreground">Total pendente</p>
-          <p className="mt-1 text-xl font-semibold text-blue-600">
+          <p className="mt-1 text-xl font-semibold text-amber-600">
             {fmt.format(totalGeralPendente)}
           </p>
         </Card>
         {totalAdiantamentos > 0 && (
           <>
-            <Card className="p-4">
+            <Card className="rounded-2xl p-4">
               <p className="text-xs text-muted-foreground">Adiantamentos</p>
               <p className="mt-1 text-xl font-semibold text-sky-600">
                 {fmt.format(totalAdiantamentos)}
               </p>
             </Card>
-            <Card className="p-4">
+            <Card className="rounded-2xl p-4">
               <p className="text-xs text-muted-foreground">Saldo a receber</p>
               <p className="mt-1 text-xl font-semibold">
                 {fmt.format(saldoAReceber)}
@@ -479,13 +650,13 @@ export function FechamentoTab() {
       <section>
         <h2 className="mb-3 text-sm font-medium text-muted-foreground">Por mês</h2>
         {resumoPorMes.length === 0 ? (
-          <Card className="p-8 text-center text-sm text-muted-foreground">
+          <Card className="rounded-2xl p-8 text-center text-sm text-muted-foreground">
             Nenhuma diária registrada ainda.
           </Card>
         ) : (
           <div className="grid gap-3">
             {resumoPorMes.map((m) => (
-              <Card key={`${m.ano}-${m.mes}`} className="p-4">
+              <Card key={`${m.ano}-${m.mes}`} className="rounded-2xl p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-2">
                     <CalendarDays className="h-4 w-4 text-muted-foreground" />
@@ -504,11 +675,11 @@ export function FechamentoTab() {
                       {fmt.format(m.totalPago)}
                     </p>
                   </div>
-                  <div className="rounded-lg bg-blue-50 p-2.5 dark:bg-blue-950/40">
-                    <p className="text-[10px] font-medium uppercase tracking-wider text-blue-700 dark:text-blue-300">
+                  <div className="rounded-lg bg-amber-50 p-2.5 dark:bg-amber-950/40">
+                    <p className="text-[10px] font-medium uppercase tracking-wider text-amber-700 dark:text-amber-300">
                       Pendente
                     </p>
-                    <p className="mt-0.5 text-base font-semibold text-blue-700 dark:text-blue-300">
+                    <p className="mt-0.5 text-base font-semibold text-amber-700 dark:text-amber-300">
                       {fmt.format(m.totalPendente)}
                     </p>
                   </div>
@@ -520,15 +691,72 @@ export function FechamentoTab() {
       </section>
 
       <Dialog open={waOpen} onOpenChange={setWaOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg max-h-[92vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Personalizar mensagem do WhatsApp</DialogTitle>
             <DialogDescription>
-              Ajuste a saudação, o encerramento e o texto antes de enviar.
+              Escolha o período, as diárias e o conteúdo antes de enviar.
             </DialogDescription>
           </DialogHeader>
 
           <div className="grid gap-3">
+            {/* Templates */}
+            {(templates.length > 0 || true) && (
+              <div className="grid gap-2 rounded-md border p-3">
+                <Label className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                  <Bookmark className="h-3.5 w-3.5" /> Modelos salvos
+                </Label>
+                {templates.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {templates.map((t) => (
+                      <div
+                        key={t.nome}
+                        className="flex items-center gap-1 rounded-full border bg-muted/40 pl-2 pr-1 text-xs"
+                      >
+                        <button
+                          type="button"
+                          onClick={() => aplicarTemplate(t.nome)}
+                          className="py-1 font-medium hover:text-primary"
+                        >
+                          {t.nome}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => excluirTemplate(t.nome)}
+                          aria-label={`Excluir modelo ${t.nome}`}
+                          className="rounded-full p-1 text-muted-foreground hover:text-destructive"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <div className="flex gap-2">
+                  <Input
+                    value={tplNome}
+                    onChange={(e) => setTplNome(e.target.value)}
+                    placeholder="Nome do modelo (ex.: Cliente A)"
+                    className="h-8 text-xs"
+                  />
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="h-8"
+                    onClick={salvarTemplate}
+                    disabled={!tplNome.trim()}
+                  >
+                    <Save className="h-3.5 w-3.5" /> Salvar
+                  </Button>
+                </div>
+                <p className="text-[11px] text-muted-foreground">
+                  Guarda saudação, encerramento e as opções de conteúdo (não guarda a
+                  seleção de diárias).
+                </p>
+              </div>
+            )}
+
             <div className="grid gap-1.5">
               <Label htmlFor="wa-telefone">Telefone (opcional)</Label>
               <Input
@@ -538,112 +766,192 @@ export function FechamentoTab() {
                 onChange={(e) => setWaTelefone(e.target.value)}
                 inputMode="tel"
               />
-              <p className="text-[11px] text-muted-foreground">
-                Deixe em branco para escolher o contato no WhatsApp.
-              </p>
             </div>
 
+            {/* Faixa de datas */}
             <div className="grid gap-2 rounded-md border p-3">
               <Label className="text-xs font-medium text-muted-foreground">
-                O que enviar
+                Filtro por período
               </Label>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="grid gap-1">
+                  <Label htmlFor="wa-de" className="text-[11px]">De</Label>
+                  <Input
+                    id="wa-de"
+                    type="date"
+                    value={waDataDe}
+                    onChange={(e) => setWaDataDe(e.target.value)}
+                    className="h-9 text-xs"
+                  />
+                </div>
+                <div className="grid gap-1">
+                  <Label htmlFor="wa-ate" className="text-[11px]">Até</Label>
+                  <Input
+                    id="wa-ate"
+                    type="date"
+                    value={waDataAte}
+                    onChange={(e) => setWaDataAte(e.target.value)}
+                    className="h-9 text-xs"
+                  />
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setWaDataDe("");
+                  setWaDataAte("");
+                }}
+                className="text-[11px] text-muted-foreground underline-offset-2 hover:underline text-left"
+              >
+                Limpar período
+              </button>
+            </div>
 
-              {resumoPorMes.length > 0 && (
-                <div className="grid gap-1.5">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-medium">Meses</span>
-                    <div className="flex gap-2 text-[11px]">
-                      <button
-                        type="button"
-                        className="text-primary underline-offset-2 hover:underline"
-                        onClick={() => {
-                          const todos = new Set(
-                            resumoPorMes.map(
-                              (m) => `${m.ano}-${String(m.mes).padStart(2, "0")}`,
-                            ),
-                          );
-                          setWaMesesSel(todos);
-                          atualizarComOpts({ meses: todos });
-                        }}
-                      >
-                        Todos
-                      </button>
-                      <button
-                        type="button"
-                        className="text-muted-foreground underline-offset-2 hover:underline"
-                        onClick={() => {
-                          const vazio = new Set<string>();
-                          setWaMesesSel(vazio);
-                          atualizarComOpts({ meses: vazio });
-                        }}
-                      >
-                        Nenhum
-                      </button>
-                    </div>
-                  </div>
-                  <div className="grid max-h-32 grid-cols-1 gap-1 overflow-y-auto sm:grid-cols-2">
-                    {resumoPorMes.map((m) => {
-                      const key = `${m.ano}-${String(m.mes).padStart(2, "0")}`;
-                      return (
-                        <label
-                          key={key}
-                          className="flex items-center gap-2 rounded px-1.5 py-1 text-xs hover:bg-muted/50"
-                        >
-                          <Checkbox
-                            checked={waMesesSel.has(key)}
-                            onCheckedChange={(v) => toggleMes(key, v === true)}
-                          />
-                          <span className="capitalize">{m.label}</span>
-                        </label>
-                      );
-                    })}
+            {/* Seleção de diárias por mês */}
+            {gruposMes.length > 0 && (
+              <div className="grid gap-2 rounded-md border p-3">
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs font-medium text-muted-foreground">
+                    Diárias a incluir ({waDiariasSel.size}/{diariasDisponiveis.length})
+                  </Label>
+                  <div className="flex gap-2 text-[11px]">
+                    <button
+                      type="button"
+                      className="text-primary underline-offset-2 hover:underline"
+                      onClick={selecionarTodas}
+                    >
+                      Todas
+                    </button>
+                    <button
+                      type="button"
+                      className="text-muted-foreground underline-offset-2 hover:underline"
+                      onClick={limparSelecao}
+                    >
+                      Nenhuma
+                    </button>
                   </div>
                 </div>
-              )}
+                <div className="grid max-h-56 gap-1 overflow-y-auto">
+                  {gruposMes.map((g) => {
+                    const total = g.items.length;
+                    const selecionados = g.items.filter((d) => waDiariasSel.has(d.id)).length;
+                    const todosMarcados = selecionados === total;
+                    const expandido = mesesExpandidos.has(g.key);
+                    return (
+                      <div key={g.key} className="rounded-md border bg-background">
+                        <div className="flex items-center gap-2 px-2 py-1.5">
+                          <Checkbox
+                            checked={todosMarcados ? true : selecionados > 0 ? "indeterminate" : false}
+                            onCheckedChange={(v) =>
+                              toggleMes(g.key, g.items, v === true || v === "indeterminate")
+                            }
+                          />
+                          <button
+                            type="button"
+                            onClick={() => toggleExpandir(g.key)}
+                            className="flex flex-1 items-center justify-between text-left text-xs"
+                          >
+                            <span className="capitalize font-medium">
+                              {g.label}{" "}
+                              <span className="text-muted-foreground">
+                                ({selecionados}/{total})
+                              </span>
+                            </span>
+                            {expandido ? (
+                              <ChevronUp className="h-3.5 w-3.5 text-muted-foreground" />
+                            ) : (
+                              <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+                            )}
+                          </button>
+                        </div>
+                        {expandido && (
+                          <div className="border-t px-2 py-1.5">
+                            {g.items.map((d) => {
+                              const totalItem = d.valor + (d.alimentacao || 0);
+                              return (
+                                <label
+                                  key={d.id}
+                                  className="flex items-center gap-2 rounded px-1 py-1 text-[11px] hover:bg-muted/40"
+                                >
+                                  <Checkbox
+                                    checked={waDiariasSel.has(d.id)}
+                                    onCheckedChange={(v) => toggleDiaria(d.id, v === true)}
+                                  />
+                                  <span className="flex-1 truncate">
+                                    {formatarData(d.data)} — {d.local || "(sem local)"}
+                                  </span>
+                                  <span className="tabular-nums">
+                                    {fmt.format(totalItem)}
+                                  </span>
+                                  <Badge
+                                    variant="outline"
+                                    className={
+                                      "text-[9px] uppercase " +
+                                      (d.status === "pago"
+                                        ? "text-emerald-600"
+                                        : "text-amber-600")
+                                    }
+                                  >
+                                    {d.status === "pago" ? "Pago" : "Pend."}
+                                  </Badge>
+                                </label>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
+            {/* Opções de conteúdo */}
+            <div className="grid gap-2 rounded-md border p-3">
+              <Label className="text-xs font-medium text-muted-foreground">
+                O que incluir
+              </Label>
               <div className="grid grid-cols-2 gap-1.5">
                 <label className="flex items-center gap-2 text-xs">
                   <Checkbox
                     checked={waIncluirPagas}
-                    onCheckedChange={(v) => {
-                      const val = v === true;
-                      setWaIncluirPagas(val);
-                      atualizarComOpts({ incluirPagas: val });
-                    }}
+                    onCheckedChange={(v) => setWaIncluirPagas(v === true)}
                   />
                   Diárias pagas
                 </label>
                 <label className="flex items-center gap-2 text-xs">
                   <Checkbox
                     checked={waIncluirPendentes}
-                    onCheckedChange={(v) => {
-                      const val = v === true;
-                      setWaIncluirPendentes(val);
-                      atualizarComOpts({ incluirPendentes: val });
-                    }}
+                    onCheckedChange={(v) => setWaIncluirPendentes(v === true)}
                   />
                   Diárias pendentes
                 </label>
                 <label className="flex items-center gap-2 text-xs">
                   <Checkbox
+                    checked={waIncluirAlim}
+                    onCheckedChange={(v) => setWaIncluirAlim(v === true)}
+                  />
+                  Alimentação
+                </label>
+                <label className="flex items-center gap-2 text-xs">
+                  <Checkbox
+                    checked={waIncluirObs}
+                    onCheckedChange={(v) => setWaIncluirObs(v === true)}
+                  />
+                  Observações
+                </label>
+                <label className="flex items-center gap-2 text-xs">
+                  <Checkbox
                     checked={waIncluirAdiant}
                     disabled={adiantamentos.length === 0}
-                    onCheckedChange={(v) => {
-                      const val = v === true;
-                      setWaIncluirAdiant(val);
-                      atualizarComOpts({ incluirAdiantamentos: val });
-                    }}
+                    onCheckedChange={(v) => setWaIncluirAdiant(v === true)}
                   />
                   Adiantamentos
                 </label>
                 <label className="flex items-center gap-2 text-xs">
                   <Checkbox
                     checked={waIncluirTotais}
-                    onCheckedChange={(v) => {
-                      const val = v === true;
-                      setWaIncluirTotais(val);
-                      atualizarComOpts({ incluirTotais: val });
-                    }}
+                    onCheckedChange={(v) => setWaIncluirTotais(v === true)}
                   />
                   Totais
                 </label>
@@ -657,10 +965,7 @@ export function FechamentoTab() {
                   id="wa-saudacao"
                   rows={2}
                   value={waSaudacao}
-                  onChange={(e) => {
-                    setWaSaudacao(e.target.value);
-                    setWaMensagem(montarMensagem(e.target.value, waEncerramento, opcoesAtuais()));
-                  }}
+                  onChange={(e) => setWaSaudacao(e.target.value)}
                 />
               </div>
               <div className="grid gap-1.5">
@@ -669,10 +974,7 @@ export function FechamentoTab() {
                   id="wa-encerramento"
                   rows={2}
                   value={waEncerramento}
-                  onChange={(e) => {
-                    setWaEncerramento(e.target.value);
-                    setWaMensagem(montarMensagem(waSaudacao, e.target.value, opcoesAtuais()));
-                  }}
+                  onChange={(e) => setWaEncerramento(e.target.value)}
                 />
               </div>
             </div>
@@ -682,9 +984,6 @@ export function FechamentoTab() {
               <div className="max-h-64 overflow-y-auto rounded-md border bg-muted/30 p-3 text-xs leading-relaxed whitespace-pre-wrap break-words">
                 {renderPreviewWhatsApp(waMensagem)}
               </div>
-              <p className="text-[11px] text-muted-foreground">
-                Confira a lista numerada e os valores antes de enviar.
-              </p>
             </div>
 
             <div className="grid gap-1.5">
@@ -693,7 +992,7 @@ export function FechamentoTab() {
                 <button
                   type="button"
                   className="text-xs text-muted-foreground underline-offset-2 hover:underline"
-                  onClick={() => setWaMensagem(montarMensagem(waSaudacao, waEncerramento, opcoesAtuais()))}
+                  onClick={() => setWaMensagem(montarMensagem())}
                 >
                   Restaurar
                 </button>
