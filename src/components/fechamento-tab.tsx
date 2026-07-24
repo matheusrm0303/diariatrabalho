@@ -28,11 +28,11 @@ import {
 } from "lucide-react";
 import { useDiarias, useAdiantamentos, fmt, type Diaria } from "@/lib/diarias-store";
 import {
-  ChartComparativoMensal,
   filtrarPorPeriodo,
   periodoOptions,
   type PeriodoKey,
 } from "@/components/charts-resumo";
+import { TrendingUp, Wallet, Target, CalendarRange } from "lucide-react";
 import {
   Select,
   SelectContent,
