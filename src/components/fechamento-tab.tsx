@@ -15,7 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
-  CalendarDays,
+  
   FileDown,
   MessageCircle,
   FileSpreadsheet,
@@ -28,11 +28,11 @@ import {
 } from "lucide-react";
 import { useDiarias, useAdiantamentos, fmt, type Diaria } from "@/lib/diarias-store";
 import {
-  ChartComparativoMensal,
   filtrarPorPeriodo,
   periodoOptions,
   type PeriodoKey,
 } from "@/components/charts-resumo";
+import { TrendingUp, Wallet, Target, CalendarRange } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -575,14 +575,26 @@ export function FechamentoTab() {
 
   const semDados = diarias.length === 0 && adiantamentos.length === 0;
 
+  const totalDiarias = diarias.length;
+  const ticketMedio = totalDiarias > 0 ? (totalGeralPago + totalGeralPendente) / totalDiarias : 0;
+  const taxaRecebimento =
+    totalGeralPago + totalGeralPendente > 0
+      ? (totalGeralPago / (totalGeralPago + totalGeralPendente)) * 100
+      : 0;
+  const maxMensal = Math.max(
+    1,
+    ...resumoPorMes.map((m) => m.totalPago + m.totalPendente),
+  );
+
   return (
-    <div>
+    <div className="pb-4">
+      {/* Período */}
       <div className="mb-4">
-        <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
-          Período
+        <label className="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+          <CalendarRange className="h-3 w-3" /> Período
         </label>
         <Select value={periodo} onValueChange={(v) => setPeriodo(v as PeriodoKey)}>
-          <SelectTrigger className="w-full">
+          <SelectTrigger className="w-full rounded-xl">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -595,100 +607,190 @@ export function FechamentoTab() {
         </Select>
       </div>
 
-      <div className="mb-4 grid grid-cols-3 gap-2">
+      {/* Ações */}
+      <div className="mb-6 grid grid-cols-3 gap-2">
         <Button
           onClick={abrirDialogoWhatsApp}
           disabled={semDados}
-          className="bg-emerald-600 hover:bg-emerald-700 text-white"
+          className="h-11 rounded-xl bg-emerald-600 text-white shadow-sm shadow-emerald-500/20 hover:bg-emerald-700"
         >
           <MessageCircle className="h-4 w-4" />
           WhatsApp
         </Button>
-        <Button onClick={gerarPDF} disabled={semDados} variant="outline">
+        <Button
+          onClick={gerarPDF}
+          disabled={semDados}
+          variant="outline"
+          className="h-11 rounded-xl"
+        >
           <FileDown className="h-4 w-4" />
           PDF
         </Button>
-        <Button onClick={gerarExcel} disabled={semDados} variant="outline">
+        <Button
+          onClick={gerarExcel}
+          disabled={semDados}
+          variant="outline"
+          className="h-11 rounded-xl"
+        >
           <FileSpreadsheet className="h-4 w-4" />
           Excel
         </Button>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 mb-6">
-        <Card className="rounded-2xl p-4">
-          <p className="text-xs text-muted-foreground">Total pago</p>
-          <p className="mt-1 text-xl font-semibold text-emerald-600">
+      {/* Dashboard bento */}
+      <div className="mb-6 grid grid-cols-2 gap-3">
+        {/* Hero: Saldo */}
+        <div className="col-span-2 relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary to-primary/75 p-5 text-primary-foreground shadow-lg shadow-primary/20">
+          <div className="pointer-events-none absolute -right-6 -top-6 h-28 w-28 rounded-full bg-white/15 blur-2xl" />
+          <div className="pointer-events-none absolute -bottom-8 -left-4 h-24 w-24 rounded-full bg-white/10 blur-2xl" />
+          <p className="text-[11px] font-semibold uppercase tracking-wider opacity-80">
+            Saldo a receber
+          </p>
+          <h2 className="mt-1 font-display text-3xl font-bold">
+            {fmt.format(saldoAReceber)}
+          </h2>
+          <div className="mt-3 flex flex-wrap items-center gap-2 text-[10px] font-medium">
+            <span className="inline-flex items-center gap-1 rounded-lg bg-white/20 px-2 py-1">
+              <Target className="h-3 w-3" />
+              {taxaRecebimento.toFixed(0)}% recebido
+            </span>
+            <span className="inline-flex items-center gap-1 rounded-lg bg-white/20 px-2 py-1">
+              {totalDiarias} {totalDiarias === 1 ? "diária" : "diárias"}
+            </span>
+          </div>
+          {/* Progress track */}
+          <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-white/20">
+            <div
+              className="h-full rounded-full bg-white transition-all"
+              style={{ width: `${Math.min(100, taxaRecebimento)}%` }}
+            />
+          </div>
+        </div>
+
+        <Card className="rounded-3xl border-transparent p-4 shadow-sm">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+            Total pago
+          </p>
+          <p className="mt-1 font-display text-lg font-bold text-emerald-600 dark:text-emerald-400">
             {fmt.format(totalGeralPago)}
           </p>
         </Card>
-        <Card className="rounded-2xl p-4">
-          <p className="text-xs text-muted-foreground">Total pendente</p>
-          <p className="mt-1 text-xl font-semibold text-amber-600">
+        <Card className="rounded-3xl border-transparent p-4 shadow-sm">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+            Pendente
+          </p>
+          <p className="mt-1 font-display text-lg font-bold text-amber-600 dark:text-amber-400">
             {fmt.format(totalGeralPendente)}
           </p>
         </Card>
-        {totalAdiantamentos > 0 && (
-          <>
-            <Card className="rounded-2xl p-4">
-              <p className="text-xs text-muted-foreground">Adiantamentos</p>
-              <p className="mt-1 text-xl font-semibold text-sky-600">
-                {fmt.format(totalAdiantamentos)}
-              </p>
-            </Card>
-            <Card className="rounded-2xl p-4">
-              <p className="text-xs text-muted-foreground">Saldo a receber</p>
-              <p className="mt-1 text-xl font-semibold">
-                {fmt.format(saldoAReceber)}
-              </p>
-            </Card>
-          </>
-        )}
+        <Card className="rounded-3xl border-transparent p-4 shadow-sm">
+          <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+            <Wallet className="h-3 w-3" /> Adiantamentos
+          </div>
+          <p className="mt-1 font-display text-lg font-bold text-sky-600 dark:text-sky-400">
+            {fmt.format(totalAdiantamentos)}
+          </p>
+        </Card>
+        <Card className="rounded-3xl border-transparent p-4 shadow-sm">
+          <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+            <TrendingUp className="h-3 w-3" /> Ticket médio
+          </div>
+          <p className="mt-1 font-display text-lg font-bold">{fmt.format(ticketMedio)}</p>
+        </Card>
       </div>
 
-      <ChartComparativoMensal resumoPorMes={resumoPorMes} />
-
-      <section>
-        <h2 className="mb-3 text-sm font-medium text-muted-foreground">Por mês</h2>
+      {/* Dashboard mensal profissional */}
+      <section className="mb-2" data-chart-export="fechamento">
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="font-display text-lg font-bold">Desempenho mensal</h2>
+          <span className="text-xs font-medium text-muted-foreground">
+            {resumoPorMes.length} {resumoPorMes.length === 1 ? "mês" : "meses"}
+          </span>
+        </div>
         {resumoPorMes.length === 0 ? (
-          <Card className="rounded-2xl p-8 text-center text-sm text-muted-foreground">
+          <Card className="rounded-2xl border-dashed p-8 text-center text-sm text-muted-foreground">
             Nenhuma diária registrada ainda.
           </Card>
         ) : (
           <div className="grid gap-3">
-            {resumoPorMes.map((m) => (
-              <Card key={`${m.ano}-${m.mes}`} className="rounded-2xl p-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-center gap-2">
-                    <CalendarDays className="h-4 w-4 text-muted-foreground" />
-                    <p className="font-medium capitalize">{m.label}</p>
-                    <Badge variant="outline" className="text-xs">
-                      {m.quantidade} {m.quantidade === 1 ? "diária" : "diárias"}
-                    </Badge>
-                  </div>
-                </div>
-                <div className="mt-3 grid grid-cols-2 gap-2">
-                  <div className="rounded-lg bg-emerald-50 p-2.5 dark:bg-emerald-950/40">
-                    <p className="text-[10px] font-medium uppercase tracking-wider text-emerald-700 dark:text-emerald-300">
-                      Pago
-                    </p>
-                    <p className="mt-0.5 text-base font-semibold text-emerald-700 dark:text-emerald-300">
-                      {fmt.format(m.totalPago)}
-                    </p>
-                  </div>
-                  <div className="rounded-lg bg-amber-50 p-2.5 dark:bg-amber-950/40">
-                    <p className="text-[10px] font-medium uppercase tracking-wider text-amber-700 dark:text-amber-300">
-                      Pendente
-                    </p>
-                    <p className="mt-0.5 text-base font-semibold text-amber-700 dark:text-amber-300">
-                      {fmt.format(m.totalPendente)}
+            {resumoPorMes.map((m) => {
+              const totalMes = m.totalPago + m.totalPendente;
+              const pctBar = (totalMes / maxMensal) * 100;
+              const pctPago = totalMes > 0 ? (m.totalPago / totalMes) * 100 : 0;
+              return (
+                <Card
+                  key={`${m.ano}-${m.mes}`}
+                  className="rounded-2xl border-transparent p-4 shadow-sm"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="font-display text-sm font-bold capitalize">
+                        {m.label}
+                      </p>
+                      <p className="text-[11px] text-muted-foreground">
+                        {m.quantidade} {m.quantidade === 1 ? "diária" : "diárias"} • {pctPago.toFixed(0)}% recebido
+                      </p>
+                    </div>
+                    <p className="font-display text-base font-bold tabular-nums">
+                      {fmt.format(totalMes)}
                     </p>
                   </div>
-                </div>
-              </Card>
-            ))}
+
+                  {/* Barra comparativa mensal (share do maior mês) */}
+                  <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-primary/70 to-primary transition-all"
+                      style={{ width: `${pctBar}%` }}
+                    />
+                  </div>
+
+                  {/* Split pago vs pendente */}
+                  <div className="mt-3 flex h-2 w-full overflow-hidden rounded-full bg-muted">
+                    {m.totalPago > 0 && (
+                      <div
+                        className="h-full bg-emerald-500"
+                        style={{ width: `${pctPago}%` }}
+                      />
+                    )}
+                    {m.totalPendente > 0 && (
+                      <div
+                        className="h-full bg-amber-500"
+                        style={{ width: `${100 - pctPago}%` }}
+                      />
+                    )}
+                  </div>
+
+                  <div className="mt-3 grid grid-cols-2 gap-2">
+                    <div className="flex items-center gap-2 rounded-xl bg-emerald-50 px-3 py-2 dark:bg-emerald-950/40">
+                      <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                      <div className="min-w-0">
+                        <p className="text-[9px] font-semibold uppercase tracking-wider text-emerald-700 dark:text-emerald-300">
+                          Pago
+                        </p>
+                        <p className="text-sm font-bold tabular-nums text-emerald-700 dark:text-emerald-300">
+                          {fmt.format(m.totalPago)}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 rounded-xl bg-amber-50 px-3 py-2 dark:bg-amber-950/40">
+                      <span className="h-2 w-2 rounded-full bg-amber-500" />
+                      <div className="min-w-0">
+                        <p className="text-[9px] font-semibold uppercase tracking-wider text-amber-700 dark:text-amber-300">
+                          Pendente
+                        </p>
+                        <p className="text-sm font-bold tabular-nums text-amber-700 dark:text-amber-300">
+                          {fmt.format(m.totalPendente)}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              );
+            })}
           </div>
         )}
       </section>
+
 
       <Dialog open={waOpen} onOpenChange={setWaOpen}>
         <DialogContent className="max-w-lg max-h-[92vh] overflow-y-auto">
