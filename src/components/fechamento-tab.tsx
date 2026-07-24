@@ -646,7 +646,7 @@ export function FechamentoTab() {
           <p className="text-[11px] font-semibold uppercase tracking-wider opacity-80">
             Saldo a receber
           </p>
-          <h2 className="mt-1 font-display text-3xl font-bold">
+          <h2 className={`mt-1 font-display text-3xl font-bold ${saldoAReceber < 0 ? "text-red-100" : ""}`}>
             {fmt.format(saldoAReceber)}
           </h2>
           <div className="mt-3 flex flex-wrap items-center gap-2 text-[10px] font-medium">

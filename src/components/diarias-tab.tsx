@@ -44,7 +44,7 @@ export function DiariasTab() {
           <p className="text-[11px] font-semibold uppercase tracking-wider opacity-80">
             Saldo a receber
           </p>
-          <h2 className={`mt-1 font-display text-3xl font-bold ${saldo < 0 ? "opacity-90" : ""}`}>
+          <h2 className={`mt-1 font-display text-3xl font-bold ${saldo < 0 ? "text-red-100" : ""}`}>
             {fmt.format(saldo)}
           </h2>
           <div className="mt-3 flex flex-wrap items-center gap-2">
