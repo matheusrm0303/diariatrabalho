@@ -19,16 +19,25 @@ function b64urlDecode(str: string): ArrayBuffer {
   for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
   return bytes.buffer;
 }
-function randomBytes(n: number): Uint8Array {
-  const a = new Uint8Array(n);
-  crypto.getRandomValues(a);
-  return a;
+function randomChallenge(n: number): ArrayBuffer {
+  const buf = new ArrayBuffer(n);
+  crypto.getRandomValues(new Uint8Array(buf));
+  return buf;
+}
+function textBytes(s: string): ArrayBuffer {
+  const enc = new TextEncoder().encode(s);
+  const buf = new ArrayBuffer(enc.byteLength);
+  new Uint8Array(buf).set(enc);
+  return buf;
 }
 
 export function isBiometricSupported(): boolean {
   if (typeof window === "undefined") return false;
-  return !!(window.PublicKeyCredential && navigator.credentials?.create && navigator.credentials?.get);
+  return typeof window.PublicKeyCredential !== "undefined"
+    && typeof navigator.credentials?.create === "function"
+    && typeof navigator.credentials?.get === "function";
 }
+
 
 export async function isPlatformAuthenticatorAvailable(): Promise<boolean> {
   if (!isBiometricSupported()) return false;
