@@ -32,7 +32,7 @@ import {
   periodoOptions,
   type PeriodoKey,
 } from "@/components/charts-resumo";
-import { TrendingUp, Wallet, Target, CalendarRange } from "lucide-react";
+import { TrendingUp, Wallet, Target, CalendarRange, TriangleAlert } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -640,16 +640,27 @@ export function FechamentoTab() {
       {/* Dashboard bento */}
       <div className="mb-6 grid grid-cols-2 gap-3">
         {/* Hero: Saldo */}
-        <div className="col-span-2 relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary to-primary/75 p-5 text-primary-foreground shadow-lg shadow-primary/20">
+        <div className={`col-span-2 relative overflow-hidden rounded-3xl p-5 text-primary-foreground shadow-lg shadow-primary/20 transition-colors ${saldoAReceber < 0 ? "bg-gradient-to-br from-red-600 to-red-500" : "bg-gradient-to-br from-primary to-primary/75"}`}>
+          {saldoAReceber < 0 && (
+            <div className="pointer-events-none absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMiIgY3k9IjIiIHI9IjEiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4xNSkiLz48L3N2Zz4=')] opacity-60" />
+          )}
           <div className="pointer-events-none absolute -right-6 -top-6 h-28 w-28 rounded-full bg-white/15 blur-2xl" />
           <div className="pointer-events-none absolute -bottom-8 -left-4 h-24 w-24 rounded-full bg-white/10 blur-2xl" />
-          <p className="text-[11px] font-semibold uppercase tracking-wider opacity-80">
-            Saldo a receber
-          </p>
-          <h2 className={`mt-1 font-display text-3xl font-bold ${saldoAReceber < 0 ? "text-red-500" : ""}`}>
+          <div className="relative flex items-start justify-between">
+            <p className="text-[11px] font-semibold uppercase tracking-wider opacity-80">
+              Saldo a receber
+            </p>
+            {saldoAReceber < 0 && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-white/25 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider">
+                <TriangleAlert className="h-3 w-3" />
+                Atenção
+              </span>
+            )}
+          </div>
+          <h2 className={`relative mt-1 font-display text-3xl font-bold ${saldoAReceber < 0 ? "text-white" : ""}`}>
             {fmt.format(saldoAReceber)}
           </h2>
-          <div className="mt-3 flex flex-wrap items-center gap-2 text-[10px] font-medium">
+          <div className="relative mt-3 flex flex-wrap items-center gap-2 text-[10px] font-medium">
             <span className="inline-flex items-center gap-1 rounded-lg bg-white/20 px-2 py-1">
               <Target className="h-3 w-3" />
               {taxaRecebimento.toFixed(0)}% recebido
@@ -659,7 +670,7 @@ export function FechamentoTab() {
             </span>
           </div>
           {/* Progress track */}
-          <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-white/20">
+          <div className="relative mt-4 h-2 w-full overflow-hidden rounded-full bg-white/20">
             <div
               className="h-full rounded-full bg-white transition-all"
               style={{ width: `${Math.min(100, taxaRecebimento)}%` }}
