@@ -49,10 +49,34 @@ function ContaPage() {
         setCreatedAt(u.created_at ?? "");
         const newEmail = (u as { new_email?: string }).new_email;
         setPendingEmail(newEmail && newEmail !== u.email ? newEmail : null);
+        setBioEnabled(isBiometricEnabled(u.id));
       }
+      const sup = isBiometricSupported() && (await isPlatformAuthenticatorAvailable());
+      setBioSupported(sup);
       setLoading(false);
     })();
   }, []);
+
+  async function alternarBiometria(ativar: boolean) {
+    if (!userId) return;
+    setBioBusy(true);
+    try {
+      if (ativar) {
+        await enableBiometric(userId, currentEmail);
+        setBioEnabled(true);
+        toast.success("Biometria ativada.");
+      } else {
+        disableBiometric(userId);
+        setBioEnabled(false);
+        toast.success("Biometria desativada.");
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao configurar biometria.");
+    } finally {
+      setBioBusy(false);
+    }
+  }
+
 
   async function salvarEmail(e: React.FormEvent) {
     e.preventDefault();
