@@ -5,9 +5,18 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { ArrowLeft, LogOut, Mail, User, Download, Upload } from "lucide-react";
+import { ArrowLeft, LogOut, Mail, User, Download, Upload, Fingerprint } from "lucide-react";
 import { toast } from "sonner";
 import { exportarBackup, baixarBackupJSON, importarBackup, type BackupPayload } from "@/lib/backup";
+import { Switch } from "@/components/ui/switch";
+import {
+  isBiometricSupported,
+  isPlatformAuthenticatorAvailable,
+  isBiometricEnabled,
+  enableBiometric,
+  disableBiometric,
+} from "@/lib/biometric";
+
 
 export const Route = createFileRoute("/_authenticated/conta")({
   head: () => ({ meta: [{ title: "Minha conta" }] }),
@@ -24,6 +33,10 @@ function ContaPage() {
   const [userId, setUserId] = useState("");
   const [createdAt, setCreatedAt] = useState("");
   const [email, setEmail] = useState("");
+  const [bioSupported, setBioSupported] = useState(false);
+  const [bioEnabled, setBioEnabled] = useState(false);
+  const [bioBusy, setBioBusy] = useState(false);
+
 
   useEffect(() => {
     (async () => {
@@ -36,10 +49,34 @@ function ContaPage() {
         setCreatedAt(u.created_at ?? "");
         const newEmail = (u as { new_email?: string }).new_email;
         setPendingEmail(newEmail && newEmail !== u.email ? newEmail : null);
+        setBioEnabled(isBiometricEnabled(u.id));
       }
+      const sup = isBiometricSupported() && (await isPlatformAuthenticatorAvailable());
+      setBioSupported(sup);
       setLoading(false);
     })();
   }, []);
+
+  async function alternarBiometria(ativar: boolean) {
+    if (!userId) return;
+    setBioBusy(true);
+    try {
+      if (ativar) {
+        await enableBiometric(userId, currentEmail);
+        setBioEnabled(true);
+        toast.success("Biometria ativada.");
+      } else {
+        disableBiometric(userId);
+        setBioEnabled(false);
+        toast.success("Biometria desativada.");
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao configurar biometria.");
+    } finally {
+      setBioBusy(false);
+    }
+  }
+
 
   async function salvarEmail(e: React.FormEvent) {
     e.preventDefault();
@@ -236,6 +273,39 @@ function ContaPage() {
             <p className="text-xs text-muted-foreground">
               Na restauração você pode mesclar (mantém o que já tem) ou substituir (apaga tudo antes de importar).
             </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Fingerprint className="h-4 w-4" /> Autenticação biométrica
+            </CardTitle>
+            <CardDescription>
+              {bioSupported
+                ? "Use Face ID, Touch ID ou digital para desbloquear o app ao abrir."
+                : "Este dispositivo/navegador não oferece biometria compatível."}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between gap-3">
+              <div className="text-sm">
+                <p className="font-medium">
+                  {bioEnabled ? "Ativada" : "Desativada"}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {bioEnabled
+                    ? "Solicitaremos biometria toda vez que o app abrir."
+                    : "Ative para exigir biometria na abertura."}
+                </p>
+              </div>
+              <Switch
+                checked={bioEnabled}
+                disabled={!bioSupported || bioBusy}
+                onCheckedChange={alternarBiometria}
+                aria-label="Ativar biometria"
+              />
+            </div>
           </CardContent>
         </Card>
 
