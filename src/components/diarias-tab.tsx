@@ -3,7 +3,7 @@ import { useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Trash2, Plus, Utensils, Pencil, ArrowUpRight } from "lucide-react";
+import { Trash2, Plus, Utensils, Pencil, ArrowUpRight, TriangleAlert } from "lucide-react";
 import { useDiarias, useAdiantamentos, fmt } from "@/lib/diarias-store";
 
 export function DiariasTab() {
