@@ -69,8 +69,8 @@ export async function enableBiometric(userId: string, email: string): Promise<vo
   const available = await isPlatformAuthenticatorAvailable();
   if (!available) throw new Error("Nenhum autenticador biométrico disponível.");
 
-  const challenge = randomBytes(32);
-  const userIdBytes = new TextEncoder().encode(userId);
+  const challenge = randomChallenge(32);
+  const userIdBytes = textBytes(userId);
 
   const cred = (await navigator.credentials.create({
     publicKey: {
@@ -111,7 +111,7 @@ export async function verifyBiometric(userId: string): Promise<boolean> {
   if (!isBiometricSupported()) return false;
   const credId = localStorage.getItem(CRED_PREFIX + userId);
   if (!credId) return false;
-  const challenge = randomBytes(32);
+  const challenge = randomChallenge(32);
   try {
     const assertion = (await navigator.credentials.get({
       publicKey: {
