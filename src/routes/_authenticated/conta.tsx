@@ -33,6 +33,10 @@ function ContaPage() {
   const [userId, setUserId] = useState("");
   const [createdAt, setCreatedAt] = useState("");
   const [email, setEmail] = useState("");
+  const [bioSupported, setBioSupported] = useState(false);
+  const [bioEnabled, setBioEnabled] = useState(false);
+  const [bioBusy, setBioBusy] = useState(false);
+
 
   useEffect(() => {
     (async () => {
