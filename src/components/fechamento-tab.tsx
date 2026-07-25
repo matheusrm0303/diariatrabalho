@@ -32,7 +32,7 @@ import {
   periodoOptions,
   type PeriodoKey,
 } from "@/components/charts-resumo";
-import { TrendingUp, Wallet, Target, CalendarRange } from "lucide-react";
+import { TrendingUp, Wallet, Target, CalendarRange, TriangleAlert } from "lucide-react";
 import {
   Select,
   SelectContent,
