@@ -276,6 +276,39 @@ function ContaPage() {
           </CardContent>
         </Card>
 
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Fingerprint className="h-4 w-4" /> Autenticação biométrica
+            </CardTitle>
+            <CardDescription>
+              {bioSupported
+                ? "Use Face ID, Touch ID ou digital para desbloquear o app ao abrir."
+                : "Este dispositivo/navegador não oferece biometria compatível."}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between gap-3">
+              <div className="text-sm">
+                <p className="font-medium">
+                  {bioEnabled ? "Ativada" : "Desativada"}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {bioEnabled
+                    ? "Solicitaremos biometria toda vez que o app abrir."
+                    : "Ative para exigir biometria na abertura."}
+                </p>
+              </div>
+              <Switch
+                checked={bioEnabled}
+                disabled={!bioSupported || bioBusy}
+                onCheckedChange={alternarBiometria}
+                aria-label="Ativar biometria"
+              />
+            </div>
+          </CardContent>
+        </Card>
+
 
         <Card>
           <CardHeader>
