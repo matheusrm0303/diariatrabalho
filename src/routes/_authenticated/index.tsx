@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate, Link, Navigate } from "@tanstack/react-router";
 import { lazy, Suspense } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { LogOut, UserCircle2, Shield, Sparkles } from "lucide-react";
+import { LogOut, UserCircle2, Shield, Sparkles, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DiariasTab } from "@/components/diarias-tab";
 import { supabase } from "@/integrations/supabase/client";
@@ -57,9 +57,10 @@ function Index() {
                 </Link>
               </Button>
             )}
-            <Button asChild variant="ghost" size="icon" aria-label="Assessor IA">
+            <Button asChild variant="ghost" size="icon" aria-label="Assessor IA" className="relative">
               <Link to="/assistente">
                 <Sparkles className="h-5 w-5 text-primary" />
+                <span className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-primary animate-pulse" />
               </Link>
             </Button>
             <Button asChild variant="ghost" size="icon" aria-label="Minha conta">
@@ -109,6 +110,16 @@ function Index() {
             </Suspense>
           </TabsContent>
         </Tabs>
+
+        <Link
+          to="/assistente"
+          className="fixed bottom-5 right-5 z-50 flex items-center gap-2 rounded-full bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/30 transition-transform hover:scale-105 active:scale-95"
+          aria-label="Abrir Assessor IA"
+        >
+          <MessageCircle className="h-5 w-5" />
+          Assessor IA
+          <Sparkles className="h-4 w-4" />
+        </Link>
       </div>
     </div>
   );
