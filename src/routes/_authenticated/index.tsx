@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate, Link, Navigate } from "@tanstack/react-router";
 import { lazy, Suspense } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { LogOut, UserCircle2, Shield } from "lucide-react";
+import { LogOut, UserCircle2, Shield, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DiariasTab } from "@/components/diarias-tab";
 import { supabase } from "@/integrations/supabase/client";
@@ -57,6 +57,11 @@ function Index() {
                 </Link>
               </Button>
             )}
+            <Button asChild variant="ghost" size="icon" aria-label="Assessor IA">
+              <Link to="/assistente">
+                <Sparkles className="h-5 w-5 text-primary" />
+              </Link>
+            </Button>
             <Button asChild variant="ghost" size="icon" aria-label="Minha conta">
               <Link to="/conta">
                 <UserCircle2 className="h-5 w-5" />
