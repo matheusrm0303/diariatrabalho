@@ -104,10 +104,10 @@ export const chatAssessor = createServerFn({ method: "POST" })
     } catch {
       parsed = { reply: content };
     }
-    const actions = (Array.isArray(parsed.actions) ? parsed.actions : []) as Array<Record<string, unknown>>;
+    const actions = Array.isArray(parsed.actions) ? parsed.actions : [];
     return {
       reply: parsed.reply || "Ok.",
-      actions,
+      actionsJson: JSON.stringify(actions),
     };
   });
 
