@@ -57,6 +57,11 @@ function Index() {
                 </Link>
               </Button>
             )}
+            <Button asChild variant="ghost" size="icon" aria-label="Assessor IA">
+              <Link to="/assistente">
+                <Sparkles className="h-5 w-5 text-primary" />
+              </Link>
+            </Button>
             <Button asChild variant="ghost" size="icon" aria-label="Minha conta">
               <Link to="/conta">
                 <UserCircle2 className="h-5 w-5" />
