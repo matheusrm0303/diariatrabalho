@@ -163,7 +163,8 @@ function Assistente() {
         },
       });
       setMessages((m) => [...m, { role: "assistant", content: res.reply }]);
-      if (res.actions.length > 0) await executarAcoes(res.actions as Action[]);
+      const actions = JSON.parse(res.actionsJson) as Action[];
+      if (actions.length > 0) await executarAcoes(actions);
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Erro desconhecido";
       toast.error(msg);
