@@ -113,12 +113,11 @@ function Index() {
 
         <Link
           to="/assistente"
-          className="fixed bottom-5 right-5 z-50 flex items-center gap-2 rounded-full bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/30 transition-transform hover:scale-105 active:scale-95"
+          className="fixed bottom-24 right-4 z-50 grid h-14 w-14 place-items-center rounded-full bg-primary text-primary-foreground shadow-xl shadow-primary/40 transition-transform hover:scale-105 active:scale-95"
           aria-label="Abrir Assessor IA"
         >
-          <MessageCircle className="h-5 w-5" />
-          Assessor IA
-          <Sparkles className="h-4 w-4" />
+          <Sparkles className="h-6 w-6" />
+          <span className="absolute -top-0.5 -right-0.5 h-3 w-3 rounded-full bg-emerald-400 ring-2 ring-background animate-pulse" />
         </Link>
       </div>
     </div>
