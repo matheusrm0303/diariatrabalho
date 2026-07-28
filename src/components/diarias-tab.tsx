@@ -113,11 +113,11 @@ export function DiariasTab() {
           </Card>
         ) : (
           <div className="grid gap-2">
-            {ordenadas.map((d) => {
+            {ordenadas.map((d, i) => {
               const totalItem = d.valor + (d.alimentacao || 0);
               const pago = d.status === "pago";
               return (
-                <Card key={d.id} className="rounded-2xl border-transparent p-4 shadow-sm">
+                <Card key={d.id} className="rounded-2xl border-transparent p-4 shadow-sm animate-fade-up transition-transform hover:-translate-y-0.5 hover:shadow-md" style={{ animationDelay: `${Math.min(i * 50, 400)}ms` }}>
                   <div className="flex items-start gap-3">
                     <div
                       className={
