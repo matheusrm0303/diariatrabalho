@@ -50,7 +50,16 @@ type Msg = {
 type Action =
   | { tipo: "criar_diaria"; data: string; diaria_tipo: "rua-200" | "deposito-100" | "personalizada"; valor: number; local: string; descricao?: string; status: "pago" | "pendente"; alimentacao?: number; alimentacaoObs?: string }
   | { tipo: "criar_adiantamento"; data: string; valor: number; observacao?: string }
-  | { tipo: "whatsapp_fechamento"; periodo: "mes-atual" | "mes-anterior" | "todos"; incluir_adiantamentos: boolean }
+  | {
+      tipo: "whatsapp_fechamento";
+      periodo: "mes-atual" | "mes-anterior" | "todos";
+      incluir_adiantamentos: boolean;
+      incluir_diarias?: boolean;
+      apenas_status?: "todos" | "pago" | "pendente";
+      telefone?: string;
+      saudacao?: string;
+      encerramento?: string;
+    }
   | { tipo: "navegar"; para: string };
 
 const STORAGE_KEY = "assessor-chat-v1";
