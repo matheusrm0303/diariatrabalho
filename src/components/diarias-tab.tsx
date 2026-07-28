@@ -38,12 +38,13 @@ export function DiariasTab() {
       {/* Bento KPI grid */}
       <div className="mb-6 grid grid-cols-2 gap-3">
         {/* Hero tile — Saldo */}
-        <div className={`col-span-2 relative overflow-hidden rounded-3xl p-5 text-primary-foreground shadow-lg shadow-primary/20 transition-colors ${saldo < 0 ? "bg-gradient-to-br from-red-600 to-red-500" : "bg-gradient-to-br from-primary to-primary/75"}`}>
+        <div className={`col-span-2 relative overflow-hidden rounded-3xl p-5 text-primary-foreground shadow-lg shadow-primary/20 transition-colors animate-pop-in ${saldo < 0 ? "bg-gradient-to-br from-red-600 to-red-500" : "bg-gradient-to-br from-primary to-primary/75"}`}>
           {saldo < 0 && (
             <div className="pointer-events-none absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMiIgY3k9IjIiIHI9IjEiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4xNSkiLz48L3N2Zz4=')] opacity-60" />
           )}
-          <div className="pointer-events-none absolute -right-6 -top-6 h-28 w-28 rounded-full bg-white/15 blur-2xl" />
-          <div className="pointer-events-none absolute -bottom-8 -left-4 h-24 w-24 rounded-full bg-white/10 blur-2xl" />
+          {saldo >= 0 && <div className="hero-shimmer-layer" />}
+          <div className="pointer-events-none absolute -right-6 -top-6 h-28 w-28 rounded-full bg-white/15 blur-2xl animate-float-soft" />
+          <div className="pointer-events-none absolute -bottom-8 -left-4 h-24 w-24 rounded-full bg-white/10 blur-2xl animate-float-soft" style={{ animationDelay: "1.2s" }} />
           <div className="relative flex items-start justify-between">
             <p className="text-[11px] font-semibold uppercase tracking-wider opacity-80">
               Saldo a receber
@@ -66,7 +67,7 @@ export function DiariasTab() {
           </div>
         </div>
 
-        <Card className="rounded-3xl border-transparent p-4 shadow-sm">
+        <Card className="rounded-3xl border-transparent p-4 shadow-sm animate-fade-up" style={{ animationDelay: "80ms" }}>
           <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
             Total pago
           </p>
@@ -74,7 +75,7 @@ export function DiariasTab() {
             {fmt.format(totalPago)}
           </p>
         </Card>
-        <Card className="rounded-3xl border-transparent p-4 shadow-sm">
+        <Card className="rounded-3xl border-transparent p-4 shadow-sm animate-fade-up" style={{ animationDelay: "140ms" }}>
           <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
             Pendente
           </p>
@@ -82,13 +83,13 @@ export function DiariasTab() {
             {fmt.format(totalPendente)}
           </p>
         </Card>
-        <Card className="rounded-3xl border-transparent p-4 shadow-sm">
+        <Card className="rounded-3xl border-transparent p-4 shadow-sm animate-fade-up" style={{ animationDelay: "200ms" }}>
           <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
             Total geral
           </p>
           <p className="mt-1 font-display text-lg font-bold">{fmt.format(total)}</p>
         </Card>
-        <Card className="rounded-3xl border-transparent p-4 shadow-sm">
+        <Card className="rounded-3xl border-transparent p-4 shadow-sm animate-fade-up" style={{ animationDelay: "260ms" }}>
           <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
             Adiantamento
           </p>
@@ -112,11 +113,11 @@ export function DiariasTab() {
           </Card>
         ) : (
           <div className="grid gap-2">
-            {ordenadas.map((d) => {
+            {ordenadas.map((d, i) => {
               const totalItem = d.valor + (d.alimentacao || 0);
               const pago = d.status === "pago";
               return (
-                <Card key={d.id} className="rounded-2xl border-transparent p-4 shadow-sm">
+                <Card key={d.id} className="rounded-2xl border-transparent p-4 shadow-sm animate-fade-up transition-transform hover:-translate-y-0.5 hover:shadow-md" style={{ animationDelay: `${Math.min(i * 50, 400)}ms` }}>
                   <div className="flex items-start gap-3">
                     <div
                       className={
