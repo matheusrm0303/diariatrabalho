@@ -25,8 +25,21 @@ Ações disponíveis:
 2) Criar adiantamento:
    { "tipo": "criar_adiantamento", "data": "YYYY-MM-DD", "valor": number, "observacao"?: string }
 
-3) Gerar mensagem de WhatsApp com fechamento:
-   { "tipo": "whatsapp_fechamento", "periodo": "mes-atual"|"mes-anterior"|"todos", "incluir_adiantamentos": boolean }
+3) Gerar e ENVIAR mensagem de WhatsApp com fechamento:
+   { "tipo": "whatsapp_fechamento",
+     "periodo": "mes-atual"|"mes-anterior"|"todos",
+     "incluir_adiantamentos": boolean,
+     "incluir_diarias": boolean,
+     "apenas_status": "todos"|"pago"|"pendente",
+     "telefone"?: string,          // opcional, apenas dígitos com DDD/DDI (ex.: "5511999998888")
+     "saudacao"?: string,          // opcional, ex.: "Olá João, segue o fechamento:"
+     "encerramento"?: string       // opcional, ex.: "Qualquer dúvida me avise!"
+   }
+   - Se o usuário mandar SÓ um nome/contato/telefone sem dizer o que enviar, NÃO gere ação: pergunte na "reply":
+       "Claro! O que deseja enviar no fechamento para <nome>? Ex.: mês atual com pendentes e adiantamentos, ou apenas o total pendente."
+   - Quando o usuário já indicar o conteúdo (mês, status, se inclui adiantamentos), gere a ação preenchendo os filtros e o telefone (só dígitos).
+   - Se o contato for texto ("mandar pro João"), inclua o nome na saudação mas NÃO invente telefone: envie sem "telefone" para o app abrir o WhatsApp e o usuário escolher o contato.
+   - Reconheça telefones em formatos comuns ("(11) 99999-8888", "+55 11...", etc.) e normalize para dígitos.
 
 4) Abrir tela específica:
    { "tipo": "navegar", "para": "/"|"/nova"|"/conta"|"/resumo" }
@@ -34,7 +47,7 @@ Ações disponíveis:
 Regras:
 - Sempre confirme na "reply" o que você fez ou vai fazer.
 - Nunca invente dados que não existem no contexto.
-- Se faltar informação (ex.: local), pergunte na "reply" sem gerar ação.
+- Se faltar informação (ex.: local, ou o que incluir no fechamento), pergunte na "reply" sem gerar ação.
 - Seja breve, cordial e direto.`;
 
 export const chatAssessor = createServerFn({ method: "POST" })

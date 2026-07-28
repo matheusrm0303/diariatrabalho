@@ -50,7 +50,16 @@ type Msg = {
 type Action =
   | { tipo: "criar_diaria"; data: string; diaria_tipo: "rua-200" | "deposito-100" | "personalizada"; valor: number; local: string; descricao?: string; status: "pago" | "pendente"; alimentacao?: number; alimentacaoObs?: string }
   | { tipo: "criar_adiantamento"; data: string; valor: number; observacao?: string }
-  | { tipo: "whatsapp_fechamento"; periodo: "mes-atual" | "mes-anterior" | "todos"; incluir_adiantamentos: boolean }
+  | {
+      tipo: "whatsapp_fechamento";
+      periodo: "mes-atual" | "mes-anterior" | "todos";
+      incluir_adiantamentos: boolean;
+      incluir_diarias?: boolean;
+      apenas_status?: "todos" | "pago" | "pendente";
+      telefone?: string;
+      saudacao?: string;
+      encerramento?: string;
+    }
   | { tipo: "navegar"; para: string };
 
 const STORAGE_KEY = "assessor-chat-v1";
@@ -127,7 +136,18 @@ function Assistente() {
     return { pago, pendente, adi, saldo: pago + pendente - adi };
   }, [diarias, adiantamentos]);
 
-  function gerarTextoFechamento(periodo: "mes-atual" | "mes-anterior" | "todos", incluirAdi: boolean) {
+  function gerarTextoFechamento(
+    periodo: "mes-atual" | "mes-anterior" | "todos",
+    incluirAdi: boolean,
+    opts?: {
+      incluirDiarias?: boolean;
+      apenasStatus?: "todos" | "pago" | "pendente";
+      saudacao?: string;
+      encerramento?: string;
+    },
+  ) {
+    const incluirDiarias = opts?.incluirDiarias ?? true;
+    const apenasStatus = opts?.apenasStatus ?? "todos";
     const hoje = new Date();
     let filtro = (_d: Diaria) => true;
     if (periodo === "mes-atual") {
@@ -144,25 +164,47 @@ function Assistente() {
         return a === y && mm - 1 === m;
       };
     }
-    const lista = diarias.filter(filtro).sort((a, b) => (a.data < b.data ? 1 : -1));
+    const lista = diarias
+      .filter(filtro)
+      .filter((d) => (apenasStatus === "todos" ? true : d.status === apenasStatus))
+      .sort((a, b) => (a.data < b.data ? 1 : -1));
     let pago = 0, pendente = 0;
-    const linhas: string[] = ["*Fechamento de Diárias*", ""];
-    for (const d of lista) {
-      const total = d.valor + (d.alimentacao || 0);
-      if (d.status === "pago") pago += total; else pendente += total;
-      const [a, m, day] = d.data.split("-");
-      const st = d.status === "pago" ? "✅ Pago" : "⏳ Pendente";
-      linhas.push(`• ${day}/${m}/${a} — ${d.local || "(sem local)"} — *${fmt.format(total)}* ${st}`);
+    const linhas: string[] = [];
+    if (opts?.saudacao) linhas.push(opts.saudacao, "");
+    linhas.push("*Fechamento de Diárias*", "");
+    if (incluirDiarias) {
+      for (const d of lista) {
+        const total = d.valor + (d.alimentacao || 0);
+        if (d.status === "pago") pago += total; else pendente += total;
+        const [a, m, day] = d.data.split("-");
+        const st = d.status === "pago" ? "✅ Pago" : "⏳ Pendente";
+        linhas.push(`• ${day}/${m}/${a} — ${d.local || "(sem local)"} — *${fmt.format(total)}* ${st}`);
+      }
+      linhas.push("");
+    } else {
+      for (const d of lista) {
+        const total = d.valor + (d.alimentacao || 0);
+        if (d.status === "pago") pago += total; else pendente += total;
+      }
     }
-    linhas.push("");
-    linhas.push(`*Total pago:* ${fmt.format(pago)}`);
-    linhas.push(`*Total pendente:* ${fmt.format(pendente)}`);
+    if (apenasStatus !== "pendente") linhas.push(`*Total pago:* ${fmt.format(pago)}`);
+    if (apenasStatus !== "pago") linhas.push(`*Total pendente:* ${fmt.format(pendente)}`);
     if (incluirAdi) {
       const adi = adiantamentos.reduce((s, a) => s + a.valor, 0);
       linhas.push(`*Adiantamentos:* ${fmt.format(adi)}`);
       linhas.push(`*Saldo a receber:* ${fmt.format(pago + pendente - adi)}`);
     }
+    if (opts?.encerramento) linhas.push("", opts.encerramento);
     return linhas.join("\n");
+  }
+
+  function normalizarTelefone(t?: string) {
+    if (!t) return "";
+    const digitos = t.replace(/\D/g, "");
+    if (!digitos) return "";
+    // Se vier sem DDI e tiver 10-11 dígitos (BR), adiciona 55
+    if (digitos.length === 10 || digitos.length === 11) return "55" + digitos;
+    return digitos;
   }
 
   async function executarAcoes(actions: Action[]): Promise<ActionResult[]> {
@@ -195,12 +237,22 @@ function Assistente() {
             detail: `${d}/${m}/${y}${a.observacao ? ` • ${a.observacao}` : ""}`,
           });
         } else if (a.tipo === "whatsapp_fechamento") {
-          const texto = gerarTextoFechamento(a.periodo, a.incluir_adiantamentos);
-          window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, "_blank");
+          const texto = gerarTextoFechamento(a.periodo, a.incluir_adiantamentos, {
+            incluirDiarias: a.incluir_diarias,
+            apenasStatus: a.apenas_status,
+            saudacao: a.saudacao,
+            encerramento: a.encerramento,
+          });
+          const tel = normalizarTelefone(a.telefone);
+          const url = tel
+            ? `https://wa.me/${tel}?text=${encodeURIComponent(texto)}`
+            : `https://wa.me/?text=${encodeURIComponent(texto)}`;
+          window.open(url, "_blank");
+          const periodoLbl = a.periodo === "mes-atual" ? "Mês atual" : a.periodo === "mes-anterior" ? "Mês anterior" : "Todos";
           results.push({
             icon: "whatsapp",
-            label: "Fechamento enviado ao WhatsApp",
-            detail: a.periodo === "mes-atual" ? "Mês atual" : a.periodo === "mes-anterior" ? "Mês anterior" : "Todos",
+            label: tel ? `Fechamento enviado para +${tel}` : "Fechamento aberto no WhatsApp",
+            detail: `${periodoLbl}${a.apenas_status && a.apenas_status !== "todos" ? ` • ${a.apenas_status}` : ""}${a.incluir_adiantamentos ? " • com adiantamentos" : ""}`,
           });
         } else if (a.tipo === "navegar") {
           navigate({ to: a.para as never });
