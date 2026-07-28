@@ -237,12 +237,22 @@ function Assistente() {
             detail: `${d}/${m}/${y}${a.observacao ? ` • ${a.observacao}` : ""}`,
           });
         } else if (a.tipo === "whatsapp_fechamento") {
-          const texto = gerarTextoFechamento(a.periodo, a.incluir_adiantamentos);
-          window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, "_blank");
+          const texto = gerarTextoFechamento(a.periodo, a.incluir_adiantamentos, {
+            incluirDiarias: a.incluir_diarias,
+            apenasStatus: a.apenas_status,
+            saudacao: a.saudacao,
+            encerramento: a.encerramento,
+          });
+          const tel = normalizarTelefone(a.telefone);
+          const url = tel
+            ? `https://wa.me/${tel}?text=${encodeURIComponent(texto)}`
+            : `https://wa.me/?text=${encodeURIComponent(texto)}`;
+          window.open(url, "_blank");
+          const periodoLbl = a.periodo === "mes-atual" ? "Mês atual" : a.periodo === "mes-anterior" ? "Mês anterior" : "Todos";
           results.push({
             icon: "whatsapp",
-            label: "Fechamento enviado ao WhatsApp",
-            detail: a.periodo === "mes-atual" ? "Mês atual" : a.periodo === "mes-anterior" ? "Mês anterior" : "Todos",
+            label: tel ? `Fechamento enviado para +${tel}` : "Fechamento aberto no WhatsApp",
+            detail: `${periodoLbl}${a.apenas_status && a.apenas_status !== "todos" ? ` • ${a.apenas_status}` : ""}${a.incluir_adiantamentos ? " • com adiantamentos" : ""}`,
           });
         } else if (a.tipo === "navegar") {
           navigate({ to: a.para as never });
