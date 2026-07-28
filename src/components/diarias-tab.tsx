@@ -67,7 +67,7 @@ export function DiariasTab() {
           </div>
         </div>
 
-        <Card className="rounded-3xl border-transparent p-4 shadow-sm">
+        <Card className="rounded-3xl border-transparent p-4 shadow-sm animate-fade-up" style={{ animationDelay: "80ms" }}>
           <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
             Total pago
           </p>
@@ -75,7 +75,7 @@ export function DiariasTab() {
             {fmt.format(totalPago)}
           </p>
         </Card>
-        <Card className="rounded-3xl border-transparent p-4 shadow-sm">
+        <Card className="rounded-3xl border-transparent p-4 shadow-sm animate-fade-up" style={{ animationDelay: "140ms" }}>
           <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
             Pendente
           </p>
@@ -83,13 +83,13 @@ export function DiariasTab() {
             {fmt.format(totalPendente)}
           </p>
         </Card>
-        <Card className="rounded-3xl border-transparent p-4 shadow-sm">
+        <Card className="rounded-3xl border-transparent p-4 shadow-sm animate-fade-up" style={{ animationDelay: "200ms" }}>
           <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
             Total geral
           </p>
           <p className="mt-1 font-display text-lg font-bold">{fmt.format(total)}</p>
         </Card>
-        <Card className="rounded-3xl border-transparent p-4 shadow-sm">
+        <Card className="rounded-3xl border-transparent p-4 shadow-sm animate-fade-up" style={{ animationDelay: "260ms" }}>
           <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
             Adiantamento
           </p>
