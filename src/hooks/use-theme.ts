@@ -1,23 +1,37 @@
 import { useEffect, useState } from "react";
 
-export type Theme = "royal" | "sky" | "dark";
+export const THEMES = [
+  "royal",
+  "sky",
+  "esmeralda",
+  "violeta",
+  "coral",
+  "grafite",
+  "dark",
+] as const;
+
+export type Theme = (typeof THEMES)[number];
 const KEY = "theme";
+
+function isTheme(v: unknown): v is Theme {
+  return typeof v === "string" && (THEMES as readonly string[]).includes(v);
+}
 
 function getInitial(): Theme {
   if (typeof window === "undefined") return "royal";
-  const stored = window.localStorage.getItem(KEY) as Theme | null;
-  if (stored === "royal" || stored === "sky" || stored === "dark") return stored;
-  // migrate old values
-  const legacy = stored as unknown as string;
-  if (legacy === "light") return "royal";
+  const stored = window.localStorage.getItem(KEY);
+  if (isTheme(stored)) return stored;
+  if (stored === "light") return "royal";
   return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "royal";
 }
 
 function apply(theme: Theme) {
   const root = document.documentElement;
-  root.classList.toggle("dark", theme === "dark");
-  root.classList.toggle("theme-sky", theme === "sky");
-  root.style.colorScheme = theme === "dark" ? "dark" : "light";
+  for (const t of THEMES) root.classList.remove(`theme-${t}`);
+  const escuro = theme === "dark" || theme === "grafite";
+  root.classList.toggle("dark", escuro);
+  if (theme !== "royal" && theme !== "dark") root.classList.add(`theme-${theme}`);
+  root.style.colorScheme = escuro ? "dark" : "light";
 }
 
 export function useTheme() {
@@ -32,6 +46,6 @@ export function useTheme() {
     theme,
     setTheme,
     toggle: () =>
-      setTheme((t) => (t === "royal" ? "sky" : t === "sky" ? "dark" : "royal")),
+      setTheme((t) => THEMES[(THEMES.indexOf(t) + 1) % THEMES.length]),
   };
 }
