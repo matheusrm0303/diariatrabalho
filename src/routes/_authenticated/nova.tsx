@@ -50,6 +50,7 @@ function Nova() {
   const [local, setLocal] = useState("");
   const [dias, setDias] = useState<string[]>([todayISO()]);
   const [status, setStatus] = useState<Status>("pendente");
+  const [dobrar, setDobrar] = useState(false);
   const [incluiAlim, setIncluiAlim] = useState(false);
   const [alimentacao, setAlimentacao] = useState("");
   const [alimentacaoObs, setAlimentacaoObs] = useState("");
