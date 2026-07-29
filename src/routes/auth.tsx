@@ -38,7 +38,17 @@ function AuthPage() {
       if (!session?.user) return;
       const meta = (session.user.user_metadata ?? {}) as { empresa?: string };
       if (meta.empresa) {
-        void supabase.rpc("set_own_empresa" as never, { _empresa: meta.empresa } as never);
+        void (async () => {
+          const { data } = await supabase
+            .from("user_diaria_defaults" as never)
+            .select("empresa")
+            .eq("user_id", session.user.id)
+            .maybeSingle();
+          const atual = (data as { empresa?: string } | null)?.empresa ?? "";
+          if (!atual) {
+            await supabase.rpc("set_own_empresa" as never, { _empresa: meta.empresa } as never);
+          }
+        })();
       }
       navigate({ to: "/" });
     });
