@@ -28,9 +28,10 @@ function getInitial(): Theme {
 function apply(theme: Theme) {
   const root = document.documentElement;
   for (const t of THEMES) root.classList.remove(`theme-${t}`);
-  root.classList.toggle("dark", theme === "dark");
+  const escuro = theme === "dark" || theme === "grafite";
+  root.classList.toggle("dark", escuro);
   if (theme !== "royal" && theme !== "dark") root.classList.add(`theme-${theme}`);
-  root.style.colorScheme = theme === "dark" || theme === "grafite" ? "dark" : "light";
+  root.style.colorScheme = escuro ? "dark" : "light";
 }
 
 export function useTheme() {
