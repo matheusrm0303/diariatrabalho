@@ -36,7 +36,7 @@ export const Route = createFileRoute("/_authenticated/admin")({
 });
 
 function AdminPage() {
-  const { users, loading, recarregar, setDefaults, toggleAdmin } = useAdminUsers();
+  const { users, loading, recarregar, setDefaults, setEmpresa, toggleAdmin } = useAdminUsers();
   const deleteUserFn = useServerFn(deleteUser);
   const [busca, setBusca] = useState("");
   const navigate = useNavigate();
@@ -44,7 +44,9 @@ function AdminPage() {
   const filtrados = useMemo(() => {
     const q = busca.trim().toLowerCase();
     if (!q) return users;
-    return users.filter((u) => u.email.toLowerCase().includes(q));
+    return users.filter(
+      (u) => u.email.toLowerCase().includes(q) || (u.empresa ?? "").toLowerCase().includes(q),
+    );
   }, [users, busca]);
 
   async function handleDelete(u: AdminUser) {
@@ -104,6 +106,7 @@ function AdminPage() {
                 key={u.id}
                 user={u}
                 onSave={(rua, dep) => setDefaults(u.id, rua, dep)}
+                onSaveEmpresa={(emp) => setEmpresa(u.id, emp)}
                 onToggleAdmin={(v) => toggleAdmin(u.id, v)}
                 onDelete={() => handleDelete(u)}
               />
@@ -118,16 +121,19 @@ function AdminPage() {
 function UserCard({
   user,
   onSave,
+  onSaveEmpresa,
   onToggleAdmin,
   onDelete,
 }: {
   user: AdminUser;
   onSave: (rua: number, dep: number) => void;
+  onSaveEmpresa: (empresa: string) => void;
   onToggleAdmin: (v: boolean) => void;
   onDelete: () => void;
 }) {
   const [rua, setRua] = useState(String(user.valor_rua));
   const [dep, setDep] = useState(String(user.valor_deposito));
+  const [empresa, setEmpresaInput] = useState(user.empresa ?? "");
   const [aberto, setAberto] = useState(false);
 
   function parseNum(v: string) {
@@ -148,6 +154,7 @@ function UserCard({
           <div className="flex items-center gap-2 flex-wrap">
             <p className="font-medium truncate">{user.email}</p>
             {user.is_admin && <Badge variant="secondary">Admin</Badge>}
+            {user.empresa ? <Badge variant="outline">{user.empresa}</Badge> : null}
           </div>
           <p className="text-xs text-muted-foreground mt-0.5">
             Saldo: <span className={saldo < 0 ? "text-rose-600 font-medium" : "font-medium"}>{fmt.format(saldo)}</span>
@@ -174,6 +181,22 @@ function UserCard({
             <div className="rounded-md border p-2">
               <p className="text-muted-foreground">Saldo</p>
               <p className={"font-semibold " + (saldo < 0 ? "text-rose-600" : "")}>{fmt.format(saldo)}</p>
+            </div>
+          </div>
+
+          <div className="grid gap-1">
+            <Label htmlFor={`empresa-${user.id}`} className="text-xs">Empresa</Label>
+            <div className="flex gap-2">
+              <Input
+                id={`empresa-${user.id}`}
+                value={empresa}
+                maxLength={120}
+                placeholder="Nome da empresa"
+                onChange={(e) => setEmpresaInput(e.target.value)}
+              />
+              <Button size="sm" variant="secondary" onClick={() => onSaveEmpresa(empresa.trim())}>
+                <Save className="h-4 w-4" /> Salvar
+              </Button>
             </div>
           </div>
 

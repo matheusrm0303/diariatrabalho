@@ -28,13 +28,29 @@ function AuthPage() {
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [empresa, setEmpresa] = useState("");
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
 
   useEffect(() => {
     const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
-      if (session?.user) navigate({ to: "/" });
+      if (!session?.user) return;
+      const meta = (session.user.user_metadata ?? {}) as { empresa?: string };
+      if (meta.empresa) {
+        void (async () => {
+          const { data } = await supabase
+            .from("user_diaria_defaults" as never)
+            .select("empresa")
+            .eq("user_id", session.user.id)
+            .maybeSingle();
+          const atual = (data as { empresa?: string } | null)?.empresa ?? "";
+          if (!atual) {
+            await supabase.rpc("set_own_empresa" as never, { _empresa: meta.empresa } as never);
+          }
+        })();
+      }
+      navigate({ to: "/" });
     });
     return () => sub.subscription.unsubscribe();
   }, [navigate]);
@@ -46,12 +62,19 @@ function AuthPage() {
     setLoading(true);
     try {
       if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({
+        const empresaLimpa = empresa.trim().slice(0, 120);
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
-          options: { emailRedirectTo: window.location.origin },
+          options: {
+            emailRedirectTo: window.location.origin,
+            data: { empresa: empresaLimpa },
+          },
         });
         if (error) throw error;
+        if (data.session && empresaLimpa) {
+          await supabase.rpc("set_own_empresa" as never, { _empresa: empresaLimpa } as never);
+        }
         setInfo("Conta criada! Verifique seu email se for solicitado e faça login.");
         setMode("signin");
       } else {
@@ -107,6 +130,20 @@ function AuthPage() {
                 required
               />
             </div>
+            {mode === "signup" && (
+              <div className="grid gap-1.5">
+                <Label htmlFor="empresa">Empresa</Label>
+                <Input
+                  id="empresa"
+                  type="text"
+                  maxLength={120}
+                  placeholder="Onde você trabalha"
+                  value={empresa}
+                  onChange={(e) => setEmpresa(e.target.value)}
+                  required
+                />
+              </div>
+            )}
             <div className="grid gap-1.5">
               <Label htmlFor="password">Senha</Label>
               <Input

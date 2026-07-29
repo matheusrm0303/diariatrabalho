@@ -10,6 +10,7 @@ export type AdminUser = {
   is_admin: boolean;
   valor_rua: number;
   valor_deposito: number;
+  empresa: string;
   total_diarias: number;
   total_adiantamentos: number;
 };
@@ -83,6 +84,7 @@ export function useAdminUsers() {
     setUsers(
       ((data as unknown) as AdminUser[] | null)?.map((r) => ({
         ...r,
+        empresa: r.empresa ?? "",
         valor_rua: Number(r.valor_rua),
         valor_deposito: Number(r.valor_deposito),
         total_diarias: Number(r.total_diarias),
@@ -109,6 +111,18 @@ export function useAdminUsers() {
     }
   }
 
+  async function setEmpresa(user_id: string, empresa: string) {
+    setUsers((prev) => prev.map((u) => (u.id === user_id ? { ...u, empresa } : u)));
+    const { error } = await supabase.rpc("admin_set_empresa" as never, {
+      _user_id: user_id,
+      _empresa: empresa,
+    } as never);
+    if (error) {
+      console.error(error);
+      recarregar();
+    }
+  }
+
   async function toggleAdmin(user_id: string, make_admin: boolean) {
     setUsers((prev) => prev.map((u) => (u.id === user_id ? { ...u, is_admin: make_admin } : u)));
     const { error } = await supabase.rpc("admin_toggle_admin" as never, {
@@ -121,7 +135,7 @@ export function useAdminUsers() {
     }
   }
 
-  return { users, loading, recarregar, setDefaults, toggleAdmin };
+  return { users, loading, recarregar, setDefaults, setEmpresa, toggleAdmin };
 }
 
 type DiariaRow = {
