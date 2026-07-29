@@ -239,6 +239,18 @@ function Nova() {
                 />
               </div>
             )}
+
+            <div className="flex items-center justify-between rounded-lg border border-input px-3 py-2">
+              <div>
+                <Label htmlFor="dobrar-switch">Dobrar valor (2x)</Label>
+                <p className="text-xs text-muted-foreground">
+                  {dobrar
+                    ? `${fmt.format(parseNum(valor))} → ${fmt.format(valorFinal)} por dia`
+                    : "Lança a diária com o valor em dobro"}
+                </p>
+              </div>
+              <Switch id="dobrar-switch" checked={dobrar} onCheckedChange={setDobrar} />
+            </div>
           </Card>
 
           <Card className="p-4 grid gap-3">
