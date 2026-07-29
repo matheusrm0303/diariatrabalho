@@ -89,6 +89,7 @@ export type Database = {
       user_diaria_defaults: {
         Row: {
           created_at: string
+          empresa: string
           updated_at: string
           user_id: string
           valor_deposito: number
@@ -96,6 +97,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          empresa?: string
           updated_at?: string
           user_id: string
           valor_deposito?: number
@@ -103,6 +105,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          empresa?: string
           updated_at?: string
           user_id?: string
           valor_deposito?: number
@@ -141,6 +144,7 @@ export type Database = {
         Returns: {
           created_at: string
           email: string
+          empresa: string
           id: string
           is_admin: boolean
           total_adiantamentos: number
@@ -151,6 +155,10 @@ export type Database = {
       }
       admin_set_defaults: {
         Args: { _user_id: string; _valor_deposito: number; _valor_rua: number }
+        Returns: undefined
+      }
+      admin_set_empresa: {
+        Args: { _empresa: string; _user_id: string }
         Returns: undefined
       }
       admin_toggle_admin: {
@@ -164,6 +172,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      set_own_empresa: { Args: { _empresa: string }; Returns: undefined }
     }
     Enums: {
       app_role: "admin" | "user"
