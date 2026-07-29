@@ -13,6 +13,10 @@ import { useTheme, type Theme } from "@/hooks/use-theme";
 const OPTIONS: { value: Theme; label: string; swatch: string }[] = [
   { value: "royal", label: "Azul royal", swatch: "bg-blue-600" },
   { value: "sky", label: "Azul claro", swatch: "bg-sky-400" },
+  { value: "esmeralda", label: "Esmeralda", swatch: "bg-emerald-500" },
+  { value: "violeta", label: "Violeta", swatch: "bg-violet-500" },
+  { value: "coral", label: "Coral", swatch: "bg-orange-500" },
+  { value: "grafite", label: "Grafite (escuro)", swatch: "bg-zinc-700" },
   { value: "dark", label: "Modo escuro", swatch: "bg-slate-900" },
 ];
 
@@ -22,7 +26,11 @@ export function ThemeToggle() {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon" aria-label="Escolher tema">
-          {theme === "dark" ? <Moon className="h-5 w-5" /> : <Palette className="h-5 w-5" />}
+          {theme === "dark" || theme === "grafite" ? (
+            <Moon className="h-5 w-5" />
+          ) : (
+            <Palette className="h-5 w-5" />
+          )}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
