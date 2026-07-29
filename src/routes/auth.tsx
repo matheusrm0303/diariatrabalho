@@ -35,7 +35,12 @@ function AuthPage() {
 
   useEffect(() => {
     const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
-      if (session?.user) navigate({ to: "/" });
+      if (!session?.user) return;
+      const meta = (session.user.user_metadata ?? {}) as { empresa?: string };
+      if (meta.empresa) {
+        void supabase.rpc("set_own_empresa" as never, { _empresa: meta.empresa } as never);
+      }
+      navigate({ to: "/" });
     });
     return () => sub.subscription.unsubscribe();
   }, [navigate]);
