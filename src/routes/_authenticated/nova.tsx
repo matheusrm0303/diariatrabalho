@@ -50,6 +50,7 @@ function Nova() {
   const [local, setLocal] = useState("");
   const [dias, setDias] = useState<string[]>([todayISO()]);
   const [status, setStatus] = useState<Status>("pendente");
+  const [dobrar, setDobrar] = useState(false);
   const [incluiAlim, setIncluiAlim] = useState(false);
   const [alimentacao, setAlimentacao] = useState("");
   const [alimentacaoObs, setAlimentacaoObs] = useState("");
@@ -83,9 +84,10 @@ function Nova() {
 
   async function salvar(e: React.FormEvent) {
     e.preventDefault();
-    const v = parseNum(valor);
+    const v = parseNum(valor) * (dobrar ? 2 : 1);
     if (!local.trim() || v <= 0 || dias.length === 0) return;
-    const descricao = PRESETS.find((p) => p.tipo === tipo)?.label || "Diária";
+    const base = PRESETS.find((p) => p.tipo === tipo)?.label || "Diária";
+    const descricao = dobrar ? `${base} (2x)` : base;
     const alim = incluiAlim ? parseNum(alimentacao) : 0;
     const alimObs = incluiAlim ? alimentacaoObs.trim() : "";
     for (const dia of dias) {
@@ -103,7 +105,8 @@ function Nova() {
     navigate({ to: "/" });
   }
 
-  const totalPorDia = parseNum(valor) + (incluiAlim ? parseNum(alimentacao) : 0);
+  const valorFinal = parseNum(valor) * (dobrar ? 2 : 1);
+  const totalPorDia = valorFinal + (incluiAlim ? parseNum(alimentacao) : 0);
   const totalGeral = totalPorDia * dias.length;
 
   return (
@@ -239,6 +242,18 @@ function Nova() {
                 />
               </div>
             )}
+
+            <div className="flex items-center justify-between rounded-lg border border-input px-3 py-2">
+              <div>
+                <Label htmlFor="dobrar-switch">Dobrar valor (2x)</Label>
+                <p className="text-xs text-muted-foreground">
+                  {dobrar
+                    ? `${fmt.format(parseNum(valor))} → ${fmt.format(valorFinal)} por dia`
+                    : "Lança a diária com o valor em dobro"}
+                </p>
+              </div>
+              <Switch id="dobrar-switch" checked={dobrar} onCheckedChange={setDobrar} />
+            </div>
           </Card>
 
           <Card className="p-4 grid gap-3">
