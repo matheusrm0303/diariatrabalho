@@ -84,9 +84,10 @@ function Nova() {
 
   async function salvar(e: React.FormEvent) {
     e.preventDefault();
-    const v = parseNum(valor);
+    const v = parseNum(valor) * (dobrar ? 2 : 1);
     if (!local.trim() || v <= 0 || dias.length === 0) return;
-    const descricao = PRESETS.find((p) => p.tipo === tipo)?.label || "Diária";
+    const base = PRESETS.find((p) => p.tipo === tipo)?.label || "Diária";
+    const descricao = dobrar ? `${base} (2x)` : base;
     const alim = incluiAlim ? parseNum(alimentacao) : 0;
     const alimObs = incluiAlim ? alimentacaoObs.trim() : "";
     for (const dia of dias) {
@@ -104,7 +105,8 @@ function Nova() {
     navigate({ to: "/" });
   }
 
-  const totalPorDia = parseNum(valor) + (incluiAlim ? parseNum(alimentacao) : 0);
+  const valorFinal = parseNum(valor) * (dobrar ? 2 : 1);
+  const totalPorDia = valorFinal + (incluiAlim ? parseNum(alimentacao) : 0);
   const totalGeral = totalPorDia * dias.length;
 
   return (
