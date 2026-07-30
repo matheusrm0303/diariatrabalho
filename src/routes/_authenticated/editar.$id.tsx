@@ -89,12 +89,15 @@ function Editar() {
 
   function salvar(e: React.FormEvent) {
     e.preventDefault();
-    const v = parseNum(valor);
+    const base = parseNum(valor);
+    const v = base * (dobrar ? 2 : 1);
     if (!local.trim() || v <= 0) return;
+    const baseLabel = PRESETS.find((p) => p.tipo === tipo)?.label || "Diária";
+    const descricao = dobrar ? `${baseLabel} (2x)` : baseLabel;
     atualizar(id, {
       data,
       local: local.trim(),
-      descricao: PRESETS.find((p) => p.tipo === tipo)?.label || "Diária",
+      descricao,
       valor: v,
       tipo,
       status,
@@ -104,7 +107,7 @@ function Editar() {
     navigate({ to: "/" });
   }
 
-  const total = parseNum(valor) + (incluiAlim ? parseNum(alimentacao) : 0);
+  const total = parseNum(valor) * (dobrar ? 2 : 1) + (incluiAlim ? parseNum(alimentacao) : 0);
 
   return (
     <div className="min-h-screen bg-background">
