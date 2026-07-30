@@ -8,6 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft } from "lucide-react";
 import { useDiarias, fmt, type Tipo, type Status } from "@/lib/diarias-store";
+import { useMyDefaults } from "@/lib/admin";
 
 export const Route = createFileRoute("/_authenticated/editar/$id")({
   head: () => ({
@@ -27,23 +28,29 @@ export const Route = createFileRoute("/_authenticated/editar/$id")({
   component: Editar,
 });
 
-const PRESETS: { tipo: Tipo; label: string; valor: number }[] = [
-  { tipo: "rua-200", label: "Rua R$ 200", valor: 200 },
-  { tipo: "deposito-100", label: "Depósito R$ 100", valor: 100 },
-  { tipo: "personalizada", label: "Personalizada", valor: 0 },
-];
 
 function Editar() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
   const { diarias, atualizar } = useDiarias();
+  const defaults = useMyDefaults();
   const atual = diarias.find((d) => d.id === id);
+
+  const valorRua = defaults?.valor_rua ?? 200;
+  const valorDep = defaults?.valor_deposito ?? 100;
+
+  const PRESETS: { tipo: Tipo; label: string; valor: number }[] = [
+    { tipo: "rua-200", label: `Rua ${fmt.format(valorRua)}`, valor: valorRua },
+    { tipo: "deposito-100", label: `Depósito ${fmt.format(valorDep)}`, valor: valorDep },
+    { tipo: "personalizada", label: "Personalizada", valor: 0 },
+  ];
 
   const [tipo, setTipo] = useState<Tipo>("rua-200");
   const [valor, setValor] = useState<string>("");
   const [local, setLocal] = useState("");
   const [data, setData] = useState("");
   const [status, setStatus] = useState<Status>("pendente");
+  const [dobrar, setDobrar] = useState(false);
   const [incluiAlim, setIncluiAlim] = useState(false);
   const [alimentacao, setAlimentacao] = useState("");
   const [alimentacaoObs, setAlimentacaoObs] = useState("");
@@ -51,8 +58,10 @@ function Editar() {
 
   useEffect(() => {
     if (atual && !carregado) {
+      const dob = atual.descricao.includes("(2x)");
+      setDobrar(dob);
       setTipo(atual.tipo);
-      setValor(String(atual.valor));
+      setValor(String(dob ? atual.valor / 2 : atual.valor));
       setLocal(atual.local);
       setData(atual.data);
       setStatus(atual.status);
@@ -80,12 +89,15 @@ function Editar() {
 
   function salvar(e: React.FormEvent) {
     e.preventDefault();
-    const v = parseNum(valor);
+    const base = parseNum(valor);
+    const v = base * (dobrar ? 2 : 1);
     if (!local.trim() || v <= 0) return;
+    const baseLabel = PRESETS.find((p) => p.tipo === tipo)?.label || "Diária";
+    const descricao = dobrar ? `${baseLabel} (2x)` : baseLabel;
     atualizar(id, {
       data,
       local: local.trim(),
-      descricao: PRESETS.find((p) => p.tipo === tipo)?.label || "Diária",
+      descricao,
       valor: v,
       tipo,
       status,
@@ -95,7 +107,7 @@ function Editar() {
     navigate({ to: "/" });
   }
 
-  const total = parseNum(valor) + (incluiAlim ? parseNum(alimentacao) : 0);
+  const total = parseNum(valor) * (dobrar ? 2 : 1) + (incluiAlim ? parseNum(alimentacao) : 0);
 
   return (
     <div className="min-h-screen bg-background">
@@ -196,6 +208,18 @@ function Editar() {
                 }}
                 required
               />
+            </div>
+
+            <div className="flex items-center justify-between rounded-lg border border-input px-3 py-2">
+              <div>
+                <Label htmlFor="dobrar-switch">Dobrar valor (2x)</Label>
+                <p className="text-xs text-muted-foreground">
+                  {dobrar
+                    ? `${fmt.format(parseNum(valor))} → ${fmt.format(parseNum(valor) * 2)}`
+                    : "Lança a diária com o valor em dobro"}
+                </p>
+              </div>
+              <Switch id="dobrar-switch" checked={dobrar} onCheckedChange={setDobrar} />
             </div>
           </Card>
 
