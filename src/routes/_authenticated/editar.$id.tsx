@@ -38,13 +38,24 @@ function Editar() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
   const { diarias, atualizar } = useDiarias();
+  const defaults = useMyDefaults();
   const atual = diarias.find((d) => d.id === id);
+
+  const valorRua = defaults?.valor_rua ?? 200;
+  const valorDep = defaults?.valor_deposito ?? 100;
+
+  const PRESETS: { tipo: Tipo; label: string; valor: number }[] = [
+    { tipo: "rua-200", label: `Rua ${fmt.format(valorRua)}`, valor: valorRua },
+    { tipo: "deposito-100", label: `Depósito ${fmt.format(valorDep)}`, valor: valorDep },
+    { tipo: "personalizada", label: "Personalizada", valor: 0 },
+  ];
 
   const [tipo, setTipo] = useState<Tipo>("rua-200");
   const [valor, setValor] = useState<string>("");
   const [local, setLocal] = useState("");
   const [data, setData] = useState("");
   const [status, setStatus] = useState<Status>("pendente");
+  const [dobrar, setDobrar] = useState(false);
   const [incluiAlim, setIncluiAlim] = useState(false);
   const [alimentacao, setAlimentacao] = useState("");
   const [alimentacaoObs, setAlimentacaoObs] = useState("");
