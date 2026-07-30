@@ -58,8 +58,10 @@ function Editar() {
 
   useEffect(() => {
     if (atual && !carregado) {
+      const dob = atual.descricao.includes("(2x)");
+      setDobrar(dob);
       setTipo(atual.tipo);
-      setValor(String(atual.valor));
+      setValor(String(dob ? atual.valor / 2 : atual.valor));
       setLocal(atual.local);
       setData(atual.data);
       setStatus(atual.status);
