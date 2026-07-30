@@ -8,6 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft } from "lucide-react";
 import { useDiarias, fmt, type Tipo, type Status } from "@/lib/diarias-store";
+import { useMyDefaults } from "@/lib/admin";
 
 export const Route = createFileRoute("/_authenticated/editar/$id")({
   head: () => ({
