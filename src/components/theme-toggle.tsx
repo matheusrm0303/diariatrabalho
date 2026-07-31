@@ -37,6 +37,7 @@ const OPTIONS: { value: ThemeSetting; label: string; swatch: string }[] = [
   { value: "violeta", label: "Violeta", swatch: "bg-violet-500" },
   { value: "coral", label: "Coral", swatch: "bg-orange-500" },
   { value: "oceano", label: "Oceano Profundo", swatch: "bg-cyan-700" },
+  { value: "aurora", label: "Aurora", swatch: "bg-gradient-to-br from-emerald-400 to-violet-400" },
   { value: "grafite", label: "Grafite (escuro)", swatch: "bg-zinc-700" },
   { value: "dark", label: "Modo escuro", swatch: "bg-slate-900" },
 ];
