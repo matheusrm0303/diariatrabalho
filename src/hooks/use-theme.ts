@@ -7,9 +7,10 @@ export const THEMES = [
   "esmeralda",
   "violeta",
   "coral",
+  "oceano",
+  "aurora",
   "grafite",
   "dark",
-  "oceano",
 ] as const;
 
 export type Theme = (typeof THEMES)[number];
