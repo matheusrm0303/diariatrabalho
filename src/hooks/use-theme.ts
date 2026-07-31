@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 export const THEMES = [
   "royal",
@@ -11,18 +12,26 @@ export const THEMES = [
 ] as const;
 
 export type Theme = (typeof THEMES)[number];
-const KEY = "theme";
+
+const LEGACY_KEY = "theme";
+const GUEST_KEY = "theme:guest";
+const keyFor = (userId: string | null) => (userId ? `theme:${userId}` : GUEST_KEY);
 
 function isTheme(v: unknown): v is Theme {
   return typeof v === "string" && (THEMES as readonly string[]).includes(v);
 }
 
-function getInitial(): Theme {
+function systemTheme(): Theme {
   if (typeof window === "undefined") return "royal";
-  const stored = window.localStorage.getItem(KEY);
+  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "royal";
+}
+
+function readTheme(userId: string | null): Theme {
+  if (typeof window === "undefined") return "royal";
+  const stored = window.localStorage.getItem(keyFor(userId));
   if (isTheme(stored)) return stored;
   if (stored === "light") return "royal";
-  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "royal";
+  return systemTheme();
 }
 
 function apply(theme: Theme) {
@@ -35,17 +44,51 @@ function apply(theme: Theme) {
 }
 
 export function useTheme() {
-  const [theme, setTheme] = useState<Theme>(getInitial);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [theme, setThemeState] = useState<Theme>(() => readTheme(null));
 
+  // Descobre o usuário atual e acompanha login/logout.
   useEffect(() => {
-    apply(theme);
-    window.localStorage.setItem(KEY, theme);
-  }, [theme]);
+    let ativo = true;
+    void supabase.auth.getUser().then(({ data }) => {
+      if (ativo) setUserId(data.user?.id ?? null);
+    });
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
+      setUserId(session?.user?.id ?? null);
+    });
+    return () => {
+      ativo = false;
+      sub.subscription.unsubscribe();
+    };
+  }, []);
+
+  // Ao trocar de usuário, carrega o tema dele (migrando a chave antiga uma vez).
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const k = keyFor(userId);
+    if (!window.localStorage.getItem(k)) {
+      const legado = window.localStorage.getItem(LEGACY_KEY);
+      if (isTheme(legado)) window.localStorage.setItem(k, legado);
+    }
+    const t = readTheme(userId);
+    setThemeState(t);
+    apply(t);
+  }, [userId]);
+
+  const setTheme = useCallback(
+    (next: Theme) => {
+      setThemeState(next);
+      apply(next);
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem(keyFor(userId), next);
+      }
+    },
+    [userId],
+  );
 
   return {
     theme,
     setTheme,
-    toggle: () =>
-      setTheme((t) => THEMES[(THEMES.indexOf(t) + 1) % THEMES.length]),
+    toggle: () => setTheme(THEMES[(THEMES.indexOf(theme) + 1) % THEMES.length]),
   };
 }
