@@ -9,6 +9,7 @@ export const THEMES = [
   "coral",
   "grafite",
   "dark",
+  "oceano",
 ] as const;
 
 export type Theme = (typeof THEMES)[number];
