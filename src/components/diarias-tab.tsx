@@ -222,6 +222,7 @@ export function DiariasTab() {
                       </span>
                       <button
                         type="button"
+                        disabled={selecionando}
                         onClick={() =>
                           atualizar(d.id, { status: pago ? "pendente" : "pago" })
                         }
@@ -241,28 +242,30 @@ export function DiariasTab() {
                       </button>
                     </div>
                   </div>
-                  <div className="mt-2 flex justify-end gap-1 border-t border-border/60 pt-2">
-                    <Button
-                      asChild
-                      size="sm"
-                      variant="ghost"
-                      className="h-7 text-xs font-medium"
-                    >
-                      <Link to="/editar/$id" params={{ id: d.id }}>
-                        <Pencil className="h-3.5 w-3.5" />
-                        Editar
-                      </Link>
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => remover(d.id)}
-                      className="h-7 text-xs font-medium text-destructive hover:text-destructive"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                      Remover
-                    </Button>
-                  </div>
+                  {!selecionando && (
+                    <div className="mt-2 flex justify-end gap-1 border-t border-border/60 pt-2">
+                      <Button
+                        asChild
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 text-xs font-medium"
+                      >
+                        <Link to="/editar/$id" params={{ id: d.id }}>
+                          <Pencil className="h-3.5 w-3.5" />
+                          Editar
+                        </Link>
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => remover(d.id)}
+                        className="h-7 text-xs font-medium text-destructive hover:text-destructive"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                        Remover
+                      </Button>
+                    </div>
+                  )}
                 </Card>
               );
             })}
@@ -270,20 +273,45 @@ export function DiariasTab() {
         )}
       </section>
 
-      {/* Floating action button */}
+      {/* Floating action bar */}
       <div className="fixed inset-x-0 bottom-4 z-40 px-4">
         <div className="mx-auto max-w-2xl">
-          <Button
-            asChild
-            className="h-14 w-full rounded-2xl text-base font-bold shadow-xl shadow-primary/30"
-          >
-            <Link to="/nova">
-              <Plus className="h-5 w-5" />
-              Nova diária
-            </Link>
-          </Button>
+          {selecionando ? (
+            <div className="rounded-2xl border bg-card/95 p-3 shadow-xl backdrop-blur">
+              <p className="mb-2 text-center text-xs font-medium text-muted-foreground">
+                {selecionados.length} selecionada{selecionados.length === 1 ? "" : "s"}
+              </p>
+              <div className="flex gap-2">
+                <Button
+                  className="h-12 flex-1 rounded-xl bg-emerald-600 font-bold text-white hover:bg-emerald-700"
+                  disabled={selecionados.length === 0}
+                  onClick={() => marcarSelecionados("pago")}
+                >
+                  Marcar pago
+                </Button>
+                <Button
+                  className="h-12 flex-1 rounded-xl bg-amber-500 font-bold text-white hover:bg-amber-600"
+                  disabled={selecionados.length === 0}
+                  onClick={() => marcarSelecionados("pendente")}
+                >
+                  Marcar pendente
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <Button
+              asChild
+              className="h-14 w-full rounded-2xl text-base font-bold shadow-xl shadow-primary/30"
+            >
+              <Link to="/nova">
+                <Plus className="h-5 w-5" />
+                Nova diária
+              </Link>
+            </Button>
+          )}
         </div>
       </div>
+
     </div>
   );
 }
