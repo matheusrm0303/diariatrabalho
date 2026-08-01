@@ -126,12 +126,38 @@ export function DiariasTab() {
 
       {/* History */}
       <section>
-        <div className="mb-3 flex items-center justify-between">
+        <div className="mb-3 flex items-center justify-between gap-2">
           <h2 className="font-display text-lg font-bold">Histórico</h2>
-          <span className="text-xs font-medium text-muted-foreground">
-            {ordenadas.length} {ordenadas.length === 1 ? "item" : "itens"}
-          </span>
+          {ordenadas.length > 0 &&
+            (selecionando ? (
+              <div className="flex items-center gap-1">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-8 text-xs font-medium"
+                  onClick={() =>
+                    setSelecionados(todosSelecionados ? [] : ordenadas.map((x) => x.id))
+                  }
+                >
+                  {todosSelecionados ? "Limpar" : "Selecionar tudo"}
+                </Button>
+                <Button size="sm" variant="ghost" className="h-8 px-2" onClick={sairSelecao} aria-label="Cancelar seleção">
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            ) : (
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-8 text-xs font-medium"
+                onClick={() => setSelecionando(true)}
+              >
+                <CheckSquare className="h-3.5 w-3.5" />
+                Selecionar
+              </Button>
+            ))}
         </div>
+
         {ordenadas.length === 0 ? (
           <Card className="rounded-2xl border-dashed p-8 text-center text-sm text-muted-foreground">
             Nenhuma diária registrada ainda. Toque em "Nova diária" para começar.
