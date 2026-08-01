@@ -1,10 +1,11 @@
 import { Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Trash2, Plus, Utensils, Pencil, ArrowUpRight, TriangleAlert, CheckSquare, X } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Trash2, Plus, Utensils, Pencil, ArrowUpRight, TriangleAlert, CheckSquare, X, ListFilter } from "lucide-react";
 import { useDiarias, useAdiantamentos, fmt } from "@/lib/diarias-store";
 
 export function DiariasTab() {
@@ -12,6 +13,7 @@ export function DiariasTab() {
   const { adiantamentos } = useAdiantamentos();
   const [selecionando, setSelecionando] = useState(false);
   const [selecionados, setSelecionados] = useState<string[]>([]);
+  const [filtroStatus, setFiltroStatus] = useState<"todas" | "pago" | "pendente">("todas");
 
   const total = useMemo(
     () => diarias.reduce((s, d) => s + d.valor + (d.alimentacao || 0), 0),
@@ -31,10 +33,11 @@ export function DiariasTab() {
   );
   const saldo = total - totalAdiant;
 
-  const ordenadas = useMemo(
-    () => [...diarias].sort((a, b) => b.data.localeCompare(a.data)),
-    [diarias],
-  );
+  const ordenadas = useMemo(() => {
+    const lista = [...diarias].sort((a, b) => b.data.localeCompare(a.data));
+    if (filtroStatus === "todas") return lista;
+    return lista.filter((d) => d.status === filtroStatus);
+  }, [diarias, filtroStatus]);
 
   const todosSelecionados =
     ordenadas.length > 0 && selecionados.length === ordenadas.length;
@@ -55,6 +58,10 @@ export function DiariasTab() {
     await Promise.all(ids.map((id) => atualizar(id, { status })));
     sairSelecao();
   }
+
+  useEffect(() => {
+    setSelecionados([]);
+  }, [filtroStatus]);
 
 
 
@@ -127,7 +134,12 @@ export function DiariasTab() {
       {/* History */}
       <section>
         <div className="mb-3 flex items-center justify-between gap-2">
-          <h2 className="font-display text-lg font-bold">Histórico</h2>
+          <div className="flex items-center gap-2">
+            <h2 className="font-display text-lg font-bold">Histórico</h2>
+            <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
+              {ordenadas.length}
+            </span>
+          </div>
           {ordenadas.length > 0 &&
             (selecionando ? (
               <div className="flex items-center gap-1">
@@ -139,7 +151,7 @@ export function DiariasTab() {
                     setSelecionados(todosSelecionados ? [] : ordenadas.map((x) => x.id))
                   }
                 >
-                  {todosSelecionados ? "Limpar" : "Selecionar tudo"}
+                  {todosSelecionados ? "Limpar" : "Tudo"}
                 </Button>
                 <Button size="sm" variant="ghost" className="h-8 px-2" onClick={sairSelecao} aria-label="Cancelar seleção">
                   <X className="h-4 w-4" />
@@ -158,9 +170,53 @@ export function DiariasTab() {
             ))}
         </div>
 
+        {/* Status filter chips */}
+        <div className="mb-4 flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => setFiltroStatus("todas")}
+            className={cn(
+              "h-8 shrink-0 rounded-full border px-3 text-xs font-medium transition-colors",
+              filtroStatus === "todas"
+                ? "border-primary bg-primary text-primary-foreground hover:bg-primary/90"
+                : "border-border bg-background text-muted-foreground hover:bg-muted hover:text-foreground"
+            )}
+          >
+            <ListFilter className="mr-1.5 h-3.5 w-3.5" />
+            Todas
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => setFiltroStatus("pago")}
+            className={cn(
+              "h-8 shrink-0 rounded-full border px-3 text-xs font-medium transition-colors",
+              filtroStatus === "pago"
+                ? "border-emerald-500 bg-emerald-500 text-white hover:bg-emerald-600"
+                : "border-border bg-background text-muted-foreground hover:bg-muted hover:text-foreground"
+            )}
+          >
+            Pagas
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => setFiltroStatus("pendente")}
+            className={cn(
+              "h-8 shrink-0 rounded-full border px-3 text-xs font-medium transition-colors",
+              filtroStatus === "pendente"
+                ? "border-amber-500 bg-amber-500 text-white hover:bg-amber-600"
+                : "border-border bg-background text-muted-foreground hover:bg-muted hover:text-foreground"
+            )}
+          >
+            Pendentes
+          </Button>
+        </div>
+
         {ordenadas.length === 0 ? (
           <Card className="rounded-2xl border-dashed p-8 text-center text-sm text-muted-foreground">
-            Nenhuma diária registrada ainda. Toque em "Nova diária" para começar.
+            Nenhuma diária encontrada para este filtro. Toque em "Nova diária" para começar.
           </Card>
         ) : (
           <div className="grid gap-2">
