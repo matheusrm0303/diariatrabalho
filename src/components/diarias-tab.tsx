@@ -59,6 +59,10 @@ export function DiariasTab() {
     sairSelecao();
   }
 
+  useEffect(() => {
+    setSelecionados([]);
+  }, [filtroStatus]);
+
 
 
   return (
