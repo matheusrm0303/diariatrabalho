@@ -1,14 +1,17 @@
 import { Link } from "@tanstack/react-router";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Trash2, Plus, Utensils, Pencil, ArrowUpRight, TriangleAlert } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Trash2, Plus, Utensils, Pencil, ArrowUpRight, TriangleAlert, CheckSquare, X } from "lucide-react";
 import { useDiarias, useAdiantamentos, fmt } from "@/lib/diarias-store";
 
 export function DiariasTab() {
   const { diarias, remover, atualizar } = useDiarias();
   const { adiantamentos } = useAdiantamentos();
+  const [selecionando, setSelecionando] = useState(false);
+  const [selecionados, setSelecionados] = useState<string[]>([]);
 
   const total = useMemo(
     () => diarias.reduce((s, d) => s + d.valor + (d.alimentacao || 0), 0),
