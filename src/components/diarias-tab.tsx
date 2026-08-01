@@ -36,6 +36,28 @@ export function DiariasTab() {
     [diarias],
   );
 
+  const todosSelecionados =
+    ordenadas.length > 0 && selecionados.length === ordenadas.length;
+
+  function toggleSelecionado(id: string) {
+    setSelecionados((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+    );
+  }
+
+  function sairSelecao() {
+    setSelecionando(false);
+    setSelecionados([]);
+  }
+
+  async function marcarSelecionados(status: "pago" | "pendente") {
+    const ids = [...selecionados];
+    await Promise.all(ids.map((id) => atualizar(id, { status })));
+    sairSelecao();
+  }
+
+
+
   return (
     <div className="pb-28">
       {/* Bento KPI grid */}
