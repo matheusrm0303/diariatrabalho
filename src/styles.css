@@ -475,6 +475,13 @@
 @utility animate-float-soft {
   animation: float-soft 3.6s ease-in-out infinite;
 }
+@utility no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+@utility no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
 @utility hero-shimmer-layer {
   position: absolute;
   inset: 0;
