@@ -39,6 +39,9 @@ export function DiariasTab() {
     return lista.filter((d) => d.status === filtroStatus);
   }, [diarias, filtroStatus]);
 
+  const todosSelecionados =
+    ordenadas.length > 0 && selecionados.length === ordenadas.length;
+
   function toggleSelecionado(id: string) {
     setSelecionados((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
