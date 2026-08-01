@@ -13,6 +13,7 @@ export function DiariasTab() {
   const { adiantamentos } = useAdiantamentos();
   const [selecionando, setSelecionando] = useState(false);
   const [selecionados, setSelecionados] = useState<string[]>([]);
+  const [filtroStatus, setFiltroStatus] = useState<"todas" | "pago" | "pendente">("todas");
 
   const total = useMemo(
     () => diarias.reduce((s, d) => s + d.valor + (d.alimentacao || 0), 0),
@@ -32,13 +33,11 @@ export function DiariasTab() {
   );
   const saldo = total - totalAdiant;
 
-  const ordenadas = useMemo(
-    () => [...diarias].sort((a, b) => b.data.localeCompare(a.data)),
-    [diarias],
-  );
-
-  const todosSelecionados =
-    ordenadas.length > 0 && selecionados.length === ordenadas.length;
+  const ordenadas = useMemo(() => {
+    const lista = [...diarias].sort((a, b) => b.data.localeCompare(a.data));
+    if (filtroStatus === "todas") return lista;
+    return lista.filter((d) => d.status === filtroStatus);
+  }, [diarias, filtroStatus]);
 
   function toggleSelecionado(id: string) {
     setSelecionados((prev) =>
