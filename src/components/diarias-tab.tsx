@@ -1,14 +1,17 @@
 import { Link } from "@tanstack/react-router";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Trash2, Plus, Utensils, Pencil, ArrowUpRight, TriangleAlert } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Trash2, Plus, Utensils, Pencil, ArrowUpRight, TriangleAlert, CheckSquare, X } from "lucide-react";
 import { useDiarias, useAdiantamentos, fmt } from "@/lib/diarias-store";
 
 export function DiariasTab() {
   const { diarias, remover, atualizar } = useDiarias();
   const { adiantamentos } = useAdiantamentos();
+  const [selecionando, setSelecionando] = useState(false);
+  const [selecionados, setSelecionados] = useState<string[]>([]);
 
   const total = useMemo(
     () => diarias.reduce((s, d) => s + d.valor + (d.alimentacao || 0), 0),
@@ -32,6 +35,28 @@ export function DiariasTab() {
     () => [...diarias].sort((a, b) => b.data.localeCompare(a.data)),
     [diarias],
   );
+
+  const todosSelecionados =
+    ordenadas.length > 0 && selecionados.length === ordenadas.length;
+
+  function toggleSelecionado(id: string) {
+    setSelecionados((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+    );
+  }
+
+  function sairSelecao() {
+    setSelecionando(false);
+    setSelecionados([]);
+  }
+
+  async function marcarSelecionados(status: "pago" | "pendente") {
+    const ids = [...selecionados];
+    await Promise.all(ids.map((id) => atualizar(id, { status })));
+    sairSelecao();
+  }
+
+
 
   return (
     <div className="pb-28">
@@ -101,12 +126,38 @@ export function DiariasTab() {
 
       {/* History */}
       <section>
-        <div className="mb-3 flex items-center justify-between">
+        <div className="mb-3 flex items-center justify-between gap-2">
           <h2 className="font-display text-lg font-bold">Histórico</h2>
-          <span className="text-xs font-medium text-muted-foreground">
-            {ordenadas.length} {ordenadas.length === 1 ? "item" : "itens"}
-          </span>
+          {ordenadas.length > 0 &&
+            (selecionando ? (
+              <div className="flex items-center gap-1">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-8 text-xs font-medium"
+                  onClick={() =>
+                    setSelecionados(todosSelecionados ? [] : ordenadas.map((x) => x.id))
+                  }
+                >
+                  {todosSelecionados ? "Limpar" : "Selecionar tudo"}
+                </Button>
+                <Button size="sm" variant="ghost" className="h-8 px-2" onClick={sairSelecao} aria-label="Cancelar seleção">
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            ) : (
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-8 text-xs font-medium"
+                onClick={() => setSelecionando(true)}
+              >
+                <CheckSquare className="h-3.5 w-3.5" />
+                Selecionar
+              </Button>
+            ))}
         </div>
+
         {ordenadas.length === 0 ? (
           <Card className="rounded-2xl border-dashed p-8 text-center text-sm text-muted-foreground">
             Nenhuma diária registrada ainda. Toque em "Nova diária" para começar.
@@ -116,19 +167,39 @@ export function DiariasTab() {
             {ordenadas.map((d, i) => {
               const totalItem = d.valor + (d.alimentacao || 0);
               const pago = d.status === "pago";
+              const marcado = selecionados.includes(d.id);
               return (
-                <Card key={d.id} className="rounded-2xl border-transparent p-4 shadow-sm animate-fade-up transition-transform hover:-translate-y-0.5 hover:shadow-md" style={{ animationDelay: `${Math.min(i * 50, 400)}ms` }}>
+                <Card
+                  key={d.id}
+                  onClick={selecionando ? () => toggleSelecionado(d.id) : undefined}
+                  className={
+                    "rounded-2xl border-transparent p-4 shadow-sm animate-fade-up transition-transform hover:-translate-y-0.5 hover:shadow-md " +
+                    (selecionando ? "cursor-pointer " : "") +
+                    (marcado ? "ring-2 ring-primary" : "")
+                  }
+                  style={{ animationDelay: `${Math.min(i * 50, 400)}ms` }}
+                >
                   <div className="flex items-start gap-3">
-                    <div
-                      className={
-                        "grid h-10 w-10 shrink-0 place-items-center rounded-xl " +
-                        (pago
-                          ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-300"
-                          : "bg-amber-50 text-amber-600 dark:bg-amber-950/50 dark:text-amber-300")
-                      }
-                    >
-                      <ArrowUpRight className="h-5 w-5" />
-                    </div>
+                    {selecionando ? (
+                      <div className="grid h-10 w-10 shrink-0 place-items-center">
+                        <Checkbox
+                          checked={marcado}
+                          onCheckedChange={() => toggleSelecionado(d.id)}
+                          aria-label="Selecionar diária"
+                        />
+                      </div>
+                    ) : (
+                      <div
+                        className={
+                          "grid h-10 w-10 shrink-0 place-items-center rounded-xl " +
+                          (pago
+                            ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-300"
+                            : "bg-amber-50 text-amber-600 dark:bg-amber-950/50 dark:text-amber-300")
+                        }
+                      >
+                        <ArrowUpRight className="h-5 w-5" />
+                      </div>
+                    )}
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-semibold">
                         {d.local || "(sem local)"}
@@ -151,6 +222,7 @@ export function DiariasTab() {
                       </span>
                       <button
                         type="button"
+                        disabled={selecionando}
                         onClick={() =>
                           atualizar(d.id, { status: pago ? "pendente" : "pago" })
                         }
@@ -170,28 +242,30 @@ export function DiariasTab() {
                       </button>
                     </div>
                   </div>
-                  <div className="mt-2 flex justify-end gap-1 border-t border-border/60 pt-2">
-                    <Button
-                      asChild
-                      size="sm"
-                      variant="ghost"
-                      className="h-7 text-xs font-medium"
-                    >
-                      <Link to="/editar/$id" params={{ id: d.id }}>
-                        <Pencil className="h-3.5 w-3.5" />
-                        Editar
-                      </Link>
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => remover(d.id)}
-                      className="h-7 text-xs font-medium text-destructive hover:text-destructive"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                      Remover
-                    </Button>
-                  </div>
+                  {!selecionando && (
+                    <div className="mt-2 flex justify-end gap-1 border-t border-border/60 pt-2">
+                      <Button
+                        asChild
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 text-xs font-medium"
+                      >
+                        <Link to="/editar/$id" params={{ id: d.id }}>
+                          <Pencil className="h-3.5 w-3.5" />
+                          Editar
+                        </Link>
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => remover(d.id)}
+                        className="h-7 text-xs font-medium text-destructive hover:text-destructive"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                        Remover
+                      </Button>
+                    </div>
+                  )}
                 </Card>
               );
             })}
@@ -199,20 +273,45 @@ export function DiariasTab() {
         )}
       </section>
 
-      {/* Floating action button */}
+      {/* Floating action bar */}
       <div className="fixed inset-x-0 bottom-4 z-40 px-4">
         <div className="mx-auto max-w-2xl">
-          <Button
-            asChild
-            className="h-14 w-full rounded-2xl text-base font-bold shadow-xl shadow-primary/30"
-          >
-            <Link to="/nova">
-              <Plus className="h-5 w-5" />
-              Nova diária
-            </Link>
-          </Button>
+          {selecionando ? (
+            <div className="rounded-2xl border bg-card/95 p-3 shadow-xl backdrop-blur">
+              <p className="mb-2 text-center text-xs font-medium text-muted-foreground">
+                {selecionados.length} selecionada{selecionados.length === 1 ? "" : "s"}
+              </p>
+              <div className="flex gap-2">
+                <Button
+                  className="h-12 flex-1 rounded-xl bg-emerald-600 font-bold text-white hover:bg-emerald-700"
+                  disabled={selecionados.length === 0}
+                  onClick={() => marcarSelecionados("pago")}
+                >
+                  Marcar pago
+                </Button>
+                <Button
+                  className="h-12 flex-1 rounded-xl bg-amber-500 font-bold text-white hover:bg-amber-600"
+                  disabled={selecionados.length === 0}
+                  onClick={() => marcarSelecionados("pendente")}
+                >
+                  Marcar pendente
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <Button
+              asChild
+              className="h-14 w-full rounded-2xl text-base font-bold shadow-xl shadow-primary/30"
+            >
+              <Link to="/nova">
+                <Plus className="h-5 w-5" />
+                Nova diária
+              </Link>
+            </Button>
+          )}
         </div>
       </div>
+
     </div>
   );
 }
