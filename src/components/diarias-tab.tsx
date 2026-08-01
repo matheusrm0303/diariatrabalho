@@ -167,19 +167,39 @@ export function DiariasTab() {
             {ordenadas.map((d, i) => {
               const totalItem = d.valor + (d.alimentacao || 0);
               const pago = d.status === "pago";
+              const marcado = selecionados.includes(d.id);
               return (
-                <Card key={d.id} className="rounded-2xl border-transparent p-4 shadow-sm animate-fade-up transition-transform hover:-translate-y-0.5 hover:shadow-md" style={{ animationDelay: `${Math.min(i * 50, 400)}ms` }}>
+                <Card
+                  key={d.id}
+                  onClick={selecionando ? () => toggleSelecionado(d.id) : undefined}
+                  className={
+                    "rounded-2xl border-transparent p-4 shadow-sm animate-fade-up transition-transform hover:-translate-y-0.5 hover:shadow-md " +
+                    (selecionando ? "cursor-pointer " : "") +
+                    (marcado ? "ring-2 ring-primary" : "")
+                  }
+                  style={{ animationDelay: `${Math.min(i * 50, 400)}ms` }}
+                >
                   <div className="flex items-start gap-3">
-                    <div
-                      className={
-                        "grid h-10 w-10 shrink-0 place-items-center rounded-xl " +
-                        (pago
-                          ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-300"
-                          : "bg-amber-50 text-amber-600 dark:bg-amber-950/50 dark:text-amber-300")
-                      }
-                    >
-                      <ArrowUpRight className="h-5 w-5" />
-                    </div>
+                    {selecionando ? (
+                      <div className="grid h-10 w-10 shrink-0 place-items-center">
+                        <Checkbox
+                          checked={marcado}
+                          onCheckedChange={() => toggleSelecionado(d.id)}
+                          aria-label="Selecionar diária"
+                        />
+                      </div>
+                    ) : (
+                      <div
+                        className={
+                          "grid h-10 w-10 shrink-0 place-items-center rounded-xl " +
+                          (pago
+                            ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-300"
+                            : "bg-amber-50 text-amber-600 dark:bg-amber-950/50 dark:text-amber-300")
+                        }
+                      >
+                        <ArrowUpRight className="h-5 w-5" />
+                      </div>
+                    )}
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-semibold">
                         {d.local || "(sem local)"}
