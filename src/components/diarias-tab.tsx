@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Trash2, Plus, Utensils, Pencil, ArrowUpRight, TriangleAlert, CheckSquare, X } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Trash2, Plus, Utensils, Pencil, ArrowUpRight, TriangleAlert, CheckSquare, X, ListFilter } from "lucide-react";
 import { useDiarias, useAdiantamentos, fmt } from "@/lib/diarias-store";
 
 export function DiariasTab() {
