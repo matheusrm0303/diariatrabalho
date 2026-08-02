@@ -144,9 +144,12 @@ export type Database = {
         Returns: {
           created_at: string
           email: string
+          email_confirmed: boolean
           empresa: string
           id: string
           is_admin: boolean
+          last_sign_in_at: string
+          qtd_diarias: number
           total_adiantamentos: number
           total_diarias: number
           valor_deposito: number
