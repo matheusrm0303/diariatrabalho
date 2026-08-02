@@ -51,10 +51,25 @@ export const Route = createFileRoute("/_authenticated/admin")({
   component: AdminPage,
 });
 
-type Filtro = "todos" | "admins" | "devendo";
+type Filtro = "todos" | "admins" | "usuarios" | "ativo" | "pendente" | "inativo" | "devendo";
 
 function iniciais(email: string) {
   return email.slice(0, 2).toUpperCase();
+}
+
+export function StatusBadge({ status }: { status: ContaStatus }) {
+  const map: Record<ContaStatus, { label: string; cls: string }> = {
+    ativo: { label: "Ativo", cls: "border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" },
+    pendente: { label: "E-mail pendente", cls: "border-amber-500/40 bg-amber-500/10 text-amber-600 dark:text-amber-400" },
+    inativo: { label: "Inativo", cls: "border-muted-foreground/30 bg-muted text-muted-foreground" },
+  };
+  const s = map[status];
+  return (
+    <span className={cn("inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold", s.cls)}>
+      <span className="h-1.5 w-1.5 rounded-full bg-current" />
+      {s.label}
+    </span>
+  );
 }
 
 function AdminPage() {
@@ -70,6 +85,10 @@ function AdminPage() {
     return {
       usuarios: users.length,
       admins: users.filter((u) => u.is_admin).length,
+      ativos: users.filter((u) => statusDaConta(u) === "ativo").length,
+      pendentes: users.filter((u) => statusDaConta(u) === "pendente").length,
+      inativos: users.filter((u) => statusDaConta(u) === "inativo").length,
+      negativos: users.filter((u) => u.total_diarias - u.total_adiantamentos < 0).length,
       diarias,
       adiantamentos,
       saldo: diarias - adiantamentos,
@@ -79,7 +98,22 @@ function AdminPage() {
   const filtrados = useMemo(() => {
     const q = busca.trim().toLowerCase();
     return users
-      .filter((u) => (filtro === "admins" ? u.is_admin : filtro === "devendo" ? u.total_diarias - u.total_adiantamentos < 0 : true))
+      .filter((u) => {
+        switch (filtro) {
+          case "admins":
+            return u.is_admin;
+          case "usuarios":
+            return !u.is_admin;
+          case "devendo":
+            return u.total_diarias - u.total_adiantamentos < 0;
+          case "ativo":
+          case "pendente":
+          case "inativo":
+            return statusDaConta(u) === filtro;
+          default:
+            return true;
+        }
+      })
       .filter((u) => !q || u.email.toLowerCase().includes(q) || (u.empresa ?? "").toLowerCase().includes(q));
   }, [users, busca, filtro]);
 
@@ -103,7 +137,11 @@ function AdminPage() {
   const chips: { id: Filtro; label: string; count: number }[] = [
     { id: "todos", label: "Todos", count: users.length },
     { id: "admins", label: "Admins", count: totais.admins },
-    { id: "devendo", label: "Saldo negativo", count: users.filter((u) => u.total_diarias - u.total_adiantamentos < 0).length },
+    { id: "usuarios", label: "Usuários", count: users.length - totais.admins },
+    { id: "ativo", label: "Ativos", count: totais.ativos },
+    { id: "pendente", label: "E-mail pendente", count: totais.pendentes },
+    { id: "inativo", label: "Inativos", count: totais.inativos },
+    { id: "devendo", label: "Saldo negativo", count: totais.negativos },
   ];
 
   return (
