@@ -25,7 +25,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
-import { useAdminUsers, gerarPDFDoUsuario, type AdminUser } from "@/lib/admin";
+import { useAdminUsers, gerarPDFDoUsuario, statusDaConta, type AdminUser, type ContaStatus } from "@/lib/admin";
 import { deleteUser } from "@/lib/admin.functions";
 import { fmt } from "@/lib/diarias-store";
 import { cn } from "@/lib/utils";
