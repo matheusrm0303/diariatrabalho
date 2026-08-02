@@ -25,7 +25,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
-import { useAdminUsers, gerarPDFDoUsuario, type AdminUser } from "@/lib/admin";
+import { useAdminUsers, gerarPDFDoUsuario, statusDaConta, type AdminUser, type ContaStatus } from "@/lib/admin";
 import { deleteUser } from "@/lib/admin.functions";
 import { fmt } from "@/lib/diarias-store";
 import { cn } from "@/lib/utils";
@@ -51,10 +51,25 @@ export const Route = createFileRoute("/_authenticated/admin")({
   component: AdminPage,
 });
 
-type Filtro = "todos" | "admins" | "devendo";
+type Filtro = "todos" | "admins" | "usuarios" | "ativo" | "pendente" | "inativo" | "devendo";
 
 function iniciais(email: string) {
   return email.slice(0, 2).toUpperCase();
+}
+
+export function StatusBadge({ status }: { status: ContaStatus }) {
+  const map: Record<ContaStatus, { label: string; cls: string }> = {
+    ativo: { label: "Ativo", cls: "border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" },
+    pendente: { label: "E-mail pendente", cls: "border-amber-500/40 bg-amber-500/10 text-amber-600 dark:text-amber-400" },
+    inativo: { label: "Inativo", cls: "border-muted-foreground/30 bg-muted text-muted-foreground" },
+  };
+  const s = map[status];
+  return (
+    <span className={cn("inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold", s.cls)}>
+      <span className="h-1.5 w-1.5 rounded-full bg-current" />
+      {s.label}
+    </span>
+  );
 }
 
 function AdminPage() {
@@ -70,6 +85,10 @@ function AdminPage() {
     return {
       usuarios: users.length,
       admins: users.filter((u) => u.is_admin).length,
+      ativos: users.filter((u) => statusDaConta(u) === "ativo").length,
+      pendentes: users.filter((u) => statusDaConta(u) === "pendente").length,
+      inativos: users.filter((u) => statusDaConta(u) === "inativo").length,
+      negativos: users.filter((u) => u.total_diarias - u.total_adiantamentos < 0).length,
       diarias,
       adiantamentos,
       saldo: diarias - adiantamentos,
@@ -79,7 +98,22 @@ function AdminPage() {
   const filtrados = useMemo(() => {
     const q = busca.trim().toLowerCase();
     return users
-      .filter((u) => (filtro === "admins" ? u.is_admin : filtro === "devendo" ? u.total_diarias - u.total_adiantamentos < 0 : true))
+      .filter((u) => {
+        switch (filtro) {
+          case "admins":
+            return u.is_admin;
+          case "usuarios":
+            return !u.is_admin;
+          case "devendo":
+            return u.total_diarias - u.total_adiantamentos < 0;
+          case "ativo":
+          case "pendente":
+          case "inativo":
+            return statusDaConta(u) === filtro;
+          default:
+            return true;
+        }
+      })
       .filter((u) => !q || u.email.toLowerCase().includes(q) || (u.empresa ?? "").toLowerCase().includes(q));
   }, [users, busca, filtro]);
 
@@ -103,7 +137,11 @@ function AdminPage() {
   const chips: { id: Filtro; label: string; count: number }[] = [
     { id: "todos", label: "Todos", count: users.length },
     { id: "admins", label: "Admins", count: totais.admins },
-    { id: "devendo", label: "Saldo negativo", count: users.filter((u) => u.total_diarias - u.total_adiantamentos < 0).length },
+    { id: "usuarios", label: "Usuários", count: users.length - totais.admins },
+    { id: "ativo", label: "Ativos", count: totais.ativos },
+    { id: "pendente", label: "E-mail pendente", count: totais.pendentes },
+    { id: "inativo", label: "Inativos", count: totais.inativos },
+    { id: "devendo", label: "Saldo negativo", count: totais.negativos },
   ];
 
   return (
@@ -275,11 +313,13 @@ function UserCard({
           <span className="flex flex-wrap items-center gap-1.5">
             <span className="truncate font-medium">{user.email}</span>
             {user.is_admin && <Badge variant="secondary" className="gap-1"><Shield className="h-3 w-3" />Admin</Badge>}
+            <StatusBadge status={statusDaConta(user)} />
           </span>
           <span className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
             {user.empresa ? (
               <span className="inline-flex items-center gap-1"><Building2 className="h-3 w-3" />{user.empresa}</span>
             ) : null}
+            <span>{user.qtd_diarias} diária(s)</span>
             <span>
               Saldo{" "}
               <span className={cn("font-semibold", saldo < 0 ? "text-destructive" : "text-foreground")}>
@@ -300,9 +340,14 @@ function UserCard({
 
       {aberto && (
         <div className="animate-fade-in-up grid gap-3 border-t p-4">
-          <p className="text-xs text-muted-foreground">
-            Cadastro: {new Date(user.created_at).toLocaleDateString("pt-BR")}
-          </p>
+          <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+            <span>Cadastro: {new Date(user.created_at).toLocaleDateString("pt-BR")}</span>
+            <span>
+              Último acesso:{" "}
+              {user.last_sign_in_at ? new Date(user.last_sign_in_at).toLocaleString("pt-BR") : "nunca"}
+            </span>
+            <span>E-mail: {user.email_confirmed ? "confirmado" : "não confirmado"}</span>
+          </div>
 
           <div className="grid grid-cols-3 gap-2 text-xs">
             <div className="rounded-lg border bg-muted/30 p-2">

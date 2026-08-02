@@ -13,7 +13,20 @@ export type AdminUser = {
   empresa: string;
   total_diarias: number;
   total_adiantamentos: number;
+  email_confirmed: boolean;
+  last_sign_in_at: string | null;
+  qtd_diarias: number;
 };
+
+/** Status derivado da conta do usuário. */
+export type ContaStatus = "ativo" | "inativo" | "pendente";
+
+export function statusDaConta(u: AdminUser): ContaStatus {
+  if (!u.email_confirmed) return "pendente";
+  if (!u.last_sign_in_at) return "inativo";
+  const dias = (Date.now() - new Date(u.last_sign_in_at).getTime()) / 86_400_000;
+  return dias > 30 ? "inativo" : "ativo";
+}
 
 export function useIsAdmin() {
   const [isAdmin, setIsAdmin] = useState(false);
@@ -89,6 +102,9 @@ export function useAdminUsers() {
         valor_deposito: Number(r.valor_deposito),
         total_diarias: Number(r.total_diarias),
         total_adiantamentos: Number(r.total_adiantamentos),
+        email_confirmed: !!r.email_confirmed,
+        last_sign_in_at: r.last_sign_in_at ?? null,
+        qtd_diarias: Number(r.qtd_diarias ?? 0),
       })) ?? [],
     );
     setLoading(false);
