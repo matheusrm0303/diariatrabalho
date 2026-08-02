@@ -313,11 +313,13 @@ function UserCard({
           <span className="flex flex-wrap items-center gap-1.5">
             <span className="truncate font-medium">{user.email}</span>
             {user.is_admin && <Badge variant="secondary" className="gap-1"><Shield className="h-3 w-3" />Admin</Badge>}
+            <StatusBadge status={statusDaConta(user)} />
           </span>
           <span className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
             {user.empresa ? (
               <span className="inline-flex items-center gap-1"><Building2 className="h-3 w-3" />{user.empresa}</span>
             ) : null}
+            <span>{user.qtd_diarias} diária(s)</span>
             <span>
               Saldo{" "}
               <span className={cn("font-semibold", saldo < 0 ? "text-destructive" : "text-foreground")}>
