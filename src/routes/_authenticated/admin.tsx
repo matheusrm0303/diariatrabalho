@@ -1,6 +1,21 @@
 import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { ArrowLeft, Shield, ShieldOff, Trash2, Save, RefreshCw, ChevronDown, ChevronUp, LogOut, FileText } from "lucide-react";
+import {
+  ArrowLeft,
+  Shield,
+  ShieldOff,
+  Trash2,
+  Save,
+  RefreshCw,
+  ChevronDown,
+  LogOut,
+  FileText,
+  Search,
+  Users,
+  Wallet,
+  TrendingDown,
+  Building2,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -13,6 +28,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAdminUsers, gerarPDFDoUsuario, type AdminUser } from "@/lib/admin";
 import { deleteUser } from "@/lib/admin.functions";
 import { fmt } from "@/lib/diarias-store";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({
@@ -35,19 +51,37 @@ export const Route = createFileRoute("/_authenticated/admin")({
   component: AdminPage,
 });
 
+type Filtro = "todos" | "admins" | "devendo";
+
+function iniciais(email: string) {
+  return email.slice(0, 2).toUpperCase();
+}
+
 function AdminPage() {
   const { users, loading, recarregar, setDefaults, setEmpresa, toggleAdmin } = useAdminUsers();
   const deleteUserFn = useServerFn(deleteUser);
   const [busca, setBusca] = useState("");
+  const [filtro, setFiltro] = useState<Filtro>("todos");
   const navigate = useNavigate();
+
+  const totais = useMemo(() => {
+    const diarias = users.reduce((s, u) => s + u.total_diarias, 0);
+    const adiantamentos = users.reduce((s, u) => s + u.total_adiantamentos, 0);
+    return {
+      usuarios: users.length,
+      admins: users.filter((u) => u.is_admin).length,
+      diarias,
+      adiantamentos,
+      saldo: diarias - adiantamentos,
+    };
+  }, [users]);
 
   const filtrados = useMemo(() => {
     const q = busca.trim().toLowerCase();
-    if (!q) return users;
-    return users.filter(
-      (u) => u.email.toLowerCase().includes(q) || (u.empresa ?? "").toLowerCase().includes(q),
-    );
-  }, [users, busca]);
+    return users
+      .filter((u) => (filtro === "admins" ? u.is_admin : filtro === "devendo" ? u.total_diarias - u.total_adiantamentos < 0 : true))
+      .filter((u) => !q || u.email.toLowerCase().includes(q) || (u.empresa ?? "").toLowerCase().includes(q));
+  }, [users, busca, filtro]);
 
   async function handleDelete(u: AdminUser) {
     if (!confirm(`Remover permanentemente ${u.email}? Todos os dados serão apagados.`)) return;
@@ -66,44 +100,118 @@ function AdminPage() {
     navigate({ to: "/auth" });
   }
 
+  const chips: { id: Filtro; label: string; count: number }[] = [
+    { id: "todos", label: "Todos", count: users.length },
+    { id: "admins", label: "Admins", count: totais.admins },
+    { id: "devendo", label: "Saldo negativo", count: users.filter((u) => u.total_diarias - u.total_adiantamentos < 0).length },
+  ];
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="mx-auto max-w-3xl px-4 py-6">
-        <header className="mb-6 flex items-center gap-3">
+      <div className="mx-auto max-w-3xl px-4 py-6 pb-16">
+        <header className="mb-5 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2">
           <Button asChild size="icon" variant="ghost">
             <Link to="/" aria-label="Voltar"><ArrowLeft className="h-5 w-5" /></Link>
           </Button>
-          <div className="flex-1">
-            <h1 className="text-xl font-semibold tracking-tight">Painel administrativo</h1>
-            <p className="text-sm text-muted-foreground">Gerencie usuários e valores padrão.</p>
+          <div className="min-w-0">
+            <h1 className="truncate text-xl font-semibold tracking-tight">Painel administrativo</h1>
+            <p className="truncate text-sm text-muted-foreground">Gerencie usuários e valores padrão.</p>
           </div>
-          <Button size="icon" variant="ghost" onClick={recarregar} aria-label="Recarregar">
-            <RefreshCw className="h-5 w-5" />
-          </Button>
-          <Button size="icon" variant="ghost" onClick={handleSignOut} aria-label="Sair">
-            <LogOut className="h-5 w-5" />
-          </Button>
-
+          <div className="flex shrink-0 items-center">
+            <Button size="icon" variant="ghost" onClick={recarregar} aria-label="Recarregar">
+              <RefreshCw className={cn("h-5 w-5 transition-transform", loading && "animate-spin")} />
+            </Button>
+            <Button size="icon" variant="ghost" onClick={handleSignOut} aria-label="Sair">
+              <LogOut className="h-5 w-5" />
+            </Button>
+          </div>
         </header>
 
-        <Card className="p-3 mb-4">
-          <Input
-            placeholder="Buscar por e-mail…"
-            value={busca}
-            onChange={(e) => setBusca(e.target.value)}
-          />
-        </Card>
+        {/* KPIs */}
+        <div className="mb-4 grid grid-cols-2 gap-3">
+          <Card className="animate-fade-in-up relative overflow-hidden border-primary/20 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent p-4">
+            <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+              <Users className="h-4 w-4 text-primary" /> Usuários
+            </div>
+            <p className="mt-1 text-2xl font-bold tabular-nums">{totais.usuarios}</p>
+            <p className="text-xs text-muted-foreground">{totais.admins} admin(s)</p>
+          </Card>
+          <Card className="animate-fade-in-up p-4 [animation-delay:60ms]">
+            <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+              <Wallet className="h-4 w-4 text-primary" /> Diárias
+            </div>
+            <p className="mt-1 text-2xl font-bold tabular-nums">{fmt.format(totais.diarias)}</p>
+            <p className="text-xs text-muted-foreground">Adiant. {fmt.format(totais.adiantamentos)}</p>
+          </Card>
+          <Card
+            className={cn(
+              "animate-fade-in-up col-span-2 p-4 [animation-delay:120ms]",
+              totais.saldo < 0 && "border-destructive/40 bg-destructive/10",
+            )}
+          >
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <p className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                  <TrendingDown className="h-4 w-4" /> Saldo geral
+                </p>
+                <p className={cn("text-2xl font-bold tabular-nums", totais.saldo < 0 && "text-destructive")}>
+                  {fmt.format(totais.saldo)}
+                </p>
+              </div>
+              <Badge variant={totais.saldo < 0 ? "destructive" : "secondary"}>
+                {totais.saldo < 0 ? "A regularizar" : "Positivo"}
+              </Badge>
+            </div>
+          </Card>
+        </div>
+
+        {/* Busca + filtros */}
+        <div className="sticky top-0 z-10 -mx-4 mb-4 bg-background/85 px-4 py-2 backdrop-blur">
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              className="pl-9"
+              placeholder="Buscar por e-mail ou empresa…"
+              value={busca}
+              onChange={(e) => setBusca(e.target.value)}
+            />
+          </div>
+          <div className="no-scrollbar mt-2 flex gap-2 overflow-x-auto">
+            {chips.map((c) => (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => setFiltro(c.id)}
+                className={cn(
+                  "shrink-0 rounded-full border px-3 py-1 text-xs font-medium transition-all active:scale-95",
+                  filtro === c.id
+                    ? "border-primary bg-primary text-primary-foreground shadow-sm"
+                    : "border-border bg-card text-muted-foreground hover:bg-accent",
+                )}
+              >
+                {c.label} <span className="opacity-70">{c.count}</span>
+              </button>
+            ))}
+          </div>
+        </div>
 
         {loading ? (
-          <Card className="p-8 text-center text-sm text-muted-foreground">Carregando…</Card>
+          <div className="grid gap-3">
+            {[0, 1, 2].map((i) => (
+              <Card key={i} className="h-20 animate-pulse bg-muted/40" />
+            ))}
+          </div>
         ) : filtrados.length === 0 ? (
-          <Card className="p-8 text-center text-sm text-muted-foreground">Nenhum usuário.</Card>
+          <Card className="p-10 text-center">
+            <Users className="mx-auto h-8 w-8 text-muted-foreground/50" />
+            <p className="mt-2 text-sm text-muted-foreground">Nenhum usuário encontrado.</p>
+          </Card>
         ) : (
           <div className="grid gap-3">
-            {filtrados.map((u) => (
+            {filtrados.map((u, i) => (
               <UserCard
                 key={u.id}
+                index={i}
                 user={u}
                 onSave={(rua, dep) => setDefaults(u.id, rua, dep)}
                 onSaveEmpresa={(emp) => setEmpresa(u.id, emp)}
@@ -120,12 +228,14 @@ function AdminPage() {
 
 function UserCard({
   user,
+  index,
   onSave,
   onSaveEmpresa,
   onToggleAdmin,
   onDelete,
 }: {
   user: AdminUser;
+  index: number;
   onSave: (rua: number, dep: number) => void;
   onSaveEmpresa: (empresa: string) => void;
   onToggleAdmin: (v: boolean) => void;
@@ -135,52 +245,77 @@ function UserCard({
   const [dep, setDep] = useState(String(user.valor_deposito));
   const [empresa, setEmpresaInput] = useState(user.empresa ?? "");
   const [aberto, setAberto] = useState(false);
+  const [pdfLoading, setPdfLoading] = useState(false);
 
   function parseNum(v: string) {
     return parseFloat(v.replace(",", ".")) || 0;
   }
 
   const saldo = user.total_diarias - user.total_adiantamentos;
+  const pct = user.total_diarias > 0 ? Math.min(100, (user.total_adiantamentos / user.total_diarias) * 100) : 0;
 
   return (
-    <Card className="p-4 grid gap-3">
+    <Card
+      className={cn(
+        "animate-fade-in-up overflow-hidden p-0 transition-shadow",
+        aberto ? "shadow-lg ring-1 ring-primary/20" : "hover:shadow-md",
+      )}
+      style={{ animationDelay: `${Math.min(index, 8) * 40}ms` }}
+    >
       <button
         type="button"
         onClick={() => setAberto((v) => !v)}
-        className="flex items-start justify-between gap-3 text-left"
+        className="grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 p-4 text-left"
         aria-expanded={aberto}
       >
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2 flex-wrap">
-            <p className="font-medium truncate">{user.email}</p>
-            {user.is_admin && <Badge variant="secondary">Admin</Badge>}
-            {user.empresa ? <Badge variant="outline">{user.empresa}</Badge> : null}
-          </div>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            Saldo: <span className={saldo < 0 ? "text-rose-600 font-medium" : "font-medium"}>{fmt.format(saldo)}</span>
-          </p>
-        </div>
-        {aberto ? <ChevronUp className="h-5 w-5 shrink-0 text-muted-foreground" /> : <ChevronDown className="h-5 w-5 shrink-0 text-muted-foreground" />}
+        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-primary to-primary/60 text-sm font-bold text-primary-foreground">
+          {iniciais(user.email)}
+        </span>
+        <span className="min-w-0">
+          <span className="flex flex-wrap items-center gap-1.5">
+            <span className="truncate font-medium">{user.email}</span>
+            {user.is_admin && <Badge variant="secondary" className="gap-1"><Shield className="h-3 w-3" />Admin</Badge>}
+          </span>
+          <span className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+            {user.empresa ? (
+              <span className="inline-flex items-center gap-1"><Building2 className="h-3 w-3" />{user.empresa}</span>
+            ) : null}
+            <span>
+              Saldo{" "}
+              <span className={cn("font-semibold", saldo < 0 ? "text-destructive" : "text-foreground")}>
+                {fmt.format(saldo)}
+              </span>
+            </span>
+          </span>
+        </span>
+        <ChevronDown className={cn("h-5 w-5 shrink-0 text-muted-foreground transition-transform duration-300", aberto && "rotate-180")} />
       </button>
 
+      <div className="h-1 w-full bg-muted">
+        <div
+          className={cn("h-full rounded-r-full transition-all duration-500", saldo < 0 ? "bg-destructive" : "bg-primary")}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+
       {aberto && (
-        <>
-          <p className="text-xs text-muted-foreground -mt-1">
+        <div className="animate-fade-in-up grid gap-3 border-t p-4">
+          <p className="text-xs text-muted-foreground">
             Cadastro: {new Date(user.created_at).toLocaleDateString("pt-BR")}
           </p>
 
           <div className="grid grid-cols-3 gap-2 text-xs">
-            <div className="rounded-md border p-2">
+            <div className="rounded-lg border bg-muted/30 p-2">
               <p className="text-muted-foreground">Diárias</p>
-              <p className="font-semibold">{fmt.format(user.total_diarias)}</p>
+              <p className="font-semibold tabular-nums">{fmt.format(user.total_diarias)}</p>
             </div>
-            <div className="rounded-md border p-2">
+            <div className="rounded-lg border bg-muted/30 p-2">
               <p className="text-muted-foreground">Adiantamentos</p>
-              <p className="font-semibold">{fmt.format(user.total_adiantamentos)}</p>
+              <p className="font-semibold tabular-nums">{fmt.format(user.total_adiantamentos)}</p>
             </div>
-            <div className="rounded-md border p-2">
+            <div className={cn("rounded-lg border p-2", saldo < 0 ? "border-destructive/40 bg-destructive/10" : "bg-muted/30")}>
               <p className="text-muted-foreground">Saldo</p>
-              <p className={"font-semibold " + (saldo < 0 ? "text-rose-600" : "")}>{fmt.format(saldo)}</p>
+              <p className={cn("font-semibold tabular-nums", saldo < 0 && "text-destructive")}>{fmt.format(saldo)}</p>
             </div>
           </div>
 
@@ -194,7 +329,14 @@ function UserCard({
                 placeholder="Nome da empresa"
                 onChange={(e) => setEmpresaInput(e.target.value)}
               />
-              <Button size="sm" variant="secondary" onClick={() => onSaveEmpresa(empresa.trim())}>
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => {
+                  onSaveEmpresa(empresa.trim());
+                  toast.success("Empresa atualizada");
+                }}
+              >
                 <Save className="h-4 w-4" /> Salvar
               </Button>
             </div>
@@ -212,22 +354,32 @@ function UserCard({
           </div>
 
           <div className="flex flex-wrap gap-2">
-            <Button size="sm" onClick={() => onSave(parseNum(rua), parseNum(dep))}>
+            <Button
+              size="sm"
+              onClick={() => {
+                onSave(parseNum(rua), parseNum(dep));
+                toast.success("Valores salvos");
+              }}
+            >
               <Save className="h-4 w-4" /> Salvar valores
             </Button>
             <Button
               size="sm"
               variant="secondary"
+              disabled={pdfLoading}
               onClick={async () => {
+                setPdfLoading(true);
                 try {
-                  toast.info("Gerando PDF…");
                   await gerarPDFDoUsuario(user);
                 } catch (e) {
                   toast.error((e as Error).message);
+                } finally {
+                  setPdfLoading(false);
                 }
               }}
             >
-              <FileText className="h-4 w-4" /> Gerar PDF
+              {pdfLoading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
+              {pdfLoading ? "Gerando…" : "Gerar PDF"}
             </Button>
             <Button size="sm" variant="outline" onClick={() => onToggleAdmin(!user.is_admin)}>
               {user.is_admin ? <><ShieldOff className="h-4 w-4" /> Remover admin</> : <><Shield className="h-4 w-4" /> Tornar admin</>}
@@ -236,10 +388,8 @@ function UserCard({
               <Trash2 className="h-4 w-4" /> Excluir
             </Button>
           </div>
-
-        </>
+        </div>
       )}
     </Card>
   );
 }
-
