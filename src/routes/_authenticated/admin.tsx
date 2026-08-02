@@ -340,9 +340,14 @@ function UserCard({
 
       {aberto && (
         <div className="animate-fade-in-up grid gap-3 border-t p-4">
-          <p className="text-xs text-muted-foreground">
-            Cadastro: {new Date(user.created_at).toLocaleDateString("pt-BR")}
-          </p>
+          <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+            <span>Cadastro: {new Date(user.created_at).toLocaleDateString("pt-BR")}</span>
+            <span>
+              Último acesso:{" "}
+              {user.last_sign_in_at ? new Date(user.last_sign_in_at).toLocaleString("pt-BR") : "nunca"}
+            </span>
+            <span>E-mail: {user.email_confirmed ? "confirmado" : "não confirmado"}</span>
+          </div>
 
           <div className="grid grid-cols-3 gap-2 text-xs">
             <div className="rounded-lg border bg-muted/30 p-2">
