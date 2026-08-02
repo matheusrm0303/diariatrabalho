@@ -102,6 +102,9 @@ export function useAdminUsers() {
         valor_deposito: Number(r.valor_deposito),
         total_diarias: Number(r.total_diarias),
         total_adiantamentos: Number(r.total_adiantamentos),
+        email_confirmed: !!r.email_confirmed,
+        last_sign_in_at: r.last_sign_in_at ?? null,
+        qtd_diarias: Number(r.qtd_diarias ?? 0),
       })) ?? [],
     );
     setLoading(false);
