@@ -242,6 +242,7 @@ function AdminPage() {
                 key={u.id}
                 index={i}
                 user={u}
+                onDetails={() => setDetalhesUser(u)}
                 onSave={(rua, dep) => setDefaults(u.id, rua, dep)}
                 onSaveEmpresa={(emp) => setEmpresa(u.id, emp)}
                 onToggleAdmin={(v) => toggleAdmin(u.id, v)}
@@ -251,6 +252,12 @@ function AdminPage() {
           </div>
         )}
       </div>
+
+      <AdminUserDialog
+        user={detalhesUser}
+        open={!!detalhesUser}
+        onOpenChange={(v) => !v && setDetalhesUser(null)}
+      />
     </div>
   );
 }
