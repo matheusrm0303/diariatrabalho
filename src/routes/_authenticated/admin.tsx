@@ -67,6 +67,7 @@ function AdminPage() {
   const deleteUserFn = useServerFn(deleteUser);
   const [busca, setBusca] = useState("");
   const [filtro, setFiltro] = useState<Filtro>("todos");
+  const [detalhesUser, setDetalhesUser] = useState<AdminUser | null>(null);
   const navigate = useNavigate();
 
   const totais = useMemo(() => {
