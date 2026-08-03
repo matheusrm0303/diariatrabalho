@@ -242,3 +242,74 @@ export async function gerarPDFDoUsuario(user: AdminUser) {
   });
 }
 
+
+export type DetalhesUsuario = {
+  diarias: Diaria[];
+  adiantamentos: Adiantamento[];
+  resumoPorMes: { key: string; label: string; pago: number; pendente: number; quantidade: number }[];
+  totais: { pago: number; pendente: number; adiantamentos: number; saldo: number };
+};
+
+const MESES_LABEL = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
+
+export async function carregarDetalhesDoUsuario(userId: string): Promise<DetalhesUsuario> {
+  const [diariasRes, adiantamentosRes] = await Promise.all([
+    supabase
+      .from("diarias")
+      .select("id,data,local,descricao,valor,tipo,status,alimentacao,alimentacao_obs")
+      .eq("user_id", userId)
+      .order("data", { ascending: false }),
+    supabase
+      .from("adiantamentos")
+      .select("id,data,valor,observacao")
+      .eq("user_id", userId)
+      .order("data", { ascending: false }),
+  ]);
+
+  if (diariasRes.error) throw new Error(diariasRes.error.message);
+  if (adiantamentosRes.error) throw new Error(adiantamentosRes.error.message);
+
+  const diarias: Diaria[] = ((diariasRes.data as DiariaRow[] | null) ?? []).map((r) => ({
+    id: r.id,
+    data: r.data,
+    local: r.local ?? "",
+    descricao: r.descricao ?? "",
+    valor: Number(r.valor),
+    tipo: r.tipo as Diaria["tipo"],
+    status: r.status as Diaria["status"],
+    alimentacao: r.alimentacao != null ? Number(r.alimentacao) : undefined,
+    alimentacaoObs: r.alimentacao_obs ?? undefined,
+  }));
+
+  const adiantamentos: Adiantamento[] = ((adiantamentosRes.data as AdiantamentoRow[] | null) ?? []).map((r) => ({
+    id: r.id,
+    data: r.data,
+    valor: Number(r.valor),
+    observacao: r.observacao ?? undefined,
+  }));
+
+  const mapa = new Map<string, { key: string; label: string; pago: number; pendente: number; quantidade: number }>();
+  for (const d of diarias) {
+    const [aStr, mStr] = d.data.split("-");
+    const ano = parseInt(aStr, 10);
+    const mes = parseInt(mStr, 10);
+    const key = `${aStr}-${mStr}`;
+    const total = d.valor + (d.alimentacao || 0);
+    const cur = mapa.get(key) ?? { key, label: `${MESES_LABEL[mes - 1]} / ${ano}`, pago: 0, pendente: 0, quantidade: 0 };
+    if (d.status === "pago") cur.pago += total; else cur.pendente += total;
+    cur.quantidade += 1;
+    mapa.set(key, cur);
+  }
+  const resumoPorMes = Array.from(mapa.values()).sort((a, b) => (a.key < b.key ? 1 : -1));
+
+  const pago = resumoPorMes.reduce((s, m) => s + m.pago, 0);
+  const pendente = resumoPorMes.reduce((s, m) => s + m.pendente, 0);
+  const totalAdiantado = adiantamentos.reduce((s, a) => s + a.valor, 0);
+
+  return {
+    diarias,
+    adiantamentos,
+    resumoPorMes,
+    totais: { pago, pendente, adiantamentos: totalAdiantado, saldo: pago + pendente - totalAdiantado },
+  };
+}
