@@ -265,6 +265,7 @@ function AdminPage() {
 function UserCard({
   user,
   index,
+  onDetails,
   onSave,
   onSaveEmpresa,
   onToggleAdmin,
@@ -272,6 +273,7 @@ function UserCard({
 }: {
   user: AdminUser;
   index: number;
+  onDetails: () => void;
   onSave: (rua: number, dep: number) => void;
   onSaveEmpresa: (empresa: string) => void;
   onToggleAdmin: (v: boolean) => void;
@@ -298,18 +300,18 @@ function UserCard({
       )}
       style={{ animationDelay: `${Math.min(index, 8) * 40}ms` }}
     >
-      <button
-        type="button"
-        onClick={() => setAberto((v) => !v)}
-        className="grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 p-4 text-left"
-        aria-expanded={aberto}
-      >
-        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-primary to-primary/60 text-sm font-bold text-primary-foreground">
+      <div className="grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 p-4">
+        <button
+          type="button"
+          onClick={onDetails}
+          title="Ver informações gerais"
+          className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-primary to-primary/60 text-sm font-bold text-primary-foreground transition-transform hover:scale-105"
+        >
           {iniciais(user.email)}
-        </span>
-        <span className="min-w-0">
+        </button>
+        <button type="button" onClick={onDetails} className="min-w-0 text-left" title="Ver informações gerais">
           <span className="flex flex-wrap items-center gap-1.5">
-            <span className="truncate font-medium">{user.email}</span>
+            <span className="truncate font-medium underline-offset-4 hover:underline">{user.email}</span>
             {user.is_admin && <Badge variant="secondary" className="gap-1"><Shield className="h-3 w-3" />Admin</Badge>}
             <StatusBadge status={statusDaConta(user)} />
           </span>
@@ -325,9 +327,18 @@ function UserCard({
               </span>
             </span>
           </span>
-        </span>
-        <ChevronDown className={cn("h-5 w-5 shrink-0 text-muted-foreground transition-transform duration-300", aberto && "rotate-180")} />
-      </button>
+        </button>
+        <button
+          type="button"
+          onClick={() => setAberto((v) => !v)}
+          aria-expanded={aberto}
+          aria-label={aberto ? "Fechar edição" : "Abrir edição"}
+          className="grid h-9 w-9 shrink-0 place-items-center rounded-lg text-muted-foreground hover:bg-muted"
+        >
+          <ChevronDown className={cn("h-5 w-5 transition-transform duration-300", aberto && "rotate-180")} />
+        </button>
+      </div>
+
 
       <div className="h-1 w-full bg-muted">
         <div
