@@ -12,8 +12,6 @@ import {
   FileText,
   Search,
   Users,
-  Wallet,
-  TrendingDown,
   Building2,
 } from "lucide-react";
 
@@ -29,7 +27,6 @@ import { useAdminUsers, gerarPDFDoUsuario, statusDaConta, type AdminUser } from 
 import { StatusBadge } from "@/components/admin-status-badge";
 import { AdminUserDialog } from "@/components/admin-user-dialog";
 import { deleteUser } from "@/lib/admin.functions";
-import { fmt } from "@/lib/diarias-store";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/admin")({
@@ -71,8 +68,6 @@ function AdminPage() {
   const navigate = useNavigate();
 
   const totais = useMemo(() => {
-    const diarias = users.reduce((s, u) => s + u.total_diarias, 0);
-    const adiantamentos = users.reduce((s, u) => s + u.total_adiantamentos, 0);
     return {
       usuarios: users.length,
       admins: users.filter((u) => u.is_admin).length,
@@ -80,9 +75,6 @@ function AdminPage() {
       pendentes: users.filter((u) => statusDaConta(u) === "pendente").length,
       inativos: users.filter((u) => statusDaConta(u) === "inativo").length,
       negativos: users.filter((u) => u.total_diarias - u.total_adiantamentos < 0).length,
-      diarias,
-      adiantamentos,
-      saldo: diarias - adiantamentos,
     };
   }, [users]);
 
