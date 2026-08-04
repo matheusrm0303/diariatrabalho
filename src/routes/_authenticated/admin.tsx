@@ -27,6 +27,7 @@ import { useAdminUsers, gerarPDFDoUsuario, statusDaConta, type AdminUser } from 
 import { StatusBadge } from "@/components/admin-status-badge";
 import { AdminUserDialog } from "@/components/admin-user-dialog";
 import { deleteUser } from "@/lib/admin.functions";
+import { fmt } from "@/lib/diarias-store";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/admin")({
@@ -149,39 +150,17 @@ function AdminPage() {
         </header>
 
         {/* KPIs */}
-        <div className="mb-4 grid grid-cols-2 gap-3">
+        <div className="mb-4 grid grid-cols-1 gap-3">
           <Card className="animate-fade-in-up relative overflow-hidden border-primary/20 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent p-4">
-            <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-              <Users className="h-4 w-4 text-primary" /> Usuários
-            </div>
-            <p className="mt-1 text-2xl font-bold tabular-nums">{totais.usuarios}</p>
-            <p className="text-xs text-muted-foreground">{totais.admins} admin(s)</p>
-          </Card>
-          <Card className="animate-fade-in-up p-4 [animation-delay:60ms]">
-            <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-              <Wallet className="h-4 w-4 text-primary" /> Diárias
-            </div>
-            <p className="mt-1 text-2xl font-bold tabular-nums">{fmt.format(totais.diarias)}</p>
-            <p className="text-xs text-muted-foreground">Adiant. {fmt.format(totais.adiantamentos)}</p>
-          </Card>
-          <Card
-            className={cn(
-              "animate-fade-in-up col-span-2 p-4 [animation-delay:120ms]",
-              totais.saldo < 0 && "border-destructive/40 bg-destructive/10",
-            )}
-          >
             <div className="flex items-center justify-between gap-3">
-              <div className="min-w-0">
-                <p className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-                  <TrendingDown className="h-4 w-4" /> Saldo geral
-                </p>
-                <p className={cn("text-2xl font-bold tabular-nums", totais.saldo < 0 && "text-destructive")}>
-                  {fmt.format(totais.saldo)}
-                </p>
+              <div>
+                <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                  <Users className="h-4 w-4 text-primary" /> Usuários
+                </div>
+                <p className="mt-1 text-2xl font-bold tabular-nums">{totais.usuarios}</p>
+                <p className="text-xs text-muted-foreground">{totais.admins} admin(s)</p>
               </div>
-              <Badge variant={totais.saldo < 0 ? "destructive" : "secondary"}>
-                {totais.saldo < 0 ? "A regularizar" : "Positivo"}
-              </Badge>
+              <Badge variant="secondary">{totais.usuarios === 1 ? "conta" : "contas"}</Badge>
             </div>
           </Card>
         </div>
