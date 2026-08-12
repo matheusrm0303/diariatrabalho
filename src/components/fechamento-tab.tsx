@@ -445,6 +445,11 @@ export function FechamentoTab() {
     waIncluirPendentes,
     waIncluirAlim,
     waIncluirObs,
+    pixChave,
+    pixTipo,
+    pixTitular,
+    pixBanco,
+    pixIncluir,
   ]);
 
   function abrirDialogoWhatsApp() {
