@@ -215,9 +215,57 @@ export function FechamentoTab() {
   const [templates, setTemplates] = useState<WaTemplate[]>([]);
   const [tplNome, setTplNome] = useState("");
 
+  // ------- Pix -------
+  const [pixChave, setPixChave] = useState("");
+  const [pixTipo, setPixTipo] = useState("");
+  const [pixTitular, setPixTitular] = useState("");
+  const [pixBanco, setPixBanco] = useState("");
+  const [pixIncluir, setPixIncluir] = useState(true);
+
   useEffect(() => {
     setTemplates(loadTpls());
+    try {
+      const raw = localStorage.getItem(PIX_KEY);
+      if (raw) {
+        const p = JSON.parse(raw) as Partial<PixInfo>;
+        setPixChave(p.chave ?? "");
+        setPixTipo(p.tipo ?? "");
+        setPixTitular(p.titular ?? "");
+        setPixBanco(p.banco ?? "");
+        setPixIncluir(p.incluir ?? true);
+      }
+    } catch {
+      // ignore
+    }
   }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        PIX_KEY,
+        JSON.stringify({
+          chave: pixChave,
+          tipo: pixTipo,
+          titular: pixTitular,
+          banco: pixBanco,
+          incluir: pixIncluir,
+        }),
+      );
+    } catch {
+      // ignore
+    }
+  }, [pixChave, pixTipo, pixTitular, pixBanco, pixIncluir]);
+
+  const pixInfo =
+    pixIncluir && pixChave.trim()
+      ? {
+          chave: pixChave.trim(),
+          tipo: pixTipo.trim(),
+          titular: pixTitular.trim(),
+          banco: pixBanco.trim(),
+        }
+      : undefined;
+
 
   // Diárias disponíveis para o WhatsApp (respeitando período + faixa de datas)
   const diariasDisponiveis = useMemo(() => {
