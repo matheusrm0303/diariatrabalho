@@ -402,6 +402,14 @@ export function FechamentoTab() {
         );
       }
     }
+    if (pixInfo) {
+      linhas.push("");
+      linhas.push(
+        `*Chave Pix${pixInfo.tipo ? ` (${pixInfo.tipo})` : ""}:* ${pixInfo.chave}`,
+      );
+      if (pixInfo.titular) linhas.push(`_Titular:_ ${pixInfo.titular}`);
+      if (pixInfo.banco) linhas.push(`_Instituição:_ ${pixInfo.banco}`);
+    }
     return linhas.join("\n");
   }
 
