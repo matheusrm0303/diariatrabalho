@@ -26,6 +26,8 @@ import {
   Save,
   Trash2,
   QrCode,
+  Eye,
+  Check,
 } from "lucide-react";
 import { useDiarias, useAdiantamentos, fmt, type Diaria } from "@/lib/diarias-store";
 import {
@@ -452,6 +454,8 @@ export function FechamentoTab() {
     pixBanco,
     pixIncluir,
   ]);
+
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   function abrirDialogoWhatsApp() {
     if (diarias.length === 0 && adiantamentos.length === 0) return;
