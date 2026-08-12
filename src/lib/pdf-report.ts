@@ -23,6 +23,13 @@ export interface MesResumoPDF {
   quantidade: number;
 }
 
+export interface PixInfoPDF {
+  chave: string;
+  tipo?: string;
+  titular?: string;
+  banco?: string;
+}
+
 export interface ReportOptions {
   titulo: string;
   periodoLabel: string;
@@ -35,6 +42,7 @@ export interface ReportOptions {
     adiantamentos?: number;
     saldo?: number;
   };
+  pix?: PixInfoPDF;
   chartsScope: string;
   nomeArquivo: string;
 }
