@@ -677,6 +677,66 @@ export function FechamentoTab() {
         </Select>
       </div>
 
+      {/* Chave Pix */}
+      <Card className="mb-4 rounded-2xl border-transparent p-4 shadow-sm">
+        <div className="mb-3 flex items-start justify-between gap-3">
+          <div>
+            <p className="flex items-center gap-1.5 font-display text-sm font-bold">
+              <QrCode className="h-4 w-4 text-primary" /> Chave Pix
+            </p>
+            <p className="text-[11px] text-muted-foreground">
+              Incluída no fechamento enviado por WhatsApp e no PDF.
+            </p>
+          </div>
+          <label className="flex shrink-0 items-center gap-2 text-[11px] font-medium text-muted-foreground">
+            <Checkbox
+              checked={pixIncluir}
+              onCheckedChange={(v) => setPixIncluir(v === true)}
+              aria-label="Incluir chave Pix no fechamento"
+            />
+            Incluir
+          </label>
+        </div>
+        <div className="grid gap-2">
+          <div className="grid grid-cols-3 gap-2">
+            <Select value={pixTipo || "nenhum"} onValueChange={(v) => setPixTipo(v === "nenhum" ? "" : v)}>
+              <SelectTrigger className="h-10 rounded-xl text-xs">
+                <SelectValue placeholder="Tipo" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="nenhum">Tipo</SelectItem>
+                <SelectItem value="CPF">CPF</SelectItem>
+                <SelectItem value="CNPJ">CNPJ</SelectItem>
+                <SelectItem value="Telefone">Telefone</SelectItem>
+                <SelectItem value="E-mail">E-mail</SelectItem>
+                <SelectItem value="Aleatória">Aleatória</SelectItem>
+              </SelectContent>
+            </Select>
+            <Input
+              value={pixChave}
+              onChange={(e) => setPixChave(e.target.value)}
+              placeholder="Chave Pix"
+              className="col-span-2 h-10 rounded-xl text-xs"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <Input
+              value={pixTitular}
+              onChange={(e) => setPixTitular(e.target.value)}
+              placeholder="Titular (opcional)"
+              className="h-10 rounded-xl text-xs"
+            />
+            <Input
+              value={pixBanco}
+              onChange={(e) => setPixBanco(e.target.value)}
+              placeholder="Banco (opcional)"
+              className="h-10 rounded-xl text-xs"
+            />
+          </div>
+        </div>
+      </Card>
+
+
       {/* Ações */}
       <div className="mb-6 grid grid-cols-3 gap-2">
         <Button
