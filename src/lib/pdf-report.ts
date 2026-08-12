@@ -23,6 +23,13 @@ export interface MesResumoPDF {
   quantidade: number;
 }
 
+export interface PixInfoPDF {
+  chave: string;
+  tipo?: string;
+  titular?: string;
+  banco?: string;
+}
+
 export interface ReportOptions {
   titulo: string;
   periodoLabel: string;
@@ -35,6 +42,7 @@ export interface ReportOptions {
     adiantamentos?: number;
     saldo?: number;
   };
+  pix?: PixInfoPDF;
   chartsScope: string;
   nomeArquivo: string;
 }
@@ -306,7 +314,45 @@ export async function gerarRelatorioPDF(opts: ReportOptions): Promise<void> {
       },
       margin: { left: margem, right: margem },
     });
+    const adFinalY =
+      (doc as unknown as { lastAutoTable?: { finalY: number } }).lastAutoTable
+        ?.finalY ?? y;
+    y = adFinalY + 14;
   }
+
+  // ---- Dados para pagamento (Pix) ----
+  if (opts.pix?.chave?.trim()) {
+    const linhasPix: string[] = [];
+    if (opts.pix.titular?.trim()) linhasPix.push(`Titular: ${opts.pix.titular.trim()}`);
+    if (opts.pix.banco?.trim()) linhasPix.push(`Instituição: ${opts.pix.banco.trim()}`);
+    const boxH = 46 + linhasPix.length * 13;
+    if (y + boxH > alturaPagina - margem - 28) {
+      doc.addPage();
+      y = margem;
+    }
+    doc.setFillColor(...COR_CARD_FUNDO);
+    doc.roundedRect(margem, y, larguraUtil, boxH, 6, 6, "F");
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8.5);
+    doc.setTextColor(...COR_SUAVE);
+    const rotulo = opts.pix.tipo?.trim()
+      ? `PAGAMENTO VIA PIX (${opts.pix.tipo.trim().toUpperCase()})`
+      : "PAGAMENTO VIA PIX";
+    doc.text(rotulo, margem + 12, y + 18);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
+    doc.setTextColor(...COR_TEXTO);
+    doc.text(doc.splitTextToSize(opts.pix.chave.trim(), larguraUtil - 24)[0], margem + 12, y + 36);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(...COR_SUAVE);
+    linhasPix.forEach((l, i) => {
+      doc.text(l, margem + 12, y + 50 + i * 13);
+    });
+    y += boxH + 14;
+  }
+
+
 
   // ---- Rodapé com paginação ----
   const total = doc.getNumberOfPages();

@@ -25,6 +25,7 @@ import {
   Bookmark,
   Save,
   Trash2,
+  QrCode,
 } from "lucide-react";
 import { useDiarias, useAdiantamentos, fmt, type Diaria } from "@/lib/diarias-store";
 import {
@@ -115,6 +116,14 @@ interface WaTemplate {
   incluirObs: boolean;
 }
 const TPL_KEY = "wa-templates-v1";
+const PIX_KEY = "pix-fechamento-v1";
+interface PixInfo {
+  chave: string;
+  tipo: string;
+  titular: string;
+  banco: string;
+  incluir: boolean;
+}
 function loadTpls(): WaTemplate[] {
   try {
     const raw = localStorage.getItem(TPL_KEY);
@@ -215,9 +224,57 @@ export function FechamentoTab() {
   const [templates, setTemplates] = useState<WaTemplate[]>([]);
   const [tplNome, setTplNome] = useState("");
 
+  // ------- Pix -------
+  const [pixChave, setPixChave] = useState("");
+  const [pixTipo, setPixTipo] = useState("");
+  const [pixTitular, setPixTitular] = useState("");
+  const [pixBanco, setPixBanco] = useState("");
+  const [pixIncluir, setPixIncluir] = useState(true);
+
   useEffect(() => {
     setTemplates(loadTpls());
+    try {
+      const raw = localStorage.getItem(PIX_KEY);
+      if (raw) {
+        const p = JSON.parse(raw) as Partial<PixInfo>;
+        setPixChave(p.chave ?? "");
+        setPixTipo(p.tipo ?? "");
+        setPixTitular(p.titular ?? "");
+        setPixBanco(p.banco ?? "");
+        setPixIncluir(p.incluir ?? true);
+      }
+    } catch {
+      // ignore
+    }
   }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        PIX_KEY,
+        JSON.stringify({
+          chave: pixChave,
+          tipo: pixTipo,
+          titular: pixTitular,
+          banco: pixBanco,
+          incluir: pixIncluir,
+        }),
+      );
+    } catch {
+      // ignore
+    }
+  }, [pixChave, pixTipo, pixTitular, pixBanco, pixIncluir]);
+
+  const pixInfo =
+    pixIncluir && pixChave.trim()
+      ? {
+          chave: pixChave.trim(),
+          tipo: pixTipo.trim(),
+          titular: pixTitular.trim(),
+          banco: pixBanco.trim(),
+        }
+      : undefined;
+
 
   // Diárias disponíveis para o WhatsApp (respeitando período + faixa de datas)
   const diariasDisponiveis = useMemo(() => {
@@ -346,6 +403,14 @@ export function FechamentoTab() {
         );
       }
     }
+    if (pixInfo) {
+      linhas.push("");
+      linhas.push(
+        `*Chave Pix${pixInfo.tipo ? ` (${pixInfo.tipo})` : ""}:* ${pixInfo.chave}`,
+      );
+      if (pixInfo.titular) linhas.push(`_Titular:_ ${pixInfo.titular}`);
+      if (pixInfo.banco) linhas.push(`_Instituição:_ ${pixInfo.banco}`);
+    }
     return linhas.join("\n");
   }
 
@@ -381,6 +446,11 @@ export function FechamentoTab() {
     waIncluirPendentes,
     waIncluirAlim,
     waIncluirObs,
+    pixChave,
+    pixTipo,
+    pixTitular,
+    pixBanco,
+    pixIncluir,
   ]);
 
   function abrirDialogoWhatsApp() {
@@ -501,6 +571,7 @@ export function FechamentoTab() {
           adiantamentos: totalAdiantamentos,
           saldo: saldoAReceber,
         },
+        pix: pixInfo,
         chartsScope: "fechamento",
         nomeArquivo: `fechamento-diarias-${periodo}-${todayStamp()}.pdf`,
       });
@@ -606,6 +677,66 @@ export function FechamentoTab() {
           </SelectContent>
         </Select>
       </div>
+
+      {/* Chave Pix */}
+      <Card className="mb-4 rounded-2xl border-transparent p-4 shadow-sm">
+        <div className="mb-3 flex items-start justify-between gap-3">
+          <div>
+            <p className="flex items-center gap-1.5 font-display text-sm font-bold">
+              <QrCode className="h-4 w-4 text-primary" /> Chave Pix
+            </p>
+            <p className="text-[11px] text-muted-foreground">
+              Incluída no fechamento enviado por WhatsApp e no PDF.
+            </p>
+          </div>
+          <label className="flex shrink-0 items-center gap-2 text-[11px] font-medium text-muted-foreground">
+            <Checkbox
+              checked={pixIncluir}
+              onCheckedChange={(v) => setPixIncluir(v === true)}
+              aria-label="Incluir chave Pix no fechamento"
+            />
+            Incluir
+          </label>
+        </div>
+        <div className="grid gap-2">
+          <div className="grid grid-cols-3 gap-2">
+            <Select value={pixTipo || "nenhum"} onValueChange={(v) => setPixTipo(v === "nenhum" ? "" : v)}>
+              <SelectTrigger className="h-10 rounded-xl text-xs">
+                <SelectValue placeholder="Tipo" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="nenhum">Tipo</SelectItem>
+                <SelectItem value="CPF">CPF</SelectItem>
+                <SelectItem value="CNPJ">CNPJ</SelectItem>
+                <SelectItem value="Telefone">Telefone</SelectItem>
+                <SelectItem value="E-mail">E-mail</SelectItem>
+                <SelectItem value="Aleatória">Aleatória</SelectItem>
+              </SelectContent>
+            </Select>
+            <Input
+              value={pixChave}
+              onChange={(e) => setPixChave(e.target.value)}
+              placeholder="Chave Pix"
+              className="col-span-2 h-10 rounded-xl text-xs"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <Input
+              value={pixTitular}
+              onChange={(e) => setPixTitular(e.target.value)}
+              placeholder="Titular (opcional)"
+              className="h-10 rounded-xl text-xs"
+            />
+            <Input
+              value={pixBanco}
+              onChange={(e) => setPixBanco(e.target.value)}
+              placeholder="Banco (opcional)"
+              className="h-10 rounded-xl text-xs"
+            />
+          </div>
+        </div>
+      </Card>
+
 
       {/* Ações */}
       <div className="mb-6 grid grid-cols-3 gap-2">
