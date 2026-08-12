@@ -115,6 +115,14 @@ interface WaTemplate {
   incluirObs: boolean;
 }
 const TPL_KEY = "wa-templates-v1";
+const PIX_KEY = "pix-fechamento-v1";
+interface PixInfo {
+  chave: string;
+  tipo: string;
+  titular: string;
+  banco: string;
+  incluir: boolean;
+}
 function loadTpls(): WaTemplate[] {
   try {
     const raw = localStorage.getItem(TPL_KEY);
