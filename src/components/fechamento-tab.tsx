@@ -570,6 +570,7 @@ export function FechamentoTab() {
           adiantamentos: totalAdiantamentos,
           saldo: saldoAReceber,
         },
+        pix: pixInfo,
         chartsScope: "fechamento",
         nomeArquivo: `fechamento-diarias-${periodo}-${todayStamp()}.pdf`,
       });
