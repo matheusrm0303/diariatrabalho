@@ -26,6 +26,8 @@ import {
   Save,
   Trash2,
   QrCode,
+  Eye,
+  Check,
 } from "lucide-react";
 import { useDiarias, useAdiantamentos, fmt, type Diaria } from "@/lib/diarias-store";
 import {
