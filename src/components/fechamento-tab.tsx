@@ -455,6 +455,8 @@ export function FechamentoTab() {
     pixIncluir,
   ]);
 
+  const [previewOpen, setPreviewOpen] = useState(false);
+
   function abrirDialogoWhatsApp() {
     if (diarias.length === 0 && adiantamentos.length === 0) return;
     // Reset faixa: início e fim das diárias existentes
