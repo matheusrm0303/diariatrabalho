@@ -1260,7 +1260,69 @@ export function FechamentoTab() {
               Cancelar
             </Button>
             <Button
+              variant="outline"
+              onClick={() => setPreviewOpen(true)}
+              disabled={!waMensagem.trim()}
+            >
+              <Eye className="h-4 w-4" />
+              Pré-visualizar
+            </Button>
+            <Button
               onClick={enviarWhatsApp}
+              disabled={!waMensagem.trim()}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white"
+            >
+              <Send className="h-4 w-4" />
+              Enviar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Pré-visualização estilo WhatsApp */}
+      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Pré-visualização</DialogTitle>
+            <DialogDescription>
+              É exatamente assim que a mensagem chegará no WhatsApp.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="max-h-[60vh] overflow-y-auto rounded-2xl bg-emerald-950/5 p-3 dark:bg-emerald-500/5">
+            <div className="ml-auto max-w-[92%] rounded-2xl rounded-br-sm bg-emerald-100 p-3 text-xs leading-relaxed whitespace-pre-wrap break-words text-emerald-950 shadow-sm dark:bg-emerald-900/50 dark:text-emerald-50">
+              {renderPreviewWhatsApp(waMensagem)}
+              <div className="mt-1 flex items-center justify-end gap-1 text-[10px] text-emerald-700/70 dark:text-emerald-200/60">
+                {new Date().toLocaleTimeString("pt-BR", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+                <Check className="h-3 w-3" />
+              </div>
+            </div>
+          </div>
+
+          {pixIncluir && pixChave.trim() ? (
+            <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <QrCode className="h-3.5 w-3.5" />
+              Chave Pix incluída na mensagem.
+            </p>
+          ) : (
+            <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <QrCode className="h-3.5 w-3.5" />
+              Sem chave Pix nesta mensagem.
+            </p>
+          )}
+
+          <DialogFooter className="gap-2 sm:gap-2">
+            <Button variant="outline" onClick={() => setPreviewOpen(false)}>
+              Editar
+            </Button>
+            <Button
+              onClick={() => {
+                setPreviewOpen(false);
+                enviarWhatsApp();
+              }}
               disabled={!waMensagem.trim()}
               className="bg-emerald-600 hover:bg-emerald-700 text-white"
             >
