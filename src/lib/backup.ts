@@ -98,3 +98,38 @@ export async function importarBackup(
 
   return { diariasInseridas, adiantInseridos };
 }
+
+/* ---- Lembrete semanal de backup ---- */
+const KEY_ULTIMO = "backup:ultimo";
+const KEY_ADIADO = "backup:adiado";
+export const INTERVALO_BACKUP_MS = 7 * 24 * 60 * 60 * 1000;
+
+export function marcarBackupFeito() {
+  try {
+    localStorage.setItem(KEY_ULTIMO, new Date().toISOString());
+    localStorage.removeItem(KEY_ADIADO);
+  } catch { /* ignore */ }
+}
+
+export function adiarLembreteBackup(dias = 1) {
+  try {
+    localStorage.setItem(KEY_ADIADO, new Date(Date.now() + dias * 86_400_000).toISOString());
+  } catch { /* ignore */ }
+}
+
+export function ultimoBackupEm(): Date | null {
+  try {
+    const v = localStorage.getItem(KEY_ULTIMO);
+    return v ? new Date(v) : null;
+  } catch { return null; }
+}
+
+export function precisaBackup(): boolean {
+  try {
+    const adiado = localStorage.getItem(KEY_ADIADO);
+    if (adiado && Date.now() < new Date(adiado).getTime()) return false;
+  } catch { /* ignore */ }
+  const ultimo = ultimoBackupEm();
+  if (!ultimo) return true;
+  return Date.now() - ultimo.getTime() >= INTERVALO_BACKUP_MS;
+}

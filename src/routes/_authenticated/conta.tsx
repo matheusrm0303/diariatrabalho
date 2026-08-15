@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { ArrowLeft, LogOut, Mail, User, Download, Upload, Fingerprint } from "lucide-react";
 import { toast } from "sonner";
-import { exportarBackup, baixarBackupJSON, importarBackup, type BackupPayload } from "@/lib/backup";
+import { exportarBackup, baixarBackupJSON, importarBackup, marcarBackupFeito, type BackupPayload } from "@/lib/backup";
 import { Switch } from "@/components/ui/switch";
 import {
   isBiometricSupported,
@@ -114,6 +114,7 @@ function ContaPage() {
     try {
       const payload = await exportarBackup();
       baixarBackupJSON(payload);
+      marcarBackupFeito();
       toast.success(
         `Backup gerado: ${payload.diarias.length} diárias e ${payload.adiantamentos.length} adiantamentos.`,
       );
