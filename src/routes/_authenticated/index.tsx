@@ -7,6 +7,7 @@ import { DiariasTab } from "@/components/diarias-tab";
 import { supabase } from "@/integrations/supabase/client";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useIsAdmin } from "@/lib/admin";
+import { BackupReminder } from "@/components/backup-reminder";
 
 const AdiantamentoTab = lazy(() =>
   import("@/components/adiantamento-tab").then((m) => ({ default: m.AdiantamentoTab })),
@@ -67,6 +68,8 @@ function Index() {
             </Button>
           </div>
         </header>
+
+        <BackupReminder />
 
         <Tabs defaultValue="diarias" className="w-full">
           <TabsList className="mb-6 grid h-11 w-full grid-cols-3 rounded-2xl bg-muted/70 p-1">
