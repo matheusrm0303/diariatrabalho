@@ -9,8 +9,12 @@ type DiariaRow = { valor: number | string; alimentacao: number | string | null }
 async function handler(request: Request) {
   const authHeader = request.headers.get('authorization') ?? ''
   const apiKey = request.headers.get('apikey') ?? authHeader.replace('Bearer ', '')
-  const expected = process.env['SUPABASE_ANON_KEY'] ?? process.env['SUPABASE_PUBLISHABLE_KEY']
-  if (!apiKey || !expected || apiKey !== expected) {
+  const accepted = [
+    process.env['SUPABASE_PUBLISHABLE_KEY'],
+    process.env['VITE_SUPABASE_PUBLISHABLE_KEY'],
+    process.env['SUPABASE_ANON_KEY'],
+  ].filter(Boolean) as string[]
+  if (!apiKey || !accepted.includes(apiKey)) {
     return Response.json({ error: 'unauthorized' }, { status: 401 })
   }
 
