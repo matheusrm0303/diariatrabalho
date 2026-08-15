@@ -18,6 +18,7 @@ import { Route as AuthenticatedContaRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedNovaRouteImport } from './routes/_authenticated/nova'
 import { Route as AuthenticatedResumoRouteImport } from './routes/_authenticated/resumo'
 import { Route as AuthenticatedEditarIdRouteImport } from './routes/_authenticated/editar.$id'
+import { Route as ApiPublicHooksWeeklyBackupRouteImport } from './routes/api/public/hooks/weekly-backup'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
@@ -64,6 +65,12 @@ const AuthenticatedEditarIdRoute = AuthenticatedEditarIdRouteImport.update({
   path: '/editar/$id',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const ApiPublicHooksWeeklyBackupRoute =
+  ApiPublicHooksWeeklyBackupRouteImport.update({
+    id: '/api/public/hooks/weekly-backup',
+    path: '/api/public/hooks/weekly-backup',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const LovableEmailTransactionalPreviewRoute =
   LovableEmailTransactionalPreviewRouteImport.update({
     id: '/lovable/email/transactional/preview',
@@ -80,6 +87,7 @@ export interface FileRoutesByFullPath {
   '/nova': typeof AuthenticatedNovaRoute
   '/resumo': typeof AuthenticatedResumoRoute
   '/editar/$id': typeof AuthenticatedEditarIdRoute
+  '/api/public/hooks/weekly-backup': typeof ApiPublicHooksWeeklyBackupRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
 }
 export interface FileRoutesByTo {
@@ -91,6 +99,7 @@ export interface FileRoutesByTo {
   '/resumo': typeof AuthenticatedResumoRoute
   '/': typeof AuthenticatedIndexRoute
   '/editar/$id': typeof AuthenticatedEditarIdRoute
+  '/api/public/hooks/weekly-backup': typeof ApiPublicHooksWeeklyBackupRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
 }
 export interface FileRoutesById {
@@ -104,6 +113,7 @@ export interface FileRoutesById {
   '/_authenticated/resumo': typeof AuthenticatedResumoRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/editar/$id': typeof AuthenticatedEditarIdRoute
+  '/api/public/hooks/weekly-backup': typeof ApiPublicHooksWeeklyBackupRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
 }
 export interface FileRouteTypes {
@@ -117,6 +127,7 @@ export interface FileRouteTypes {
     | '/nova'
     | '/resumo'
     | '/editar/$id'
+    | '/api/public/hooks/weekly-backup'
     | '/lovable/email/transactional/preview'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -128,6 +139,7 @@ export interface FileRouteTypes {
     | '/resumo'
     | '/'
     | '/editar/$id'
+    | '/api/public/hooks/weekly-backup'
     | '/lovable/email/transactional/preview'
   id:
     | '__root__'
@@ -140,12 +152,14 @@ export interface FileRouteTypes {
     | '/_authenticated/resumo'
     | '/_authenticated/'
     | '/_authenticated/editar/$id'
+    | '/api/public/hooks/weekly-backup'
     | '/lovable/email/transactional/preview'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  ApiPublicHooksWeeklyBackupRoute: typeof ApiPublicHooksWeeklyBackupRoute
   LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
 }
 
@@ -214,6 +228,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedEditarIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/public/hooks/weekly-backup': {
+      id: '/api/public/hooks/weekly-backup'
+      path: '/api/public/hooks/weekly-backup'
+      fullPath: '/api/public/hooks/weekly-backup'
+      preLoaderRoute: typeof ApiPublicHooksWeeklyBackupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/lovable/email/transactional/preview': {
       id: '/lovable/email/transactional/preview'
       path: '/lovable/email/transactional/preview'
@@ -250,6 +271,7 @@ const AuthenticatedRouteRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  ApiPublicHooksWeeklyBackupRoute: ApiPublicHooksWeeklyBackupRoute,
   LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,
 }
 export const routeTree = rootRouteImport
