@@ -77,6 +77,40 @@ async function handler(request: Request) {
         .createSignedUrl(path, 60 * 60 * 24 * 7)
       if (signError) throw signError
 
+      // Fechamento total em PDF
+      let pdfUrl: string | undefined
+      try {
+        const { gerarFechamentoPDF } = await import('@/lib/fechamento-pdf.server')
+        const pdf = await gerarFechamentoPDF({
+          titulo: user.email,
+          periodo: `Fechamento gerado em ${hoje.toLocaleDateString('pt-BR')}`,
+          diarias: (diarias ?? []) as never[],
+          adiantamentos: (adiantamentos ?? []) as never[],
+        })
+        const pdfPath = `${user.id}/fechamento-${stamp}.pdf`
+        const { error: pdfUpErr } = await supabase.storage
+          .from('backups')
+          .upload(pdfPath, new Blob([pdf as BlobPart], { type: 'application/pdf' }), {
+            upsert: true,
+            contentType: 'application/pdf',
+          })
+        if (pdfUpErr) throw pdfUpErr
+        const { data: pdfSigned } = await supabase.storage
+          .from('backups')
+          .createSignedUrl(pdfPath, 60 * 60 * 24 * 7)
+        pdfUrl = pdfSigned?.signedUrl
+      } catch (e) {
+        console.error(`weekly-backup: PDF falhou para ${user.id}`, e)
+      }
+
+      const totalAdiantado = (adiantamentos ?? []).reduce(
+        (acc: number, a: { valor: number | string }) => acc + Number(a.valor),
+        0,
+      )
+      const pendente = listaDiarias
+        .filter((d) => (d as unknown as { status: string }).status !== 'pago')
+        .reduce((acc, d) => acc + Number(d.valor) + Number(d.alimentacao ?? 0), 0)
+
       await sendTemplateEmail('backup-semanal', user.email, {
         idempotencyKey: `backup-semanal-${user.id}-${stamp}`,
         templateData: {
@@ -84,9 +118,12 @@ async function handler(request: Request) {
           qtdDiarias: listaDiarias.length,
           qtdAdiantamentos: (adiantamentos ?? []).length,
           totalDiarias: fmt.format(total),
+          saldoReceber: fmt.format(pendente - totalAdiantado),
           downloadUrl: signed?.signedUrl,
+          pdfUrl,
         },
       })
+
       enviados++
     } catch (e) {
       console.error(`weekly-backup: falha para ${user.id}`, e)
