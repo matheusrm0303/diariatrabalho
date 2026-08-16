@@ -9,6 +9,7 @@ import { ArrowLeft, LogOut, Mail, User, Download, Upload, Fingerprint } from "lu
 import { toast } from "sonner";
 import { exportarBackup, baixarBackupJSON, importarBackup, marcarBackupFeito, type BackupPayload } from "@/lib/backup";
 import { Switch } from "@/components/ui/switch";
+import { ImportarIACard } from "@/components/importar-ia-card";
 import {
   isBiometricSupported,
   isPlatformAuthenticatorAvailable,
@@ -276,6 +277,9 @@ function ContaPage() {
             </p>
           </CardContent>
         </Card>
+
+        <ImportarIACard />
+
 
         <Card>
           <CardHeader>

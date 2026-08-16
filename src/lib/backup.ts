@@ -99,6 +99,60 @@ export async function importarBackup(
   return { diariasInseridas, adiantInseridos };
 }
 
+export type DiariaImportada = {
+  data: string;
+  local?: string;
+  descricao?: string;
+  valor: number;
+  tipo?: string;
+  status?: string;
+  alimentacao?: number;
+  alimentacaoObs?: string;
+};
+export type AdiantImportado = { data: string; valor: number; observacao?: string };
+
+/** Insere registros já normalizados (ex.: vindos da análise por IA), mesclando com os atuais. */
+export async function importarRegistros(
+  diariasIn: DiariaImportada[],
+  adiantIn: AdiantImportado[],
+): Promise<ImportResult> {
+  const { data: userData } = await supabase.auth.getUser();
+  const user_id = userData.user?.id;
+  if (!user_id) throw new Error("Sessão expirada. Entre novamente.");
+
+  const diarias = diariasIn.map((d) => ({
+    user_id,
+    data: d.data,
+    local: d.local ?? "",
+    descricao: d.descricao ?? "",
+    valor: Number(d.valor) || 0,
+    tipo: d.tipo ?? "personalizada",
+    status: d.status === "pago" ? "pago" : "pendente",
+    alimentacao: Number(d.alimentacao) || 0,
+    alimentacao_obs: d.alimentacaoObs ?? "",
+  }));
+  const adiants = adiantIn.map((a) => ({
+    user_id,
+    data: a.data,
+    valor: Number(a.valor) || 0,
+    observacao: a.observacao ?? "",
+  }));
+
+  let diariasInseridas = 0;
+  let adiantInseridos = 0;
+  if (diarias.length > 0) {
+    const { error } = await supabase.from("diarias" as never).insert(diarias as never);
+    if (error) throw error;
+    diariasInseridas = diarias.length;
+  }
+  if (adiants.length > 0) {
+    const { error } = await supabase.from("adiantamentos" as never).insert(adiants as never);
+    if (error) throw error;
+    adiantInseridos = adiants.length;
+  }
+  return { diariasInseridas, adiantInseridos };
+}
+
 /* ---- Lembrete semanal de backup ---- */
 const KEY_ULTIMO = "backup:ultimo";
 const KEY_ADIADO = "backup:adiado";
