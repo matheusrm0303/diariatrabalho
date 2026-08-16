@@ -140,18 +140,74 @@ export async function importarRegistros(
 
   let diariasInseridas = 0;
   let adiantInseridos = 0;
+  const idsDiarias: string[] = [];
+  const idsAdiant: string[] = [];
   if (diarias.length > 0) {
-    const { error } = await supabase.from("diarias" as never).insert(diarias as never);
+    const { data, error } = await supabase
+      .from("diarias" as never)
+      .insert(diarias as never)
+      .select("id");
     if (error) throw error;
     diariasInseridas = diarias.length;
+    for (const r of (data ?? []) as { id: string }[]) idsDiarias.push(r.id);
   }
   if (adiants.length > 0) {
-    const { error } = await supabase.from("adiantamentos" as never).insert(adiants as never);
+    const { data, error } = await supabase
+      .from("adiantamentos" as never)
+      .insert(adiants as never)
+      .select("id");
     if (error) throw error;
     adiantInseridos = adiants.length;
+    for (const r of (data ?? []) as { id: string }[]) idsAdiant.push(r.id);
   }
+  salvarUltimaImportacao({ diarias: idsDiarias, adiantamentos: idsAdiant, em: new Date().toISOString() });
   return { diariasInseridas, adiantInseridos };
 }
+
+/* ---- Desfazer última importação ---- */
+export type UltimaImportacao = { diarias: string[]; adiantamentos: string[]; em: string };
+const KEY_IMPORT = "import:ultima";
+
+function salvarUltimaImportacao(v: UltimaImportacao) {
+  try {
+    localStorage.setItem(KEY_IMPORT, JSON.stringify(v));
+  } catch { /* ignore */ }
+}
+
+export function ultimaImportacao(): UltimaImportacao | null {
+  try {
+    const raw = localStorage.getItem(KEY_IMPORT);
+    if (!raw) return null;
+    const v = JSON.parse(raw) as UltimaImportacao;
+    if (!v || (!v.diarias?.length && !v.adiantamentos?.length)) return null;
+    return v;
+  } catch {
+    return null;
+  }
+}
+
+export function limparUltimaImportacao() {
+  try {
+    localStorage.removeItem(KEY_IMPORT);
+  } catch { /* ignore */ }
+}
+
+/** Remove do banco os registros da última importação. */
+export async function desfazerUltimaImportacao(): Promise<ImportResult> {
+  const v = ultimaImportacao();
+  if (!v) return { diariasInseridas: 0, adiantInseridos: 0 };
+  if (v.diarias.length > 0) {
+    const { error } = await supabase.from("diarias" as never).delete().in("id", v.diarias);
+    if (error) throw error;
+  }
+  if (v.adiantamentos.length > 0) {
+    const { error } = await supabase.from("adiantamentos" as never).delete().in("id", v.adiantamentos);
+    if (error) throw error;
+  }
+  limparUltimaImportacao();
+  return { diariasInseridas: v.diarias.length, adiantInseridos: v.adiantamentos.length };
+}
+
 
 /* ---- Lembrete semanal de backup ---- */
 const KEY_ULTIMO = "backup:ultimo";

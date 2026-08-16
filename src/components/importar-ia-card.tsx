@@ -1,11 +1,18 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Sparkles, FileJson, Check } from "lucide-react";
+import { Sparkles, FileJson, Check, Undo2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { analisarJsonImportado } from "@/lib/importar-ia.functions";
-import { importarRegistros, type DiariaImportada, type AdiantImportado } from "@/lib/backup";
+import {
+  importarRegistros,
+  ultimaImportacao,
+  desfazerUltimaImportacao,
+  type DiariaImportada,
+  type AdiantImportado,
+  type UltimaImportacao,
+} from "@/lib/backup";
 import { useDiarias, useAdiantamentos, fmt, todayISO } from "@/lib/diarias-store";
 import { useMyDefaults } from "@/lib/admin";
 
@@ -18,10 +25,34 @@ export function ImportarIACard() {
 
   const [analisando, setAnalisando] = useState(false);
   const [importando, setImportando] = useState(false);
+  const [desfazendo, setDesfazendo] = useState(false);
+  const [ultima, setUltima] = useState<UltimaImportacao | null>(null);
   const [resumo, setResumo] = useState("");
   const [arquivo, setArquivo] = useState("");
   const [diarias, setDiarias] = useState<DiariaImportada[]>([]);
   const [adiants, setAdiants] = useState<AdiantImportado[]>([]);
+
+  useEffect(() => {
+    setUltima(ultimaImportacao());
+  }, []);
+
+  async function desfazer() {
+    if (!window.confirm("Remover os registros da última importação?")) return;
+    setDesfazendo(true);
+    try {
+      const r = await desfazerUltimaImportacao();
+      await Promise.all([recarregarDiarias(), recarregarAdiant()]);
+      setUltima(null);
+      toast.success(
+        `Removido: ${r.diariasInseridas} diárias e ${r.adiantInseridos} adiantamentos.`,
+      );
+    } catch (err) {
+      toast.error("Falha ao remover. " + (err instanceof Error ? err.message : ""));
+    } finally {
+      setDesfazendo(false);
+    }
+  }
+
 
   async function aoSelecionar(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -63,10 +94,12 @@ export function ImportarIACard() {
       toast.success(
         `Adicionado: ${r.diariasInseridas} diárias e ${r.adiantInseridos} adiantamentos.`,
       );
+      setUltima(ultimaImportacao());
       setDiarias([]);
       setAdiants([]);
       setResumo("");
       setArquivo("");
+
     } catch (err) {
       toast.error("Falha ao importar. " + (err instanceof Error ? err.message : ""));
     } finally {
@@ -105,7 +138,26 @@ export function ImportarIACard() {
           {analisando ? "Analisando com IA…" : "Escolher arquivo .json"}
         </Button>
 
+        {ultima && (
+          <div className="rounded-lg border border-dashed p-3 space-y-2">
+            <p className="text-xs text-muted-foreground">
+              Última importação em {new Date(ultima.em).toLocaleString("pt-BR")} —{" "}
+              {ultima.diarias.length} diárias e {ultima.adiantamentos.length} adiantamentos.
+            </p>
+            <Button
+              onClick={desfazer}
+              disabled={desfazendo || importando || analisando}
+              variant="destructive"
+              className="w-full"
+            >
+              <Undo2 className="h-4 w-4" />
+              {desfazendo ? "Removendo…" : "Remover o que foi importado"}
+            </Button>
+          </div>
+        )}
+
         {resumo && (
+
           <div className="rounded-lg border bg-muted/40 p-3 space-y-2">
             <p className="text-xs text-muted-foreground">{arquivo}</p>
             <p className="text-sm">{resumo}</p>
