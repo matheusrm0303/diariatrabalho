@@ -94,10 +94,12 @@ export function ImportarIACard() {
       toast.success(
         `Adicionado: ${r.diariasInseridas} diárias e ${r.adiantInseridos} adiantamentos.`,
       );
+      setUltima(ultimaImportacao());
       setDiarias([]);
       setAdiants([]);
       setResumo("");
       setArquivo("");
+
     } catch (err) {
       toast.error("Falha ao importar. " + (err instanceof Error ? err.message : ""));
     } finally {
