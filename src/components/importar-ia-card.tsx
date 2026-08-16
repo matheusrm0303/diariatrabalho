@@ -138,7 +138,26 @@ export function ImportarIACard() {
           {analisando ? "Analisando com IA…" : "Escolher arquivo .json"}
         </Button>
 
+        {ultima && (
+          <div className="rounded-lg border border-dashed p-3 space-y-2">
+            <p className="text-xs text-muted-foreground">
+              Última importação em {new Date(ultima.em).toLocaleString("pt-BR")} —{" "}
+              {ultima.diarias.length} diárias e {ultima.adiantamentos.length} adiantamentos.
+            </p>
+            <Button
+              onClick={desfazer}
+              disabled={desfazendo || importando || analisando}
+              variant="destructive"
+              className="w-full"
+            >
+              <Undo2 className="h-4 w-4" />
+              {desfazendo ? "Removendo…" : "Remover o que foi importado"}
+            </Button>
+          </div>
+        )}
+
         {resumo && (
+
           <div className="rounded-lg border bg-muted/40 p-3 space-y-2">
             <p className="text-xs text-muted-foreground">{arquivo}</p>
             <p className="text-sm">{resumo}</p>
