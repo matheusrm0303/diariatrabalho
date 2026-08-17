@@ -14,6 +14,7 @@ export function DiariasTab() {
   const [selecionando, setSelecionando] = useState(false);
   const [selecionados, setSelecionados] = useState<string[]>([]);
   const [filtroStatus, setFiltroStatus] = useState<"todas" | "pago" | "pendente">("todas");
+  const [apagando, setApagando] = useState(false);
 
   const total = useMemo(
     () => diarias.reduce((s, d) => s + d.valor + (d.alimentacao || 0), 0),
