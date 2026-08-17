@@ -353,7 +353,19 @@ export function DiariasTab() {
                   Marcar pendente
                 </Button>
               </div>
+              <Button
+                variant="destructive"
+                className="mt-2 h-12 w-full rounded-xl font-bold"
+                disabled={selecionados.length === 0 || apagando}
+                onClick={apagarSelecionados}
+              >
+                <Trash2 className="h-4 w-4" />
+                {apagando
+                  ? "Apagando…"
+                  : `Apagar selecionada${selecionados.length === 1 ? "" : "s"}`}
+              </Button>
             </div>
+
           ) : (
             <Button
               asChild
