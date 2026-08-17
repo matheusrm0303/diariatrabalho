@@ -59,6 +59,25 @@ export function DiariasTab() {
     sairSelecao();
   }
 
+  async function apagarSelecionados() {
+    const ids = [...selecionados];
+    if (ids.length === 0) return;
+    if (
+      !window.confirm(
+        `Apagar ${ids.length} diária${ids.length === 1 ? "" : "s"}? Essa ação não pode ser desfeita.`,
+      )
+    )
+      return;
+    setApagando(true);
+    try {
+      await Promise.all(ids.map((id) => remover(id)));
+      sairSelecao();
+    } finally {
+      setApagando(false);
+    }
+  }
+
+
   useEffect(() => {
     setSelecionados([]);
   }, [filtroStatus]);
