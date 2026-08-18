@@ -6,11 +6,12 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import { Trash2, Plus, Utensils, Pencil, ArrowUpRight, TriangleAlert, CheckSquare, X, ListFilter } from "lucide-react";
-import { useDiarias, useAdiantamentos, fmt } from "@/lib/diarias-store";
+import { useDiarias, useAdiantamentos, useGastos, fmt } from "@/lib/diarias-store";
 
 export function DiariasTab() {
   const { diarias, remover, atualizar } = useDiarias();
   const { adiantamentos } = useAdiantamentos();
+  const { gastos } = useGastos();
   const [selecionando, setSelecionando] = useState(false);
   const [selecionados, setSelecionados] = useState<string[]>([]);
   const [filtroStatus, setFiltroStatus] = useState<"todas" | "pago" | "pendente">("todas");
@@ -32,7 +33,11 @@ export function DiariasTab() {
     () => adiantamentos.reduce((s, a) => s + a.valor, 0),
     [adiantamentos],
   );
-  const saldo = total - totalAdiant;
+  const totalGastos = useMemo(
+    () => gastos.reduce((s, g) => s + g.valor, 0),
+    [gastos],
+  );
+  const saldo = total + totalGastos - totalAdiant;
 
   const ordenadas = useMemo(() => {
     const lista = [...diarias].sort((a, b) => b.data.localeCompare(a.data));
@@ -116,6 +121,11 @@ export function DiariasTab() {
               <ArrowUpRight className="h-3 w-3" />
               {diarias.length} {diarias.length === 1 ? "diária" : "diárias"} registradas
             </span>
+            {totalGastos > 0 && (
+              <span className="inline-flex items-center gap-1 rounded-lg bg-white/20 px-2 py-1 text-[10px] font-medium">
+                + {fmt.format(totalGastos)} em gastos
+              </span>
+            )}
           </div>
         </div>
 
