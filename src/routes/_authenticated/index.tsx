@@ -12,6 +12,9 @@ import { BackupReminder } from "@/components/backup-reminder";
 const AdiantamentoTab = lazy(() =>
   import("@/components/adiantamento-tab").then((m) => ({ default: m.AdiantamentoTab })),
 );
+const GastosTab = lazy(() =>
+  import("@/components/gastos-tab").then((m) => ({ default: m.GastosTab })),
+);
 const FechamentoTab = lazy(() =>
   import("@/components/fechamento-tab").then((m) => ({ default: m.FechamentoTab })),
 );
@@ -72,22 +75,28 @@ function Index() {
         <BackupReminder />
 
         <Tabs defaultValue="diarias" className="w-full">
-          <TabsList className="mb-6 grid h-11 w-full grid-cols-3 rounded-2xl bg-muted/70 p-1">
+          <TabsList className="mb-6 grid h-11 w-full grid-cols-4 rounded-2xl bg-muted/70 p-1">
             <TabsTrigger
               value="diarias"
-              className="rounded-xl text-sm font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"
+              className="rounded-xl text-xs font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"
             >
               Diárias
             </TabsTrigger>
             <TabsTrigger
               value="adiantamento"
-              className="rounded-xl text-sm font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"
+              className="rounded-xl text-xs font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"
             >
-              Adiantamento
+              Adiant.
+            </TabsTrigger>
+            <TabsTrigger
+              value="gastos"
+              className="rounded-xl text-xs font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"
+            >
+              Gastos
             </TabsTrigger>
             <TabsTrigger
               value="fechamento"
-              className="rounded-xl text-sm font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"
+              className="rounded-xl text-xs font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"
             >
               Fechamento
             </TabsTrigger>
@@ -99,6 +108,11 @@ function Index() {
           <TabsContent value="adiantamento">
             <Suspense fallback={<TabFallback />}>
               <AdiantamentoTab />
+            </Suspense>
+          </TabsContent>
+          <TabsContent value="gastos">
+            <Suspense fallback={<TabFallback />}>
+              <GastosTab />
             </Suspense>
           </TabsContent>
           <TabsContent value="fechamento">

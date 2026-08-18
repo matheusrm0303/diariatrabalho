@@ -23,6 +23,52 @@ export type Adiantamento = {
   observacao?: string;
 };
 
+export type GastoCategoria =
+  | "uber"
+  | "transporte"
+  | "estacionamento"
+  | "pedagio"
+  | "hospedagem"
+  | "material"
+  | "outros";
+
+export type Gasto = {
+  id: string;
+  data: string;
+  categoria: GastoCategoria;
+  descricao: string;
+  valor: number;
+};
+
+export const GASTO_CATEGORIAS: { value: GastoCategoria; label: string }[] = [
+  { value: "uber", label: "Uber / App" },
+  { value: "transporte", label: "Transporte" },
+  { value: "estacionamento", label: "Estacionamento" },
+  { value: "pedagio", label: "Pedágio" },
+  { value: "hospedagem", label: "Hospedagem" },
+  { value: "material", label: "Material" },
+  { value: "outros", label: "Outros" },
+];
+
+type GastoRow = {
+  id: string;
+  data: string;
+  categoria: string;
+  descricao: string | null;
+  valor: number | string;
+};
+
+function mapGasto(r: GastoRow): Gasto {
+  return {
+    id: r.id,
+    data: r.data,
+    categoria: (r.categoria as GastoCategoria) ?? "outros",
+    descricao: r.descricao ?? "",
+    valor: Number(r.valor),
+  };
+}
+
+
 export const fmt = new Intl.NumberFormat("pt-BR", {
   style: "currency",
   currency: "BRL",
@@ -152,15 +198,100 @@ async function fetchAdiantamentos() {
   }
 }
 
+const gastosStore = createStore<Gasto[]>([]);
+let gastosLoaded = false;
+let gastosPromise: Promise<void> | null = null;
+
+async function fetchGastos() {
+  if (gastosPromise) return gastosPromise;
+  gastosPromise = (async () => {
+    const { data, error } = await supabase
+      .from("gastos" as never)
+      .select("*")
+      .order("data", { ascending: false });
+    if (error) {
+      console.error(error);
+      return;
+    }
+    gastosStore.set(((data as unknown) as GastoRow[] | null)?.map(mapGasto) ?? []);
+    gastosLoaded = true;
+  })();
+  try {
+    await gastosPromise;
+  } finally {
+    gastosPromise = null;
+  }
+}
+
 // Reset caches on sign-out/sign-in so users don't see stale data.
 supabase.auth.onAuthStateChange((event) => {
   if (event === "SIGNED_OUT" || event === "SIGNED_IN") {
     diariasLoaded = false;
     adiantLoaded = false;
+    gastosLoaded = false;
     diariasStore.set([]);
     adiantStore.set([]);
+    gastosStore.set([]);
   }
 });
+
+export function useGastos() {
+  const gastos = useSyncExternalStore(
+    gastosStore.subscribe,
+    gastosStore.get,
+    gastosStore.get,
+  );
+
+  if (!gastosLoaded && !gastosPromise) {
+    void fetchGastos();
+  }
+
+  const recarregar = useCallback(async () => {
+    gastosLoaded = false;
+    await fetchGastos();
+  }, []);
+
+  const adicionar = useCallback(async (g: Omit<Gasto, "id">) => {
+    const { data: userData } = await supabase.auth.getUser();
+    const user_id = userData.user?.id;
+    if (!user_id) return;
+    const tempId = `tmp-${Date.now()}`;
+    gastosStore.set((prev) =>
+      [{ ...g, id: tempId }, ...prev].sort((a, b) => b.data.localeCompare(a.data)),
+    );
+    const { data, error } = await supabase
+      .from("gastos" as never)
+      .insert({
+        user_id,
+        data: g.data,
+        categoria: g.categoria,
+        descricao: g.descricao ?? "",
+        valor: g.valor,
+      } as never)
+      .select()
+      .single();
+    if (error || !data) {
+      console.error(error);
+      gastosStore.set((prev) => prev.filter((x) => x.id !== tempId));
+      return;
+    }
+    const novo = mapGasto((data as unknown) as GastoRow);
+    gastosStore.set((prev) => prev.map((x) => (x.id === tempId ? novo : x)));
+  }, []);
+
+  const remover = useCallback(async (id: string) => {
+    const backup = gastosStore.get();
+    gastosStore.set((prev) => prev.filter((x) => x.id !== id));
+    const { error } = await supabase.from("gastos" as never).delete().eq("id", id);
+    if (error) {
+      console.error(error);
+      gastosStore.set(backup);
+    }
+  }, []);
+
+  return { gastos, adicionar, remover, recarregar };
+}
+
 
 // ---------- Hooks ----------
 

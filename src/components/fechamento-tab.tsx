@@ -29,7 +29,7 @@ import {
   Eye,
   Check,
 } from "lucide-react";
-import { useDiarias, useAdiantamentos, fmt, type Diaria } from "@/lib/diarias-store";
+import { useDiarias, useAdiantamentos, useGastos, fmt, type Diaria } from "@/lib/diarias-store";
 import {
   filtrarPorPeriodo,
   periodoOptions,
@@ -147,6 +147,7 @@ function saveTpls(t: WaTemplate[]) {
 export function FechamentoTab() {
   const { diarias: todasDiarias } = useDiarias();
   const { adiantamentos: todosAdiantamentos } = useAdiantamentos();
+  const { gastos } = useGastos();
   const [periodo, setPeriodo] = useState<PeriodoKey>("todos");
   const diarias = useMemo(
     () => filtrarPorPeriodo(todasDiarias, periodo),
@@ -202,7 +203,11 @@ export function FechamentoTab() {
     () => adiantamentos.reduce((s, a) => s + a.valor, 0),
     [adiantamentos],
   );
-  const saldoAReceber = totalGeralPendente - totalAdiantamentos;
+  const totalGastos = useMemo(
+    () => gastos.reduce((s, g) => s + g.valor, 0),
+    [gastos],
+  );
+  const saldoAReceber = totalGeralPendente + totalGastos - totalAdiantamentos;
 
   const adiantOrdenados = () =>
     [...adiantamentos].sort((a, b) => (a.data < b.data ? 1 : -1));
@@ -398,10 +403,13 @@ export function FechamentoTab() {
       if (waIncluirPagas) linhas.push(`*Total pago:* ${fmt.format(totalPagoSel)}`);
       if (waIncluirPendentes)
         linhas.push(`*Total pendente:* ${fmt.format(totalPendenteSel)}`);
+      if (totalGastos > 0) {
+        linhas.push(`*Gastos a reembolsar:* ${fmt.format(totalGastos)}`);
+      }
       if (waIncluirAdiant && totalAdiantamentos > 0) {
         linhas.push(`*Adiantamentos:* ${fmt.format(totalAdiantamentos)}`);
         linhas.push(
-          `*Saldo a receber:* ${fmt.format(totalPendenteSel - totalAdiantamentos)}`,
+          `*Saldo a receber:* ${fmt.format(totalPendenteSel + totalGastos - totalAdiantamentos)}`,
         );
       }
     }
