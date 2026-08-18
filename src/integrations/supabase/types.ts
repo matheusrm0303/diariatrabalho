@@ -86,6 +86,36 @@ export type Database = {
         }
         Relationships: []
       }
+      gastos: {
+        Row: {
+          categoria: string
+          created_at: string
+          data: string
+          descricao: string
+          id: string
+          user_id: string
+          valor: number
+        }
+        Insert: {
+          categoria?: string
+          created_at?: string
+          data: string
+          descricao?: string
+          id?: string
+          user_id: string
+          valor?: number
+        }
+        Update: {
+          categoria?: string
+          created_at?: string
+          data?: string
+          descricao?: string
+          id?: string
+          user_id?: string
+          valor?: number
+        }
+        Relationships: []
+      }
       user_diaria_defaults: {
         Row: {
           created_at: string
