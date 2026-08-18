@@ -23,6 +23,52 @@ export type Adiantamento = {
   observacao?: string;
 };
 
+export type GastoCategoria =
+  | "uber"
+  | "transporte"
+  | "estacionamento"
+  | "pedagio"
+  | "hospedagem"
+  | "material"
+  | "outros";
+
+export type Gasto = {
+  id: string;
+  data: string;
+  categoria: GastoCategoria;
+  descricao: string;
+  valor: number;
+};
+
+export const GASTO_CATEGORIAS: { value: GastoCategoria; label: string }[] = [
+  { value: "uber", label: "Uber / App" },
+  { value: "transporte", label: "Transporte" },
+  { value: "estacionamento", label: "Estacionamento" },
+  { value: "pedagio", label: "Pedágio" },
+  { value: "hospedagem", label: "Hospedagem" },
+  { value: "material", label: "Material" },
+  { value: "outros", label: "Outros" },
+];
+
+type GastoRow = {
+  id: string;
+  data: string;
+  categoria: string;
+  descricao: string | null;
+  valor: number | string;
+};
+
+function mapGasto(r: GastoRow): Gasto {
+  return {
+    id: r.id,
+    data: r.data,
+    categoria: (r.categoria as GastoCategoria) ?? "outros",
+    descricao: r.descricao ?? "",
+    valor: Number(r.valor),
+  };
+}
+
+
 export const fmt = new Intl.NumberFormat("pt-BR", {
   style: "currency",
   currency: "BRL",
