@@ -29,7 +29,7 @@ import {
   Eye,
   Check,
 } from "lucide-react";
-import { useDiarias, useAdiantamentos, fmt, type Diaria } from "@/lib/diarias-store";
+import { useDiarias, useAdiantamentos, useGastos, fmt, type Diaria } from "@/lib/diarias-store";
 import {
   filtrarPorPeriodo,
   periodoOptions,
