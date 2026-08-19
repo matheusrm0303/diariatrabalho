@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Trash2, Plus, Calendar, Receipt, Car, TrendingUp } from "lucide-react";
+import { Trash2, Plus, Calendar, Receipt, Car, TrendingUp, Pencil, Check, X } from "lucide-react";
 import {
   useGastos,
   GASTO_CATEGORIAS,
@@ -17,11 +17,17 @@ function labelCategoria(c: GastoCategoria) {
 }
 
 export function GastosTab() {
-  const { gastos, adicionar, remover } = useGastos();
+  const { gastos, adicionar, remover, atualizar } = useGastos();
   const [data, setData] = useState(todayISO());
   const [categoria, setCategoria] = useState<GastoCategoria>("uber");
   const [descricao, setDescricao] = useState("");
   const [valor, setValor] = useState("");
+  const [editId, setEditId] = useState<string | null>(null);
+  const [eData, setEData] = useState(todayISO());
+  const [eCategoria, setECategoria] = useState<GastoCategoria>("uber");
+  const [eDescricao, setEDescricao] = useState("");
+  const [eValor, setEValor] = useState("");
+
 
   const total = useMemo(() => gastos.reduce((s, g) => s + g.valor, 0), [gastos]);
 
