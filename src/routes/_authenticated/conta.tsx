@@ -297,9 +297,19 @@ function ContaPage() {
               <Upload className="h-4 w-4" />
               {importando ? "Importando…" : "Restaurar backup"}
             </Button>
+            <Button
+              onClick={enviarPorEmail}
+              disabled={enviandoEmail}
+              className="w-full"
+            >
+              <Send className="h-4 w-4" />
+              {enviandoEmail ? "Enviando…" : "Enviar backup por e-mail"}
+            </Button>
             <p className="text-xs text-muted-foreground">
               Na restauração você pode mesclar (mantém o que já tem) ou substituir (apaga tudo antes de importar).
+              O envio por e-mail manda o arquivo .json e o fechamento em PDF para o e-mail da sua conta.
             </p>
+
           </CardContent>
         </Card>
 
