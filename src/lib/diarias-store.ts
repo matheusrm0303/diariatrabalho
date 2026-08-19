@@ -289,8 +289,34 @@ export function useGastos() {
     }
   }, []);
 
-  return { gastos, adicionar, remover, recarregar };
+  const atualizar = useCallback(
+    async (id: string, patch: Partial<Omit<Gasto, "id">>) => {
+      const backup = gastosStore.get();
+      gastosStore.set((prev) =>
+        prev
+          .map((x) => (x.id === id ? { ...x, ...patch } : x))
+          .sort((a, b) => b.data.localeCompare(a.data)),
+      );
+      const { error } = await supabase
+        .from("gastos" as never)
+        .update({
+          ...(patch.data !== undefined ? { data: patch.data } : {}),
+          ...(patch.categoria !== undefined ? { categoria: patch.categoria } : {}),
+          ...(patch.descricao !== undefined ? { descricao: patch.descricao } : {}),
+          ...(patch.valor !== undefined ? { valor: patch.valor } : {}),
+        } as never)
+        .eq("id", id);
+      if (error) {
+        console.error(error);
+        gastosStore.set(backup);
+      }
+    },
+    [],
+  );
+
+  return { gastos, adicionar, remover, atualizar, recarregar };
 }
+
 
 
 // ---------- Hooks ----------
