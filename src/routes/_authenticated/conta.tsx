@@ -5,11 +5,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { ArrowLeft, LogOut, Mail, User, Download, Upload, Fingerprint } from "lucide-react";
+import { ArrowLeft, LogOut, Mail, User, Download, Upload, Fingerprint, Send } from "lucide-react";
 import { toast } from "sonner";
 import { exportarBackup, baixarBackupJSON, importarBackup, marcarBackupFeito, type BackupPayload } from "@/lib/backup";
 import { Switch } from "@/components/ui/switch";
 import { ImportarIACard } from "@/components/importar-ia-card";
+import { useServerFn } from "@tanstack/react-start";
+import { enviarBackupPorEmail } from "@/lib/backup-email.functions";
+
 import {
   isBiometricSupported,
   isPlatformAuthenticatorAvailable,
