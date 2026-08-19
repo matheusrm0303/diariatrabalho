@@ -111,7 +111,29 @@ function ContaPage() {
 
   const [exportando, setExportando] = useState(false);
   const [importando, setImportando] = useState(false);
+  const [enviandoEmail, setEnviandoEmail] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const enviarBackupFn = useServerFn(enviarBackupPorEmail);
+
+  async function enviarPorEmail() {
+    setEnviandoEmail(true);
+    try {
+      const r = await enviarBackupFn({});
+      if (r.ok) {
+        marcarBackupFeito();
+        toast.success(`Backup enviado para ${r.email}.`);
+      } else if (r.motivo === "recipient_suppressed") {
+        toast.error("Seu e-mail está bloqueado para envios. Verifique a caixa de entrada anterior.");
+      } else {
+        toast.error("Não foi possível enviar o backup por e-mail.");
+      }
+    } catch (e) {
+      toast.error("Falha ao enviar. " + (e instanceof Error ? e.message : ""));
+    } finally {
+      setEnviandoEmail(false);
+    }
+  }
+
 
   async function baixarBackup() {
     setExportando(true);
