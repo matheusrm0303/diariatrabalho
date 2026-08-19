@@ -5,11 +5,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { ArrowLeft, LogOut, Mail, User, Download, Upload, Fingerprint } from "lucide-react";
+import { ArrowLeft, LogOut, Mail, User, Download, Upload, Fingerprint, Send } from "lucide-react";
 import { toast } from "sonner";
 import { exportarBackup, baixarBackupJSON, importarBackup, marcarBackupFeito, type BackupPayload } from "@/lib/backup";
 import { Switch } from "@/components/ui/switch";
 import { ImportarIACard } from "@/components/importar-ia-card";
+import { useServerFn } from "@tanstack/react-start";
+import { enviarBackupPorEmail } from "@/lib/backup-email.functions";
+
 import {
   isBiometricSupported,
   isPlatformAuthenticatorAvailable,
@@ -108,7 +111,29 @@ function ContaPage() {
 
   const [exportando, setExportando] = useState(false);
   const [importando, setImportando] = useState(false);
+  const [enviandoEmail, setEnviandoEmail] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const enviarBackupFn = useServerFn(enviarBackupPorEmail);
+
+  async function enviarPorEmail() {
+    setEnviandoEmail(true);
+    try {
+      const r = await enviarBackupFn({});
+      if (r.ok) {
+        marcarBackupFeito();
+        toast.success(`Backup enviado para ${r.email}.`);
+      } else if (r.motivo === "recipient_suppressed") {
+        toast.error("Seu e-mail está bloqueado para envios. Verifique a caixa de entrada anterior.");
+      } else {
+        toast.error("Não foi possível enviar o backup por e-mail.");
+      }
+    } catch (e) {
+      toast.error("Falha ao enviar. " + (e instanceof Error ? e.message : ""));
+    } finally {
+      setEnviandoEmail(false);
+    }
+  }
+
 
   async function baixarBackup() {
     setExportando(true);
@@ -272,9 +297,19 @@ function ContaPage() {
               <Upload className="h-4 w-4" />
               {importando ? "Importando…" : "Restaurar backup"}
             </Button>
+            <Button
+              onClick={enviarPorEmail}
+              disabled={enviandoEmail}
+              className="w-full"
+            >
+              <Send className="h-4 w-4" />
+              {enviandoEmail ? "Enviando…" : "Enviar backup por e-mail"}
+            </Button>
             <p className="text-xs text-muted-foreground">
               Na restauração você pode mesclar (mantém o que já tem) ou substituir (apaga tudo antes de importar).
+              O envio por e-mail manda o arquivo .json e o fechamento em PDF para o e-mail da sua conta.
             </p>
+
           </CardContent>
         </Card>
 
