@@ -1,9 +1,25 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Trash2, Plus, Calendar, Receipt, Car, TrendingUp, Pencil, Check, X } from "lucide-react";
+import {
+  Trash2,
+  Plus,
+  Calendar,
+  Receipt,
+  Car,
+  TrendingUp,
+  Pencil,
+  Check,
+  X,
+  Camera,
+  Loader2,
+  Sparkles,
+} from "lucide-react";
+import { lerNotasGastos } from "@/lib/gasto-ocr.functions";
 import {
   useGastos,
   GASTO_CATEGORIAS,
@@ -14,6 +30,30 @@ import {
 
 function labelCategoria(c: GastoCategoria) {
   return GASTO_CATEGORIAS.find((x) => x.value === c)?.label ?? "Outros";
+}
+
+const CATEGORIA_VALUES = GASTO_CATEGORIAS.map((c) => c.value);
+
+type Detectado = {
+  key: string;
+  data: string;
+  categoria: GastoCategoria;
+  descricao: string;
+  valor: string;
+};
+
+async function comprimirImagem(file: File): Promise<string> {
+  const bitmap = await createImageBitmap(file);
+  const max = 1400;
+  const escala = Math.min(1, max / Math.max(bitmap.width, bitmap.height));
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.round(bitmap.width * escala);
+  canvas.height = Math.round(bitmap.height * escala);
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Não foi possível processar a imagem.");
+  ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  bitmap.close?.();
+  return canvas.toDataURL("image/jpeg", 0.7);
 }
 
 export function GastosTab() {
@@ -27,9 +67,75 @@ export function GastosTab() {
   const [eCategoria, setECategoria] = useState<GastoCategoria>("uber");
   const [eDescricao, setEDescricao] = useState("");
   const [eValor, setEValor] = useState("");
+  const [lendo, setLendo] = useState(false);
+  const [salvandoLote, setSalvandoLote] = useState(false);
+  const [detectados, setDetectados] = useState<Detectado[]>([]);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const lerNotas = useServerFn(lerNotasGastos);
 
+  async function onFotos(files: FileList | null) {
+    if (!files || files.length === 0) return;
+    const lista = Array.from(files).slice(0, 10);
+    setLendo(true);
+    try {
+      const imagens = await Promise.all(lista.map(comprimirImagem));
+      const res = await lerNotas({ data: { imagens, hoje: todayISO() } });
+      const brutos = JSON.parse(res.gastosJson) as Array<Record<string, unknown>>;
+      const itens: Detectado[] = brutos
+        .map((g, i) => {
+          const v = Number(g["valor"]);
+          const cat = String(g["categoria"] ?? "outros") as GastoCategoria;
+          return {
+            key: `${Date.now()}-${i}`,
+            data: /^\d{4}-\d{2}-\d{2}$/.test(String(g["data"] ?? ""))
+              ? String(g["data"])
+              : todayISO(),
+            categoria: CATEGORIA_VALUES.includes(cat) ? cat : "outros",
+            descricao: String(g["descricao"] ?? ""),
+            valor: Number.isFinite(v) && v > 0 ? String(v) : "",
+          };
+        })
+        .filter((g) => g.valor !== "");
+      if (itens.length === 0) {
+        toast.error("Nenhum gasto identificado nas fotos.");
+      } else {
+        setDetectados((prev) => [...prev, ...itens]);
+        toast.success(`${itens.length} gasto(s) identificado(s). Confira e registre.`);
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Falha ao ler as fotos.");
+    } finally {
+      setLendo(false);
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  }
+
+  async function registrarTodos() {
+    const validos = detectados.filter((d) => parseFloat(d.valor.replace(",", ".")) > 0);
+    if (validos.length === 0) return;
+    setSalvandoLote(true);
+    try {
+      for (const d of validos) {
+        await adicionar({
+          data: d.data,
+          categoria: d.categoria,
+          descricao: d.descricao.trim(),
+          valor: parseFloat(d.valor.replace(",", ".")),
+        });
+      }
+      setDetectados([]);
+      toast.success(`${validos.length} gasto(s) registrado(s).`);
+    } finally {
+      setSalvandoLote(false);
+    }
+  }
+
+  function patchDetectado(key: string, patch: Partial<Detectado>) {
+    setDetectados((prev) => prev.map((d) => (d.key === key ? { ...d, ...patch } : d)));
+  }
 
   const total = useMemo(() => gastos.reduce((s, g) => s + g.valor, 0), [gastos]);
+
 
   const totalMes = useMemo(() => {
     const hoje = new Date();
