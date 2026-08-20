@@ -1,9 +1,12 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Trash2, Plus, Calendar, Receipt, Car, TrendingUp, Pencil, Check, X } from "lucide-react";
+import { Trash2, Plus, Calendar, Receipt, Car, TrendingUp, Pencil, Check, X, Camera, Loader2 } from "lucide-react";
+import { toast } from "sonner";
+import { useServerFn } from "@tanstack/react-start";
+import { lerNotaGasto } from "@/lib/gasto-ocr.functions";
 import {
   useGastos,
   GASTO_CATEGORIAS,
@@ -27,9 +30,42 @@ export function GastosTab() {
   const [eCategoria, setECategoria] = useState<GastoCategoria>("uber");
   const [eDescricao, setEDescricao] = useState("");
   const [eValor, setEValor] = useState("");
+  const [lendo, setLendo] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const lerNota = useServerFn(lerNotaGasto);
 
+  async function onFoto(file: File) {
+    if (!file.type.startsWith("image/")) {
+      toast.error("Escolha uma imagem da nota ou do comprovante.");
+      return;
+    }
+    setLendo(true);
+    try {
+      const buf = new Uint8Array(await file.arrayBuffer());
+      let bin = "";
+      for (let i = 0; i < buf.length; i++) bin += String.fromCharCode(buf[i]!);
+      const res = await lerNota({
+        data: { imageBase64: btoa(bin), mime: file.type, hoje: todayISO() },
+      });
+      if (!res.valor) {
+        toast.error(res.resumo || "Não consegui identificar o valor. Preencha manualmente.");
+      } else {
+        setData(res.data);
+        setCategoria(res.categoria as GastoCategoria);
+        setDescricao(res.descricao);
+        setValor(String(res.valor));
+        toast.success(`Li ${fmt.format(res.valor)} — confira e registre.`);
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Falha ao ler a imagem.");
+    } finally {
+      setLendo(false);
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  }
 
   const total = useMemo(() => gastos.reduce((s, g) => s + g.valor, 0), [gastos]);
+
 
   const totalMes = useMemo(() => {
     const hoje = new Date();
@@ -96,7 +132,36 @@ export function GastosTab() {
           </div>
           <h2 className="font-display text-base font-bold">Novo gasto</h2>
         </div>
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          className="hidden"
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) void onFoto(f);
+          }}
+        />
+        <Button
+          type="button"
+          variant="outline"
+          disabled={lendo}
+          onClick={() => fileRef.current?.click()}
+          className="mb-3 h-12 w-full rounded-xl text-sm font-bold"
+        >
+          {lendo ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" /> Lendo comprovante...
+            </>
+          ) : (
+            <>
+              <Camera className="h-4 w-4" /> Ler nota / foto com IA
+            </>
+          )}
+        </Button>
         <form onSubmit={salvar} className="grid gap-3">
+
           <div className="grid gap-1.5">
             <Label>Categoria</Label>
             <div className="flex flex-wrap gap-2">
