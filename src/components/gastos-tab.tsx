@@ -194,6 +194,134 @@ export function GastosTab() {
         </Card>
       </div>
 
+      {/* Leitura de notas com IA */}
+      <Card className="mb-6 rounded-3xl border-transparent p-5 shadow-sm">
+        <div className="mb-3 flex items-center gap-2">
+          <div className="grid h-9 w-9 place-items-center rounded-xl bg-primary/10 text-primary">
+            <Sparkles className="h-4 w-4" />
+          </div>
+          <div>
+            <h2 className="font-display text-base font-bold">Ler notas com IA</h2>
+            <p className="text-xs text-muted-foreground">
+              Selecione até 10 fotos de uma vez — os gastos são criados automaticamente.
+            </p>
+          </div>
+        </div>
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*"
+          multiple
+          className="hidden"
+          onChange={(e) => void onFotos(e.target.files)}
+        />
+        <Button
+          type="button"
+          variant="outline"
+          disabled={lendo}
+          onClick={() => fileRef.current?.click()}
+          className="h-12 w-full rounded-xl text-sm font-bold"
+        >
+          {lendo ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" /> Lendo fotos...
+            </>
+          ) : (
+            <>
+              <Camera className="h-4 w-4" /> Enviar fotos das notas
+            </>
+          )}
+        </Button>
+
+        {detectados.length > 0 && (
+          <div className="mt-4 grid gap-3">
+            <p className="text-xs font-semibold text-muted-foreground">
+              {detectados.length} gasto(s) identificado(s) — confira antes de registrar
+            </p>
+            {detectados.map((d) => (
+              <div key={d.key} className="grid gap-2 rounded-2xl border border-dashed p-3">
+                <div className="flex flex-wrap gap-1.5">
+                  {GASTO_CATEGORIAS.map((c) => (
+                    <button
+                      key={c.value}
+                      type="button"
+                      onClick={() => patchDetectado(d.key, { categoria: c.value })}
+                      className={
+                        "rounded-lg border px-2 py-1 text-[11px] font-semibold transition-colors " +
+                        (d.categoria === c.value
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-input bg-background hover:bg-accent")
+                      }
+                    >
+                      {c.label}
+                    </button>
+                  ))}
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <Input
+                    type="date"
+                    value={d.data}
+                    onChange={(e) => patchDetectado(d.key, { data: e.target.value })}
+                  />
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    inputMode="decimal"
+                    value={d.valor}
+                    onChange={(e) => patchDetectado(d.key, { valor: e.target.value })}
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Descrição"
+                    value={d.descricao}
+                    onChange={(e) => patchDetectado(d.key, { descricao: e.target.value })}
+                  />
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant="ghost"
+                    aria-label="Descartar"
+                    onClick={() => setDetectados((prev) => prev.filter((x) => x.key !== d.key))}
+                    className="shrink-0 text-muted-foreground hover:text-destructive"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            ))}
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                disabled={salvandoLote}
+                onClick={() => void registrarTodos()}
+                className="h-11 flex-1 rounded-xl text-sm font-bold"
+              >
+                {salvandoLote ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" /> Registrando...
+                  </>
+                ) : (
+                  <>
+                    <Check className="h-4 w-4" /> Registrar {detectados.length} gasto(s)
+                  </>
+                )}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="h-11 rounded-xl text-sm font-bold"
+                onClick={() => setDetectados([])}
+              >
+                Limpar
+              </Button>
+            </div>
+          </div>
+        )}
+      </Card>
+
+
       {/* Form */}
       <Card className="mb-6 rounded-3xl border-transparent p-5 shadow-sm">
         <div className="mb-4 flex items-center gap-2">
