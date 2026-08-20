@@ -1,49 +1,58 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-const PROMPT = `Você lê fotos de notas fiscais, cupons, recibos e prints de corrida (Uber/99) e extrai o gasto.
+const PROMPT = `Você lê fotos de notas fiscais, cupons, comprovantes e prints de corridas de aplicativo (Uber/99) e extrai os gastos.
+
+Você receberá UMA OU MAIS imagens. Cada imagem normalmente corresponde a UM gasto (se uma imagem tiver vários comprovantes, extraia todos).
 
 Responda SOMENTE JSON válido (sem markdown) no formato:
 {
-  "resumo": "frase curta em português sobre o que foi lido",
-  "data": "YYYY-MM-DD",
-  "valor": number,
-  "categoria": "uber"|"transporte"|"estacionamento"|"pedagio"|"hospedagem"|"material"|"outros",
-  "descricao": "texto curto: estabelecimento, trajeto ou item"
+  "gastos": [
+    { "indiceImagem": number, "data": "YYYY-MM-DD", "categoria": "uber"|"transporte"|"estacionamento"|"pedagio"|"hospedagem"|"material"|"outros", "descricao": string, "valor": number, "confianca": "alta"|"media"|"baixa" }
+  ]
 }
 
 Regras:
-- valor é o TOTAL pago (número, ponto decimal, sem "R$").
-- Se não achar a data no comprovante, use a data de hoje informada.
-- categoria: corrida de app = "uber"; ônibus/metrô/táxi = "transporte"; demais conforme o texto; na dúvida "outros".
-- Não invente: se a imagem não for um comprovante, devolva valor 0 e explique no resumo.`;
+- valor: total pago, número (sem "R$", vírgula vira ponto). Se não achar o total, use o maior valor plausível.
+- data: converta qualquer formato para YYYY-MM-DD. Se não houver data legível, use a data de hoje informada.
+- categoria: "uber" para corridas de app; "transporte" para ônibus/táxi/combustível; use as demais conforme o comprovante; senão "outros".
+- descricao: curta, em português (ex.: "Uber - Centro até Arena", "Estacionamento Shopping X").
+- indiceImagem: índice (começando em 0) da imagem de onde veio o gasto.
+- Não invente gastos. Se uma imagem não for um comprovante, ignore-a.`;
 
-export const lerNotaGasto = createServerFn({ method: "POST" })
+export const lerNotasGastos = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: { imageBase64: string; mime: string; hoje: string }) => {
-    if (!data?.imageBase64) throw new Error("imagem obrigatória");
-    if (data.imageBase64.length > 8_000_000) throw new Error("Imagem muito grande (máx. ~6 MB).");
+  .inputValidator((data: { imagens: string[]; hoje: string }) => {
+    if (!Array.isArray(data?.imagens) || data.imagens.length === 0)
+      throw new Error("Envie ao menos uma foto.");
+    if (data.imagens.length > 10) throw new Error("Máximo de 10 fotos por vez.");
+    const total = data.imagens.reduce((s, i) => s + i.length, 0);
+    if (total > 16_000_000) throw new Error("Fotos muito grandes. Tente com menos fotos.");
     return data;
   })
   .handler(async ({ data }) => {
-    const key = process.env.LOVABLE_API_KEY;
+    const key = process.env["LOVABLE_API_KEY"];
     if (!key) throw new Error("LOVABLE_API_KEY não configurada");
 
     const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
       body: JSON.stringify({
-        model: "google/gemini-3-pro-preview",
+        model: "google/gemini-3.6-flash",
         messages: [
           { role: "system", content: PROMPT },
+          { role: "system", content: `Hoje = ${data.hoje}.` },
           {
             role: "user",
             content: [
-              { type: "text", text: `Hoje é ${data.hoje}. Leia este comprovante.` },
               {
-                type: "image_url",
-                image_url: { url: `data:${data.mime};base64,${data.imageBase64}` },
+                type: "text",
+                text: `Extraia os gastos destas ${data.imagens.length} imagem(ns), na ordem enviada.`,
               },
+              ...data.imagens.map((url) => ({
+                type: "image_url" as const,
+                image_url: { url },
+              })),
             ],
           },
         ],
@@ -53,40 +62,19 @@ export const lerNotaGasto = createServerFn({ method: "POST" })
 
     if (!res.ok) {
       const body = await res.text().catch(() => "");
-      if (res.status === 429) throw new Error("Muitas requisições. Tente de novo em alguns segundos.");
+      if (res.status === 429)
+        throw new Error("Muitas requisições. Tente novamente em alguns segundos.");
       if (res.status === 402) throw new Error("Créditos de IA esgotados.");
       throw new Error(`Erro IA (${res.status}): ${body.slice(0, 200)}`);
     }
 
     const json = (await res.json()) as { choices?: Array<{ message?: { content?: string } }> };
-    let parsed: {
-      resumo?: string;
-      data?: string;
-      valor?: number;
-      categoria?: string;
-      descricao?: string;
-    } = {};
+    const content = json.choices?.[0]?.message?.content ?? "{}";
+    let parsed: { gastos?: unknown[] } = {};
     try {
-      parsed = JSON.parse(json.choices?.[0]?.message?.content ?? "{}");
+      parsed = JSON.parse(content);
     } catch {
-      throw new Error("Não consegui ler o comprovante. Tente outra foto.");
+      throw new Error("A IA não conseguiu ler as fotos.");
     }
-
-    const categorias = [
-      "uber",
-      "transporte",
-      "estacionamento",
-      "pedagio",
-      "hospedagem",
-      "material",
-      "outros",
-    ];
-
-    return {
-      resumo: parsed.resumo ?? "",
-      data: /^\d{4}-\d{2}-\d{2}$/.test(parsed.data ?? "") ? parsed.data! : data.hoje,
-      valor: Number(parsed.valor) > 0 ? Number(parsed.valor) : 0,
-      categoria: categorias.includes(parsed.categoria ?? "") ? parsed.categoria! : "outros",
-      descricao: (parsed.descricao ?? "").slice(0, 160),
-    };
+    return { gastosJson: JSON.stringify(Array.isArray(parsed.gastos) ? parsed.gastos : []) };
   });

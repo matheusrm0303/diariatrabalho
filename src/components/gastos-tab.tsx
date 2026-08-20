@@ -1,12 +1,25 @@
 import { useMemo, useRef, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Trash2, Plus, Calendar, Receipt, Car, TrendingUp, Pencil, Check, X, Camera, Loader2 } from "lucide-react";
-import { toast } from "sonner";
-import { useServerFn } from "@tanstack/react-start";
-import { lerNotaGasto } from "@/lib/gasto-ocr.functions";
+import {
+  Trash2,
+  Plus,
+  Calendar,
+  Receipt,
+  Car,
+  TrendingUp,
+  Pencil,
+  Check,
+  X,
+  Camera,
+  Loader2,
+  Sparkles,
+} from "lucide-react";
+import { lerNotasGastos } from "@/lib/gasto-ocr.functions";
 import {
   useGastos,
   GASTO_CATEGORIAS,
@@ -17,6 +30,30 @@ import {
 
 function labelCategoria(c: GastoCategoria) {
   return GASTO_CATEGORIAS.find((x) => x.value === c)?.label ?? "Outros";
+}
+
+const CATEGORIA_VALUES = GASTO_CATEGORIAS.map((c) => c.value);
+
+type Detectado = {
+  key: string;
+  data: string;
+  categoria: GastoCategoria;
+  descricao: string;
+  valor: string;
+};
+
+async function comprimirImagem(file: File): Promise<string> {
+  const bitmap = await createImageBitmap(file);
+  const max = 1400;
+  const escala = Math.min(1, max / Math.max(bitmap.width, bitmap.height));
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.round(bitmap.width * escala);
+  canvas.height = Math.round(bitmap.height * escala);
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Não foi possível processar a imagem.");
+  ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  bitmap.close?.();
+  return canvas.toDataURL("image/jpeg", 0.7);
 }
 
 export function GastosTab() {
@@ -31,37 +68,70 @@ export function GastosTab() {
   const [eDescricao, setEDescricao] = useState("");
   const [eValor, setEValor] = useState("");
   const [lendo, setLendo] = useState(false);
+  const [salvandoLote, setSalvandoLote] = useState(false);
+  const [detectados, setDetectados] = useState<Detectado[]>([]);
   const fileRef = useRef<HTMLInputElement>(null);
-  const lerNota = useServerFn(lerNotaGasto);
+  const lerNotas = useServerFn(lerNotasGastos);
 
-  async function onFoto(file: File) {
-    if (!file.type.startsWith("image/")) {
-      toast.error("Escolha uma imagem da nota ou do comprovante.");
-      return;
-    }
+  async function onFotos(files: FileList | null) {
+    if (!files || files.length === 0) return;
+    const lista = Array.from(files).slice(0, 10);
     setLendo(true);
     try {
-      const buf = new Uint8Array(await file.arrayBuffer());
-      let bin = "";
-      for (let i = 0; i < buf.length; i++) bin += String.fromCharCode(buf[i]!);
-      const res = await lerNota({
-        data: { imageBase64: btoa(bin), mime: file.type, hoje: todayISO() },
-      });
-      if (!res.valor) {
-        toast.error(res.resumo || "Não consegui identificar o valor. Preencha manualmente.");
+      const imagens = await Promise.all(lista.map(comprimirImagem));
+      const res = await lerNotas({ data: { imagens, hoje: todayISO() } });
+      const brutos = JSON.parse(res.gastosJson) as Array<Record<string, unknown>>;
+      const itens: Detectado[] = brutos
+        .map((g, i) => {
+          const v = Number(g["valor"]);
+          const cat = String(g["categoria"] ?? "outros") as GastoCategoria;
+          return {
+            key: `${Date.now()}-${i}`,
+            data: /^\d{4}-\d{2}-\d{2}$/.test(String(g["data"] ?? ""))
+              ? String(g["data"])
+              : todayISO(),
+            categoria: CATEGORIA_VALUES.includes(cat) ? cat : "outros",
+            descricao: String(g["descricao"] ?? ""),
+            valor: Number.isFinite(v) && v > 0 ? String(v) : "",
+          };
+        })
+        .filter((g) => g.valor !== "");
+      if (itens.length === 0) {
+        toast.error("Nenhum gasto identificado nas fotos.");
       } else {
-        setData(res.data);
-        setCategoria(res.categoria as GastoCategoria);
-        setDescricao(res.descricao);
-        setValor(String(res.valor));
-        toast.success(`Li ${fmt.format(res.valor)} — confira e registre.`);
+        setDetectados((prev) => [...prev, ...itens]);
+        toast.success(`${itens.length} gasto(s) identificado(s). Confira e registre.`);
       }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Falha ao ler a imagem.");
+      toast.error(err instanceof Error ? err.message : "Falha ao ler as fotos.");
     } finally {
       setLendo(false);
       if (fileRef.current) fileRef.current.value = "";
     }
+  }
+
+  async function registrarTodos() {
+    const validos = detectados.filter((d) => parseFloat(d.valor.replace(",", ".")) > 0);
+    if (validos.length === 0) return;
+    setSalvandoLote(true);
+    try {
+      for (const d of validos) {
+        await adicionar({
+          data: d.data,
+          categoria: d.categoria,
+          descricao: d.descricao.trim(),
+          valor: parseFloat(d.valor.replace(",", ".")),
+        });
+      }
+      setDetectados([]);
+      toast.success(`${validos.length} gasto(s) registrado(s).`);
+    } finally {
+      setSalvandoLote(false);
+    }
+  }
+
+  function patchDetectado(key: string, patch: Partial<Detectado>) {
+    setDetectados((prev) => prev.map((d) => (d.key === key ? { ...d, ...patch } : d)));
   }
 
   const total = useMemo(() => gastos.reduce((s, g) => s + g.valor, 0), [gastos]);
@@ -124,6 +194,134 @@ export function GastosTab() {
         </Card>
       </div>
 
+      {/* Leitura de notas com IA */}
+      <Card className="mb-6 rounded-3xl border-transparent p-5 shadow-sm">
+        <div className="mb-3 flex items-center gap-2">
+          <div className="grid h-9 w-9 place-items-center rounded-xl bg-primary/10 text-primary">
+            <Sparkles className="h-4 w-4" />
+          </div>
+          <div>
+            <h2 className="font-display text-base font-bold">Ler notas com IA</h2>
+            <p className="text-xs text-muted-foreground">
+              Selecione até 10 fotos de uma vez — os gastos são criados automaticamente.
+            </p>
+          </div>
+        </div>
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*"
+          multiple
+          className="hidden"
+          onChange={(e) => void onFotos(e.target.files)}
+        />
+        <Button
+          type="button"
+          variant="outline"
+          disabled={lendo}
+          onClick={() => fileRef.current?.click()}
+          className="h-12 w-full rounded-xl text-sm font-bold"
+        >
+          {lendo ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" /> Lendo fotos...
+            </>
+          ) : (
+            <>
+              <Camera className="h-4 w-4" /> Enviar fotos das notas
+            </>
+          )}
+        </Button>
+
+        {detectados.length > 0 && (
+          <div className="mt-4 grid gap-3">
+            <p className="text-xs font-semibold text-muted-foreground">
+              {detectados.length} gasto(s) identificado(s) — confira antes de registrar
+            </p>
+            {detectados.map((d) => (
+              <div key={d.key} className="grid gap-2 rounded-2xl border border-dashed p-3">
+                <div className="flex flex-wrap gap-1.5">
+                  {GASTO_CATEGORIAS.map((c) => (
+                    <button
+                      key={c.value}
+                      type="button"
+                      onClick={() => patchDetectado(d.key, { categoria: c.value })}
+                      className={
+                        "rounded-lg border px-2 py-1 text-[11px] font-semibold transition-colors " +
+                        (d.categoria === c.value
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-input bg-background hover:bg-accent")
+                      }
+                    >
+                      {c.label}
+                    </button>
+                  ))}
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <Input
+                    type="date"
+                    value={d.data}
+                    onChange={(e) => patchDetectado(d.key, { data: e.target.value })}
+                  />
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    inputMode="decimal"
+                    value={d.valor}
+                    onChange={(e) => patchDetectado(d.key, { valor: e.target.value })}
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Descrição"
+                    value={d.descricao}
+                    onChange={(e) => patchDetectado(d.key, { descricao: e.target.value })}
+                  />
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant="ghost"
+                    aria-label="Descartar"
+                    onClick={() => setDetectados((prev) => prev.filter((x) => x.key !== d.key))}
+                    className="shrink-0 text-muted-foreground hover:text-destructive"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            ))}
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                disabled={salvandoLote}
+                onClick={() => void registrarTodos()}
+                className="h-11 flex-1 rounded-xl text-sm font-bold"
+              >
+                {salvandoLote ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" /> Registrando...
+                  </>
+                ) : (
+                  <>
+                    <Check className="h-4 w-4" /> Registrar {detectados.length} gasto(s)
+                  </>
+                )}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="h-11 rounded-xl text-sm font-bold"
+                onClick={() => setDetectados([])}
+              >
+                Limpar
+              </Button>
+            </div>
+          </div>
+        )}
+      </Card>
+
+
       {/* Form */}
       <Card className="mb-6 rounded-3xl border-transparent p-5 shadow-sm">
         <div className="mb-4 flex items-center gap-2">
@@ -132,36 +330,7 @@ export function GastosTab() {
           </div>
           <h2 className="font-display text-base font-bold">Novo gasto</h2>
         </div>
-        <input
-          ref={fileRef}
-          type="file"
-          accept="image/*"
-          capture="environment"
-          className="hidden"
-          onChange={(e) => {
-            const f = e.target.files?.[0];
-            if (f) void onFoto(f);
-          }}
-        />
-        <Button
-          type="button"
-          variant="outline"
-          disabled={lendo}
-          onClick={() => fileRef.current?.click()}
-          className="mb-3 h-12 w-full rounded-xl text-sm font-bold"
-        >
-          {lendo ? (
-            <>
-              <Loader2 className="h-4 w-4 animate-spin" /> Lendo comprovante...
-            </>
-          ) : (
-            <>
-              <Camera className="h-4 w-4" /> Ler nota / foto com IA
-            </>
-          )}
-        </Button>
         <form onSubmit={salvar} className="grid gap-3">
-
           <div className="grid gap-1.5">
             <Label>Categoria</Label>
             <div className="flex flex-wrap gap-2">
