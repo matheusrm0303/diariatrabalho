@@ -132,7 +132,36 @@ export function GastosTab() {
           </div>
           <h2 className="font-display text-base font-bold">Novo gasto</h2>
         </div>
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          className="hidden"
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) void onFoto(f);
+          }}
+        />
+        <Button
+          type="button"
+          variant="outline"
+          disabled={lendo}
+          onClick={() => fileRef.current?.click()}
+          className="mb-3 h-12 w-full rounded-xl text-sm font-bold"
+        >
+          {lendo ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" /> Lendo comprovante...
+            </>
+          ) : (
+            <>
+              <Camera className="h-4 w-4" /> Ler nota / foto com IA
+            </>
+          )}
+        </Button>
         <form onSubmit={salvar} className="grid gap-3">
+
           <div className="grid gap-1.5">
             <Label>Categoria</Label>
             <div className="flex flex-wrap gap-2">
