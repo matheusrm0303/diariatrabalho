@@ -75,6 +75,24 @@ function uid() {
   return Math.random().toString(36).slice(2) + Date.now().toString(36);
 }
 
+const ACOES_RE = /<acoes>([\s\S]*?)<\/acoes>/i;
+
+function limparAcoes(texto: string) {
+  return texto.replace(ACOES_RE, "").replace(/<acoes>[\s\S]*$/i, "");
+}
+
+function extrairAcoes(texto: string): Action[] {
+  const m = texto.match(ACOES_RE);
+  if (!m) return [];
+  try {
+    const parsed = JSON.parse(m[1].trim());
+    return Array.isArray(parsed) ? (parsed as Action[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+
 function loadHistory(): Msg[] {
   if (typeof window === "undefined") return [WELCOME];
   try {
