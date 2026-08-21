@@ -38,7 +38,8 @@ if (typeof globalThis.addEventListener === "function") {
 
 // Dev (Node) only: socket aborts surface as process-level uncaught exceptions
 // from node:_http_server and would otherwise blank the preview.
-const nodeProcess = (globalThis as { process?: NodeJS.Process }).process;
+type NodeProcessLike = { on?: (event: string, listener: (arg: unknown) => void) => void };
+const nodeProcess = (globalThis as { process?: NodeProcessLike }).process;
 if (nodeProcess && typeof nodeProcess.on === "function") {
   nodeProcess.on("uncaughtException", (error: unknown) => {
     if (isClientDisconnect(error)) return;
