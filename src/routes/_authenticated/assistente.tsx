@@ -119,6 +119,8 @@ function Assistente() {
   const [loading, setLoading] = useState(false);
   const [recording, setRecording] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [streamingId, setStreamingId] = useState<string | null>(null);
+
   const mediaRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
