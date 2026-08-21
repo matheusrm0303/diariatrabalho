@@ -17,6 +17,7 @@ import { Route as AuthenticatedAssistenteRouteImport } from './routes/_authentic
 import { Route as AuthenticatedContaRouteImport } from './routes/_authenticated/conta'
 import { Route as AuthenticatedNovaRouteImport } from './routes/_authenticated/nova'
 import { Route as AuthenticatedResumoRouteImport } from './routes/_authenticated/resumo'
+import { Route as ApiAssessorRouteImport } from './routes/api/assessor'
 import { Route as AuthenticatedEditarIdRouteImport } from './routes/_authenticated/editar.$id'
 import { Route as ApiPublicHooksWeeklyBackupRouteImport } from './routes/api/public/hooks/weekly-backup'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
@@ -60,6 +61,11 @@ const AuthenticatedResumoRoute = AuthenticatedResumoRouteImport.update({
   path: '/resumo',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const ApiAssessorRoute = ApiAssessorRouteImport.update({
+  id: '/api/assessor',
+  path: '/api/assessor',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedEditarIdRoute = AuthenticatedEditarIdRouteImport.update({
   id: '/editar/$id',
   path: '/editar/$id',
@@ -86,6 +92,7 @@ export interface FileRoutesByFullPath {
   '/conta': typeof AuthenticatedContaRoute
   '/nova': typeof AuthenticatedNovaRoute
   '/resumo': typeof AuthenticatedResumoRoute
+  '/api/assessor': typeof ApiAssessorRoute
   '/editar/$id': typeof AuthenticatedEditarIdRoute
   '/api/public/hooks/weekly-backup': typeof ApiPublicHooksWeeklyBackupRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
@@ -97,6 +104,7 @@ export interface FileRoutesByTo {
   '/conta': typeof AuthenticatedContaRoute
   '/nova': typeof AuthenticatedNovaRoute
   '/resumo': typeof AuthenticatedResumoRoute
+  '/api/assessor': typeof ApiAssessorRoute
   '/': typeof AuthenticatedIndexRoute
   '/editar/$id': typeof AuthenticatedEditarIdRoute
   '/api/public/hooks/weekly-backup': typeof ApiPublicHooksWeeklyBackupRoute
@@ -111,6 +119,7 @@ export interface FileRoutesById {
   '/_authenticated/conta': typeof AuthenticatedContaRoute
   '/_authenticated/nova': typeof AuthenticatedNovaRoute
   '/_authenticated/resumo': typeof AuthenticatedResumoRoute
+  '/api/assessor': typeof ApiAssessorRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/editar/$id': typeof AuthenticatedEditarIdRoute
   '/api/public/hooks/weekly-backup': typeof ApiPublicHooksWeeklyBackupRoute
@@ -126,6 +135,7 @@ export interface FileRouteTypes {
     | '/conta'
     | '/nova'
     | '/resumo'
+    | '/api/assessor'
     | '/editar/$id'
     | '/api/public/hooks/weekly-backup'
     | '/lovable/email/transactional/preview'
@@ -137,6 +147,7 @@ export interface FileRouteTypes {
     | '/conta'
     | '/nova'
     | '/resumo'
+    | '/api/assessor'
     | '/'
     | '/editar/$id'
     | '/api/public/hooks/weekly-backup'
@@ -150,6 +161,7 @@ export interface FileRouteTypes {
     | '/_authenticated/conta'
     | '/_authenticated/nova'
     | '/_authenticated/resumo'
+    | '/api/assessor'
     | '/_authenticated/'
     | '/_authenticated/editar/$id'
     | '/api/public/hooks/weekly-backup'
@@ -159,6 +171,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  ApiAssessorRoute: typeof ApiAssessorRoute
   ApiPublicHooksWeeklyBackupRoute: typeof ApiPublicHooksWeeklyBackupRoute
   LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
 }
@@ -221,6 +234,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedResumoRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/assessor': {
+      id: '/api/assessor'
+      path: '/api/assessor'
+      fullPath: '/api/assessor'
+      preLoaderRoute: typeof ApiAssessorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/editar/$id': {
       id: '/_authenticated/editar/$id'
       path: '/editar/$id'
@@ -271,6 +291,7 @@ const AuthenticatedRouteRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  ApiAssessorRoute: ApiAssessorRoute,
   ApiPublicHooksWeeklyBackupRoute: ApiPublicHooksWeeklyBackupRoute,
   LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,
 }

@@ -275,9 +275,16 @@ function Assistente() {
     setMessages(novo);
     setInput("");
     setLoading(true);
+    const assistantId = uid();
     try {
-      const res = await chat({
-        data: {
+      const { data: sess } = await supabase.auth.getSession();
+      const token = sess.session?.access_token;
+      if (!token) throw new Error("Sessão expirada. Entre novamente.");
+
+      const res = await fetch("/api/assessor", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
           messages: novo.map((m) => ({ role: m.role, content: m.content })),
           context: {
             hoje: todayISO(),
@@ -287,29 +294,51 @@ function Assistente() {
             totalPendente: totals.pendente,
             totalAdiantamentos: totals.adi,
             saldo: totals.saldo,
-            ultimasDiarias: diarias.slice(0, 5).map((d) => ({
+            ultimasDiarias: diarias.slice(0, 8).map((d) => ({
               data: d.data, local: d.local, valor: d.valor, status: d.status, tipo: d.tipo,
             })),
           },
-        },
+        }),
       });
-      const actions = JSON.parse(res.actionsJson) as Action[];
+      if (!res.ok || !res.body) {
+        throw new Error((await res.text().catch(() => "")) || "Falha ao falar com a IA");
+      }
+
+      setMessages((m) => [...m, { id: assistantId, role: "assistant", content: "", ts: Date.now() }]);
+      setLoading(false);
+      setStreamingId(assistantId);
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let full = "";
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        full += decoder.decode(value, { stream: true });
+        const visivel = limparAcoes(full);
+        setMessages((m) => m.map((x) => (x.id === assistantId ? { ...x, content: visivel } : x)));
+      }
+      setStreamingId(null);
+
+      const actions = extrairAcoes(full);
+      const visivelFinal = limparAcoes(full).trim() || "Ok.";
       const results = actions.length > 0 ? await executarAcoes(actions) : undefined;
-      setMessages((m) => [
-        ...m,
-        { id: uid(), role: "assistant", content: res.reply, ts: Date.now(), results },
-      ]);
+      setMessages((m) =>
+        m.map((x) => (x.id === assistantId ? { ...x, content: visivelFinal, results } : x)),
+      );
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Erro desconhecido";
       toast.error(msg);
+      setStreamingId(null);
       setMessages((m) => [
-        ...m,
+        ...m.filter((x) => !(x.id === assistantId && !x.content)),
         { id: uid(), role: "assistant", content: "❌ " + msg, ts: Date.now() },
       ]);
     } finally {
       setLoading(false);
     }
   }
+
 
   async function toggleGravacao() {
     if (recording) {
