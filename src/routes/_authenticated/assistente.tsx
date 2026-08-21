@@ -24,6 +24,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { chatAssessor, transcreverAudio } from "@/lib/assistente.functions";
 import { useDiarias, useAdiantamentos, fmt, todayISO, type Diaria } from "@/lib/diarias-store";
 import { useMyDefaults } from "@/lib/admin";
+import { supabase } from "@/integrations/supabase/client";
+
 
 export const Route = createFileRoute("/_authenticated/assistente")({
   head: () => ({
@@ -75,6 +77,24 @@ function uid() {
   return Math.random().toString(36).slice(2) + Date.now().toString(36);
 }
 
+const ACOES_RE = /<acoes>([\s\S]*?)<\/acoes>/i;
+
+function limparAcoes(texto: string) {
+  return texto.replace(ACOES_RE, "").replace(/<acoes>[\s\S]*$/i, "");
+}
+
+function extrairAcoes(texto: string): Action[] {
+  const m = texto.match(ACOES_RE);
+  if (!m) return [];
+  try {
+    const parsed = JSON.parse(m[1].trim());
+    return Array.isArray(parsed) ? (parsed as Action[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+
 function loadHistory(): Msg[] {
   if (typeof window === "undefined") return [WELCOME];
   try {
@@ -101,6 +121,8 @@ function Assistente() {
   const [loading, setLoading] = useState(false);
   const [recording, setRecording] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [streamingId, setStreamingId] = useState<string | null>(null);
+
   const mediaRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -275,9 +297,16 @@ function Assistente() {
     setMessages(novo);
     setInput("");
     setLoading(true);
+    const assistantId = uid();
     try {
-      const res = await chat({
-        data: {
+      const { data: sess } = await supabase.auth.getSession();
+      const token = sess.session?.access_token;
+      if (!token) throw new Error("Sessão expirada. Entre novamente.");
+
+      const res = await fetch("/api/assessor", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
           messages: novo.map((m) => ({ role: m.role, content: m.content })),
           context: {
             hoje: todayISO(),
@@ -287,29 +316,51 @@ function Assistente() {
             totalPendente: totals.pendente,
             totalAdiantamentos: totals.adi,
             saldo: totals.saldo,
-            ultimasDiarias: diarias.slice(0, 5).map((d) => ({
+            ultimasDiarias: diarias.slice(0, 8).map((d) => ({
               data: d.data, local: d.local, valor: d.valor, status: d.status, tipo: d.tipo,
             })),
           },
-        },
+        }),
       });
-      const actions = JSON.parse(res.actionsJson) as Action[];
+      if (!res.ok || !res.body) {
+        throw new Error((await res.text().catch(() => "")) || "Falha ao falar com a IA");
+      }
+
+      setMessages((m) => [...m, { id: assistantId, role: "assistant", content: "", ts: Date.now() }]);
+      setLoading(false);
+      setStreamingId(assistantId);
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let full = "";
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        full += decoder.decode(value, { stream: true });
+        const visivel = limparAcoes(full);
+        setMessages((m) => m.map((x) => (x.id === assistantId ? { ...x, content: visivel } : x)));
+      }
+      setStreamingId(null);
+
+      const actions = extrairAcoes(full);
+      const visivelFinal = limparAcoes(full).trim() || "Ok.";
       const results = actions.length > 0 ? await executarAcoes(actions) : undefined;
-      setMessages((m) => [
-        ...m,
-        { id: uid(), role: "assistant", content: res.reply, ts: Date.now(), results },
-      ]);
+      setMessages((m) =>
+        m.map((x) => (x.id === assistantId ? { ...x, content: visivelFinal, results } : x)),
+      );
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Erro desconhecido";
       toast.error(msg);
+      setStreamingId(null);
       setMessages((m) => [
-        ...m,
+        ...m.filter((x) => !(x.id === assistantId && !x.content)),
         { id: uid(), role: "assistant", content: "❌ " + msg, ts: Date.now() },
       ]);
     } finally {
       setLoading(false);
     }
   }
+
 
   async function toggleGravacao() {
     if (recording) {
@@ -453,25 +504,38 @@ function Assistente() {
           {messages.map((m) => (
             <div
               key={m.id}
-              className={`flex animate-in fade-in slide-in-from-bottom-2 duration-300 ${
+              className={`flex gap-2.5 animate-in fade-in slide-in-from-bottom-2 duration-300 ${
                 m.role === "user" ? "justify-end" : "justify-start"
               }`}
             >
-              <div className="group flex max-w-[88%] flex-col gap-1.5">
+              {m.role === "assistant" && (
+                <div className="mt-1 grid h-7 w-7 shrink-0 place-items-center rounded-full bg-gradient-to-br from-primary to-primary/70 text-primary-foreground shadow-sm">
+                  <Sparkles className="h-3.5 w-3.5" />
+                </div>
+              )}
+              <div
+                className={`group flex flex-col gap-1.5 ${
+                  m.role === "user" ? "max-w-[85%]" : "min-w-0 flex-1"
+                }`}
+              >
                 <div
                   className={
                     m.role === "user"
                       ? "rounded-2xl rounded-br-md bg-primary px-4 py-2.5 text-sm text-primary-foreground shadow-sm"
-                      : "rounded-2xl rounded-bl-md bg-muted px-4 py-2.5 text-sm"
+                      : "text-[15px] leading-relaxed"
                   }
                 >
                   {m.role === "assistant" ? (
-                    <div className="prose prose-sm max-w-none dark:prose-invert prose-p:my-1 prose-ul:my-1 prose-strong:text-foreground">
+                    <div className="prose prose-sm max-w-none dark:prose-invert prose-p:my-2 prose-ul:my-2 prose-li:my-0.5 prose-headings:mt-3 prose-headings:mb-1 prose-strong:text-foreground prose-table:text-xs">
                       <ReactMarkdown>{m.content}</ReactMarkdown>
+                      {streamingId === m.id && (
+                        <span className="ml-0.5 inline-block h-4 w-[2px] animate-pulse bg-primary align-middle" />
+                      )}
                     </div>
                   ) : (
                     <span className="whitespace-pre-wrap">{m.content}</span>
                   )}
+
                 </div>
 
                 {/* Action result cards */}
