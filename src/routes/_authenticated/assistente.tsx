@@ -24,6 +24,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { chatAssessor, transcreverAudio } from "@/lib/assistente.functions";
 import { useDiarias, useAdiantamentos, fmt, todayISO, type Diaria } from "@/lib/diarias-store";
 import { useMyDefaults } from "@/lib/admin";
+import { supabase } from "@/integrations/supabase/client";
+
 
 export const Route = createFileRoute("/_authenticated/assistente")({
   head: () => ({
