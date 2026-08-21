@@ -504,25 +504,38 @@ function Assistente() {
           {messages.map((m) => (
             <div
               key={m.id}
-              className={`flex animate-in fade-in slide-in-from-bottom-2 duration-300 ${
+              className={`flex gap-2.5 animate-in fade-in slide-in-from-bottom-2 duration-300 ${
                 m.role === "user" ? "justify-end" : "justify-start"
               }`}
             >
-              <div className="group flex max-w-[88%] flex-col gap-1.5">
+              {m.role === "assistant" && (
+                <div className="mt-1 grid h-7 w-7 shrink-0 place-items-center rounded-full bg-gradient-to-br from-primary to-primary/70 text-primary-foreground shadow-sm">
+                  <Sparkles className="h-3.5 w-3.5" />
+                </div>
+              )}
+              <div
+                className={`group flex flex-col gap-1.5 ${
+                  m.role === "user" ? "max-w-[85%]" : "min-w-0 flex-1"
+                }`}
+              >
                 <div
                   className={
                     m.role === "user"
                       ? "rounded-2xl rounded-br-md bg-primary px-4 py-2.5 text-sm text-primary-foreground shadow-sm"
-                      : "rounded-2xl rounded-bl-md bg-muted px-4 py-2.5 text-sm"
+                      : "text-[15px] leading-relaxed"
                   }
                 >
                   {m.role === "assistant" ? (
-                    <div className="prose prose-sm max-w-none dark:prose-invert prose-p:my-1 prose-ul:my-1 prose-strong:text-foreground">
+                    <div className="prose prose-sm max-w-none dark:prose-invert prose-p:my-2 prose-ul:my-2 prose-li:my-0.5 prose-headings:mt-3 prose-headings:mb-1 prose-strong:text-foreground prose-table:text-xs">
                       <ReactMarkdown>{m.content}</ReactMarkdown>
+                      {streamingId === m.id && (
+                        <span className="ml-0.5 inline-block h-4 w-[2px] animate-pulse bg-primary align-middle" />
+                      )}
                     </div>
                   ) : (
                     <span className="whitespace-pre-wrap">{m.content}</span>
                   )}
+
                 </div>
 
                 {/* Action result cards */}
