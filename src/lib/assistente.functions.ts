@@ -81,42 +81,73 @@ export const chatAssessor = createServerFn({ method: "POST" })
 - Saldo a receber: R$ ${data.context.saldo.toFixed(2)}
 - Últimas diárias: ${JSON.stringify(data.context.ultimasDiarias.slice(0, 5))}`;
 
-    const messages = [
+    const input = [
       { role: "system", content: SYSTEM_PROMPT },
       { role: "system", content: contextMsg },
-      ...data.messages,
+      ...data.messages.map((m) => ({ role: m.role, content: m.content })),
     ];
 
-    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const res = await fetch("https://ai.gateway.lovable.dev/v1/responses", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${key}`,
+        "Lovable-API-Key": key,
+        "X-Lovable-AIG-SDK": "fetch",
       },
       body: JSON.stringify({
-        model: "google/gemini-3.6-flash",
-        messages,
-        response_format: { type: "json_object" },
+        model: "openai/gpt-5.6-terra",
+        input,
+        stream: true,
+        store: false,
       }),
     });
 
-    if (!res.ok) {
+    if (!res.ok || !res.body) {
       const body = await res.text().catch(() => "");
       if (res.status === 429) throw new Error("Muitas requisições. Tente novamente em alguns segundos.");
       if (res.status === 402) throw new Error("Créditos de IA esgotados. Adicione créditos nas configurações do workspace.");
       throw new Error(`Erro IA (${res.status}): ${body.slice(0, 200)}`);
     }
 
-    const json = (await res.json()) as {
-      choices?: Array<{ message?: { content?: string } }>;
-    };
-    const content = json.choices?.[0]?.message?.content ?? "{}";
-    let parsed: { reply?: string; actions?: unknown[] } = {};
-    try {
-      parsed = JSON.parse(content);
-    } catch {
-      parsed = { reply: content };
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+    let content = "";
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n");
+      buffer = lines.pop() ?? "";
+      for (const line of lines) {
+        if (!line.startsWith("data:")) continue;
+        const payload = line.slice(5).trim();
+        if (!payload || payload === "[DONE]") continue;
+        try {
+          const evt = JSON.parse(payload) as {
+            type?: string;
+            delta?: string;
+            response?: { output_text?: string };
+          };
+          if (evt.type === "response.output_text.delta" && typeof evt.delta === "string") {
+            content += evt.delta;
+          } else if (evt.type === "response.completed" && evt.response?.output_text) {
+            if (!content) content = evt.response.output_text;
+          }
+        } catch {
+          // ignora eventos não-JSON
+        }
+      }
     }
+
+    let parsed: { reply?: string; actions?: unknown[] } = {};
+    const jsonText = content.trim().replace(/^```(?:json)?/i, "").replace(/```$/, "").trim();
+    try {
+      parsed = JSON.parse(jsonText);
+    } catch {
+      parsed = { reply: jsonText || "Ok." };
+    }
+
     const actions = Array.isArray(parsed.actions) ? parsed.actions : [];
     return {
       reply: parsed.reply || "Ok.",
