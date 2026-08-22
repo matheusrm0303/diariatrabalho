@@ -79,14 +79,22 @@ async function handler(request: Request) {
   const input = [
     { role: "system", content: SYSTEM_PROMPT },
     { role: "system", content: contextMsg },
-    ...messages.map((m) => ({
-      role: m.role,
-      content: [
-        m.role === "assistant"
-          ? { type: "output_text", text: m.content }
-          : { type: "input_text", text: m.content },
-      ],
-    })),
+    ...messages.map((m) => {
+      if (m.role === "assistant") {
+        return { role: m.role, content: [{ type: "output_text", text: m.content }] };
+      }
+      const parts: Array<Record<string, unknown>> = [
+        { type: "input_text", text: m.content || "(sem texto)" },
+      ];
+      for (const a of (m.anexos ?? []).slice(0, 6)) {
+        if (a.mime.startsWith("image/")) {
+          parts.push({ type: "input_image", image_url: a.dataUrl });
+        } else {
+          parts.push({ type: "input_file", filename: a.name, file_data: a.dataUrl });
+        }
+      }
+      return { role: m.role, content: parts };
+    }),
   ];
 
   const res = await fetch("https://ai.gateway.lovable.dev/v1/responses", {
