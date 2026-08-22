@@ -790,7 +790,7 @@ function Assistente() {
             type="button"
             size="icon"
             onClick={() => enviar()}
-            disabled={loading || !input.trim()}
+            disabled={loading || (!input.trim() && anexos.length === 0)}
             aria-label="Enviar"
             className="h-11 w-11 shrink-0 rounded-2xl shadow-md shadow-primary/30"
           >
