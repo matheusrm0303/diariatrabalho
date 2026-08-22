@@ -322,7 +322,7 @@ function Assistente() {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({
-          messages: novo.map((m) => ({ role: m.role, content: m.content })),
+          messages: novo.map((m) => ({ role: m.role, content: m.content, anexos: m.anexos })),
           context: {
             hoje: todayISO(),
             valorRua: defaults?.valor_rua ?? 200,
