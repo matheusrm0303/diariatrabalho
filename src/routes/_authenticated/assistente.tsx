@@ -45,12 +45,14 @@ type ActionResult = {
   detail?: string;
   icon: "diaria" | "adiantamento" | "whatsapp" | "navegar";
 };
+type Anexo = { name: string; mime: string; dataUrl: string };
 type Msg = {
   id: string;
   role: "user" | "assistant";
   content: string;
   ts: number;
   results?: ActionResult[];
+  anexos?: Anexo[];
 };
 type Action =
   | { tipo: "criar_diaria"; data: string; diaria_tipo: "rua-200" | "deposito-100" | "personalizada"; valor: number; local: string; descricao?: string; status: "pago" | "pendente"; alimentacao?: number; alimentacaoObs?: string }
