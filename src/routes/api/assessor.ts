@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { createClient } from "@supabase/supabase-js";
 
-type ChatMsg = { role: "user" | "assistant"; content: string };
+type Anexo = { name: string; mime: string; dataUrl: string };
+type ChatMsg = { role: "user" | "assistant"; content: string; anexos?: Anexo[] };
 
 type Ctx = {
   hoje: string;
