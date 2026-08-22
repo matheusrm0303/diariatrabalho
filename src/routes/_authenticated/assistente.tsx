@@ -298,11 +298,19 @@ function Assistente() {
 
   async function enviar(textoBase?: string) {
     const texto = (textoBase ?? input).trim();
-    if (!texto || loading) return;
-    const userMsg: Msg = { id: uid(), role: "user", content: texto, ts: Date.now() };
+    const enviados = textoBase ? [] : anexos;
+    if ((!texto && enviados.length === 0) || loading) return;
+    const userMsg: Msg = {
+      id: uid(),
+      role: "user",
+      content: texto || (enviados.length ? "Analise o(s) arquivo(s) em anexo." : ""),
+      ts: Date.now(),
+      anexos: enviados.length ? enviados : undefined,
+    };
     const novo = [...messages, userMsg];
     setMessages(novo);
     setInput("");
+    setAnexos([]);
     setLoading(true);
     const assistantId = uid();
     try {
