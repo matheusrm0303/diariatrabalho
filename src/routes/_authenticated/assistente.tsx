@@ -579,7 +579,31 @@ function Assistente() {
                       )}
                     </div>
                   ) : (
-                    <span className="whitespace-pre-wrap">{m.content}</span>
+                    <div className="space-y-2">
+                      {m.anexos && m.anexos.length > 0 && (
+                        <div className="flex flex-wrap justify-end gap-1.5">
+                          {m.anexos.map((a, i) =>
+                            a.mime.startsWith("image/") && a.dataUrl ? (
+                              <img
+                                key={i}
+                                src={a.dataUrl}
+                                alt={a.name}
+                                className="h-20 w-20 rounded-lg object-cover"
+                              />
+                            ) : (
+                              <span
+                                key={i}
+                                className="inline-flex max-w-[160px] items-center gap-1 rounded-lg bg-primary-foreground/15 px-2 py-1 text-[11px]"
+                              >
+                                <FileText className="h-3 w-3 shrink-0" />
+                                <span className="truncate">{a.name}</span>
+                              </span>
+                            ),
+                          )}
+                        </div>
+                      )}
+                      <span className="whitespace-pre-wrap">{m.content}</span>
+                    </div>
                   )}
 
                 </div>
