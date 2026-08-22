@@ -138,7 +138,10 @@ function Assistente() {
   // Persist
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(messages.slice(-50)));
+      const leve = messages.slice(-50).map((m) =>
+        m.anexos ? { ...m, anexos: m.anexos.map((a) => ({ ...a, dataUrl: "" })) } : m,
+      );
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(leve));
     } catch {
       /* noop */
     }
