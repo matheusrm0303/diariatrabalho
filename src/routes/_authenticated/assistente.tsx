@@ -430,6 +430,30 @@ function Assistente() {
     }
   }
 
+  async function adicionarArquivos(files: FileList | null) {
+    if (!files || files.length === 0) return;
+    const novos: Anexo[] = [];
+    for (const file of Array.from(files).slice(0, 6)) {
+      const ok = file.type.startsWith("image/") || file.type === "application/pdf";
+      if (!ok) {
+        toast.error(`${file.name}: envie apenas imagens ou PDF`);
+        continue;
+      }
+      if (file.size > 8 * 1024 * 1024) {
+        toast.error(`${file.name}: máximo 8 MB`);
+        continue;
+      }
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const fr = new FileReader();
+        fr.onload = () => resolve(String(fr.result));
+        fr.onerror = () => reject(new Error("erro ao ler arquivo"));
+        fr.readAsDataURL(file);
+      });
+      novos.push({ name: file.name, mime: file.type, dataUrl });
+    }
+    if (novos.length) setAnexos((a) => [...a, ...novos].slice(0, 6));
+  }
+
   function copiar(m: Msg) {
     navigator.clipboard.writeText(m.content).then(() => {
       setCopiedId(m.id);
