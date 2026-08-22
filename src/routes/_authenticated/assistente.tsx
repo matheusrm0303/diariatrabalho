@@ -15,6 +15,9 @@ import {
   TrendingUp,
   ArrowUpRight,
   MessageSquarePlus,
+  Paperclip,
+  X,
+  FileText,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { toast } from "sonner";
@@ -42,12 +45,14 @@ type ActionResult = {
   detail?: string;
   icon: "diaria" | "adiantamento" | "whatsapp" | "navegar";
 };
+type Anexo = { name: string; mime: string; dataUrl: string };
 type Msg = {
   id: string;
   role: "user" | "assistant";
   content: string;
   ts: number;
   results?: ActionResult[];
+  anexos?: Anexo[];
 };
 type Action =
   | { tipo: "criar_diaria"; data: string; diaria_tipo: "rua-200" | "deposito-100" | "personalizada"; valor: number; local: string; descricao?: string; status: "pago" | "pendente"; alimentacao?: number; alimentacaoObs?: string }
@@ -122,6 +127,8 @@ function Assistente() {
   const [recording, setRecording] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [streamingId, setStreamingId] = useState<string | null>(null);
+  const [anexos, setAnexos] = useState<Anexo[]>([]);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const mediaRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
@@ -131,7 +138,10 @@ function Assistente() {
   // Persist
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(messages.slice(-50)));
+      const leve = messages.slice(-50).map((m) =>
+        m.anexos ? { ...m, anexos: m.anexos.map((a) => ({ ...a, dataUrl: "" })) } : m,
+      );
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(leve));
     } catch {
       /* noop */
     }
@@ -291,11 +301,19 @@ function Assistente() {
 
   async function enviar(textoBase?: string) {
     const texto = (textoBase ?? input).trim();
-    if (!texto || loading) return;
-    const userMsg: Msg = { id: uid(), role: "user", content: texto, ts: Date.now() };
+    const enviados = textoBase ? [] : anexos;
+    if ((!texto && enviados.length === 0) || loading) return;
+    const userMsg: Msg = {
+      id: uid(),
+      role: "user",
+      content: texto || (enviados.length ? "Analise o(s) arquivo(s) em anexo." : ""),
+      ts: Date.now(),
+      anexos: enviados.length ? enviados : undefined,
+    };
     const novo = [...messages, userMsg];
     setMessages(novo);
     setInput("");
+    setAnexos([]);
     setLoading(true);
     const assistantId = uid();
     try {
@@ -307,7 +325,11 @@ function Assistente() {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({
-          messages: novo.map((m) => ({ role: m.role, content: m.content })),
+          messages: novo.map((m) => ({
+            role: m.role,
+            content: m.content,
+            anexos: m.anexos?.filter((a) => a.dataUrl),
+          })),
           context: {
             hoje: todayISO(),
             valorRua: defaults?.valor_rua ?? 200,
@@ -406,6 +428,30 @@ function Assistente() {
     } catch {
       toast.error("Não foi possível acessar o microfone");
     }
+  }
+
+  async function adicionarArquivos(files: FileList | null) {
+    if (!files || files.length === 0) return;
+    const novos: Anexo[] = [];
+    for (const file of Array.from(files).slice(0, 6)) {
+      const ok = file.type.startsWith("image/") || file.type === "application/pdf";
+      if (!ok) {
+        toast.error(`${file.name}: envie apenas imagens ou PDF`);
+        continue;
+      }
+      if (file.size > 8 * 1024 * 1024) {
+        toast.error(`${file.name}: máximo 8 MB`);
+        continue;
+      }
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const fr = new FileReader();
+        fr.onload = () => resolve(String(fr.result));
+        fr.onerror = () => reject(new Error("erro ao ler arquivo"));
+        fr.readAsDataURL(file);
+      });
+      novos.push({ name: file.name, mime: file.type, dataUrl });
+    }
+    if (novos.length) setAnexos((a) => [...a, ...novos].slice(0, 6));
   }
 
   function copiar(m: Msg) {
@@ -533,7 +579,31 @@ function Assistente() {
                       )}
                     </div>
                   ) : (
-                    <span className="whitespace-pre-wrap">{m.content}</span>
+                    <div className="space-y-2">
+                      {m.anexos && m.anexos.length > 0 && (
+                        <div className="flex flex-wrap justify-end gap-1.5">
+                          {m.anexos.map((a, i) =>
+                            a.mime.startsWith("image/") && a.dataUrl ? (
+                              <img
+                                key={i}
+                                src={a.dataUrl}
+                                alt={a.name}
+                                className="h-20 w-20 rounded-lg object-cover"
+                              />
+                            ) : (
+                              <span
+                                key={i}
+                                className="inline-flex max-w-[160px] items-center gap-1 rounded-lg bg-primary-foreground/15 px-2 py-1 text-[11px]"
+                              >
+                                <FileText className="h-3 w-3 shrink-0" />
+                                <span className="truncate">{a.name}</span>
+                              </span>
+                            ),
+                          )}
+                        </div>
+                      )}
+                      <span className="whitespace-pre-wrap">{m.content}</span>
+                    </div>
                   )}
 
                 </div>
@@ -635,9 +705,60 @@ function Assistente() {
           </div>
         </div>
 
+        {/* Anexos pendentes */}
+        {anexos.length > 0 && (
+          <div className="mx-auto flex max-w-2xl flex-wrap gap-2 px-4 pt-1">
+            {anexos.map((a, i) => (
+              <div
+                key={i}
+                className="relative flex items-center gap-1.5 rounded-xl border bg-muted/50 py-1 pl-1 pr-6 text-xs"
+              >
+                {a.mime.startsWith("image/") ? (
+                  <img src={a.dataUrl} alt={a.name} className="h-9 w-9 rounded-lg object-cover" />
+                ) : (
+                  <span className="grid h-9 w-9 place-items-center rounded-lg bg-primary/10 text-primary">
+                    <FileText className="h-4 w-4" />
+                  </span>
+                )}
+                <span className="max-w-[120px] truncate">{a.name}</span>
+                <button
+                  type="button"
+                  onClick={() => setAnexos((prev) => prev.filter((_, j) => j !== i))}
+                  aria-label={`Remover ${a.name}`}
+                  className="absolute right-1 top-1 rounded-full p-0.5 text-muted-foreground hover:bg-muted"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
         {/* Composer */}
         <div className="mx-auto flex max-w-2xl items-end gap-2 px-4 pb-3 pt-1">
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/*,application/pdf"
+            multiple
+            className="hidden"
+            onChange={(e) => {
+              void adicionarArquivos(e.target.files);
+              e.target.value = "";
+            }}
+          />
           <div className="flex flex-1 items-end gap-1 rounded-2xl border bg-muted/40 px-2 py-1.5 focus-within:border-primary focus-within:bg-background">
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              onClick={() => fileRef.current?.click()}
+              disabled={loading || recording}
+              aria-label="Anexar arquivo ou foto"
+              className="h-8 w-8 shrink-0 rounded-full"
+            >
+              <Paperclip className="h-4 w-4" />
+            </Button>
             <Textarea
               ref={inputRef}
               value={input}
@@ -669,7 +790,7 @@ function Assistente() {
             type="button"
             size="icon"
             onClick={() => enviar()}
-            disabled={loading || !input.trim()}
+            disabled={loading || (!input.trim() && anexos.length === 0)}
             aria-label="Enviar"
             className="h-11 w-11 shrink-0 rounded-2xl shadow-md shadow-primary/30"
           >

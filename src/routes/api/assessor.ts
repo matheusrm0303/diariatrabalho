@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { createClient } from "@supabase/supabase-js";
 
-type ChatMsg = { role: "user" | "assistant"; content: string };
+type Anexo = { name: string; mime: string; dataUrl: string };
+type ChatMsg = { role: "user" | "assistant"; content: string; anexos?: Anexo[] };
 
 type Ctx = {
   hoje: string;
@@ -40,7 +41,10 @@ Formatos de ação:
    - Só um nome/telefone sem conteúdo definido? Não gere ação: pergunte o que incluir.
    - Contato por nome sem número: use o nome na saudação e não envie "telefone".
    - Normalize telefones para apenas dígitos.
-4) { "tipo": "navegar", "para": "/"|"/nova"|"/conta"|"/resumo" }`;
+4) { "tipo": "navegar", "para": "/"|"/nova"|"/conta"|"/resumo" }
+
+ANEXOS:
+O usuário pode enviar fotos (notas fiscais, comprovantes, planilhas fotografadas) e PDFs. Leia com atenção, extraia datas, locais e valores, resuma o que encontrou e, se fizer sentido, proponha ou gere as ações correspondentes (diária, adiantamento). Se a imagem estiver ilegível, diga o que faltou.`;
 
 async function handler(request: Request) {
   const SUPABASE_URL = process.env["SUPABASE_URL"];
@@ -78,14 +82,22 @@ async function handler(request: Request) {
   const input = [
     { role: "system", content: SYSTEM_PROMPT },
     { role: "system", content: contextMsg },
-    ...messages.map((m) => ({
-      role: m.role,
-      content: [
-        m.role === "assistant"
-          ? { type: "output_text", text: m.content }
-          : { type: "input_text", text: m.content },
-      ],
-    })),
+    ...messages.map((m) => {
+      if (m.role === "assistant") {
+        return { role: m.role, content: [{ type: "output_text", text: m.content }] };
+      }
+      const parts: Array<Record<string, unknown>> = [
+        { type: "input_text", text: m.content || "(sem texto)" },
+      ];
+      for (const a of (m.anexos ?? []).slice(0, 6)) {
+        if (a.mime.startsWith("image/")) {
+          parts.push({ type: "input_image", image_url: a.dataUrl });
+        } else {
+          parts.push({ type: "input_file", filename: a.name, file_data: a.dataUrl });
+        }
+      }
+      return { role: m.role, content: parts };
+    }),
   ];
 
   const res = await fetch("https://ai.gateway.lovable.dev/v1/responses", {
