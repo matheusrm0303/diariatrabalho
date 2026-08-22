@@ -15,6 +15,9 @@ import {
   TrendingUp,
   ArrowUpRight,
   MessageSquarePlus,
+  Paperclip,
+  X,
+  FileText,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { toast } from "sonner";
