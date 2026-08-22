@@ -705,9 +705,60 @@ function Assistente() {
           </div>
         </div>
 
+        {/* Anexos pendentes */}
+        {anexos.length > 0 && (
+          <div className="mx-auto flex max-w-2xl flex-wrap gap-2 px-4 pt-1">
+            {anexos.map((a, i) => (
+              <div
+                key={i}
+                className="relative flex items-center gap-1.5 rounded-xl border bg-muted/50 py-1 pl-1 pr-6 text-xs"
+              >
+                {a.mime.startsWith("image/") ? (
+                  <img src={a.dataUrl} alt={a.name} className="h-9 w-9 rounded-lg object-cover" />
+                ) : (
+                  <span className="grid h-9 w-9 place-items-center rounded-lg bg-primary/10 text-primary">
+                    <FileText className="h-4 w-4" />
+                  </span>
+                )}
+                <span className="max-w-[120px] truncate">{a.name}</span>
+                <button
+                  type="button"
+                  onClick={() => setAnexos((prev) => prev.filter((_, j) => j !== i))}
+                  aria-label={`Remover ${a.name}`}
+                  className="absolute right-1 top-1 rounded-full p-0.5 text-muted-foreground hover:bg-muted"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
         {/* Composer */}
         <div className="mx-auto flex max-w-2xl items-end gap-2 px-4 pb-3 pt-1">
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/*,application/pdf"
+            multiple
+            className="hidden"
+            onChange={(e) => {
+              void adicionarArquivos(e.target.files);
+              e.target.value = "";
+            }}
+          />
           <div className="flex flex-1 items-end gap-1 rounded-2xl border bg-muted/40 px-2 py-1.5 focus-within:border-primary focus-within:bg-background">
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              onClick={() => fileRef.current?.click()}
+              disabled={loading || recording}
+              aria-label="Anexar arquivo ou foto"
+              className="h-8 w-8 shrink-0 rounded-full"
+            >
+              <Paperclip className="h-4 w-4" />
+            </Button>
             <Textarea
               ref={inputRef}
               value={input}
