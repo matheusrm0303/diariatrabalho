@@ -120,6 +120,7 @@ function Assistente() {
   const navigate = useNavigate();
   const chat = useServerFn(chatAssessor);
   const transcribe = useServerFn(transcreverAudio);
+  const falar = useServerFn(falarTexto);
   const { diarias, adicionar: addDiaria } = useDiarias();
   const { adiantamentos, adicionar: addAdiant } = useAdiantamentos();
   const defaults = useMyDefaults();
@@ -131,12 +132,79 @@ function Assistente() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [streamingId, setStreamingId] = useState<string | null>(null);
   const [anexos, setAnexos] = useState<Anexo[]>([]);
+  const [autoVoz, setAutoVoz] = useState(false);
+  const [audioId, setAudioId] = useState<string | null>(null);
+  const [audioLoadingId, setAudioLoadingId] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const mediaRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const audioCache = useRef<Map<string, string>>(new Map());
+
+  useEffect(() => {
+    try {
+      setAutoVoz(localStorage.getItem("assessor-auto-voz") === "1");
+    } catch {
+      /* noop */
+    }
+    return () => {
+      audioRef.current?.pause();
+      audioRef.current = null;
+    };
+  }, []);
+
+  function pararAudio() {
+    audioRef.current?.pause();
+    audioRef.current = null;
+    setAudioId(null);
+  }
+
+  async function ouvir(m: Msg) {
+    if (audioId === m.id) {
+      pararAudio();
+      return;
+    }
+    pararAudio();
+    const texto = m.content.trim();
+    if (!texto) return;
+    try {
+      let url = audioCache.current.get(m.id);
+      if (!url) {
+        setAudioLoadingId(m.id);
+        const { audioBase64, mime } = await falar({ data: { texto } });
+        url = `data:${mime};base64,${audioBase64}`;
+        audioCache.current.set(m.id, url);
+      }
+      const audio = new Audio(url);
+      audioRef.current = audio;
+      audio.onended = () => setAudioId(null);
+      audio.onerror = () => setAudioId(null);
+      setAudioId(m.id);
+      await audio.play();
+    } catch (e) {
+      setAudioId(null);
+      toast.error(e instanceof Error ? e.message : "Não consegui gerar o áudio");
+    } finally {
+      setAudioLoadingId(null);
+    }
+  }
+
+  function alternarAutoVoz() {
+    setAutoVoz((v) => {
+      const novo = !v;
+      try {
+        localStorage.setItem("assessor-auto-voz", novo ? "1" : "0");
+      } catch {
+        /* noop */
+      }
+      if (!novo) pararAudio();
+      else toast.success("Respostas em áudio ativadas");
+      return novo;
+    });
+  }
 
   // Persist
   useEffect(() => {
