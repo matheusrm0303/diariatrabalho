@@ -723,8 +723,8 @@ function Assistente() {
 
                 {/* Meta row */}
                 <div
-                  className={`flex items-center gap-2 px-1 text-[10px] text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 ${
-                    m.role === "user" ? "justify-end" : "justify-start"
+                  className={`flex items-center gap-2 px-1 text-[10px] text-muted-foreground transition-opacity group-hover:opacity-100 ${
+                    m.role === "user" ? "justify-end opacity-0" : "justify-start opacity-80"
                   }`}
                 >
                   <span>
