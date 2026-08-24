@@ -582,6 +582,16 @@ function Assistente() {
           <Button
             size="icon"
             variant="ghost"
+            onClick={alternarAutoVoz}
+            aria-label={autoVoz ? "Desativar respostas em áudio" : "Ativar respostas em áudio"}
+            title={autoVoz ? "Respostas em áudio: ativadas" : "Respostas em áudio: desativadas"}
+            className={autoVoz ? "text-primary" : "text-muted-foreground"}
+          >
+            {autoVoz ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+          </Button>
+          <Button
+            size="icon"
+            variant="ghost"
             onClick={novaConversa}
             aria-label="Nova conversa"
             title="Nova conversa"
