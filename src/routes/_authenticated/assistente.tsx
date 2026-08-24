@@ -734,22 +734,45 @@ function Assistente() {
                     })}
                   </span>
                   {m.role === "assistant" && m.id !== "welcome" && (
-                    <button
-                      type="button"
-                      onClick={() => copiar(m)}
-                      className="inline-flex items-center gap-1 rounded px-1 py-0.5 hover:bg-muted"
-                      aria-label="Copiar"
-                    >
-                      {copiedId === m.id ? (
-                        <>
-                          <Check className="h-3 w-3" /> copiado
-                        </>
-                      ) : (
-                        <>
-                          <Copy className="h-3 w-3" /> copiar
-                        </>
-                      )}
-                    </button>
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => copiar(m)}
+                        className="inline-flex items-center gap-1 rounded px-1 py-0.5 hover:bg-muted"
+                        aria-label="Copiar"
+                      >
+                        {copiedId === m.id ? (
+                          <>
+                            <Check className="h-3 w-3" /> copiado
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="h-3 w-3" /> copiar
+                          </>
+                        )}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void ouvir(m)}
+                        disabled={audioLoadingId === m.id || streamingId === m.id}
+                        className="inline-flex items-center gap-1 rounded px-1 py-0.5 hover:bg-muted disabled:opacity-50"
+                        aria-label={audioId === m.id ? "Parar áudio" : "Ouvir resposta"}
+                      >
+                        {audioLoadingId === m.id ? (
+                          <>
+                            <Loader2 className="h-3 w-3 animate-spin" /> gerando
+                          </>
+                        ) : audioId === m.id ? (
+                          <>
+                            <Square className="h-3 w-3" /> parar
+                          </>
+                        ) : (
+                          <>
+                            <Volume2 className="h-3 w-3" /> ouvir
+                          </>
+                        )}
+                      </button>
+                    </>
                   )}
                 </div>
               </div>
