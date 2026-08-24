@@ -18,13 +18,16 @@ import {
   Paperclip,
   X,
   FileText,
+  Volume2,
+  VolumeX,
+  Loader2,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { chatAssessor, transcreverAudio } from "@/lib/assistente.functions";
+import { chatAssessor, transcreverAudio, falarTexto } from "@/lib/assistente.functions";
 import { useDiarias, useAdiantamentos, fmt, todayISO, type Diaria } from "@/lib/diarias-store";
 import { useMyDefaults } from "@/lib/admin";
 import { supabase } from "@/integrations/supabase/client";
