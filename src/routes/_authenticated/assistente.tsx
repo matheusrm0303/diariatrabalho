@@ -18,13 +18,16 @@ import {
   Paperclip,
   X,
   FileText,
+  Volume2,
+  VolumeX,
+  Loader2,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { chatAssessor, transcreverAudio } from "@/lib/assistente.functions";
+import { chatAssessor, transcreverAudio, falarTexto } from "@/lib/assistente.functions";
 import { useDiarias, useAdiantamentos, fmt, todayISO, type Diaria } from "@/lib/diarias-store";
 import { useMyDefaults } from "@/lib/admin";
 import { supabase } from "@/integrations/supabase/client";
@@ -117,6 +120,7 @@ function Assistente() {
   const navigate = useNavigate();
   const chat = useServerFn(chatAssessor);
   const transcribe = useServerFn(transcreverAudio);
+  const falar = useServerFn(falarTexto);
   const { diarias, adicionar: addDiaria } = useDiarias();
   const { adiantamentos, adicionar: addAdiant } = useAdiantamentos();
   const defaults = useMyDefaults();
@@ -128,12 +132,79 @@ function Assistente() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [streamingId, setStreamingId] = useState<string | null>(null);
   const [anexos, setAnexos] = useState<Anexo[]>([]);
+  const [autoVoz, setAutoVoz] = useState(false);
+  const [audioId, setAudioId] = useState<string | null>(null);
+  const [audioLoadingId, setAudioLoadingId] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const mediaRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const audioCache = useRef<Map<string, string>>(new Map());
+
+  useEffect(() => {
+    try {
+      setAutoVoz(localStorage.getItem("assessor-auto-voz") === "1");
+    } catch {
+      /* noop */
+    }
+    return () => {
+      audioRef.current?.pause();
+      audioRef.current = null;
+    };
+  }, []);
+
+  function pararAudio() {
+    audioRef.current?.pause();
+    audioRef.current = null;
+    setAudioId(null);
+  }
+
+  async function ouvir(m: Msg) {
+    if (audioId === m.id) {
+      pararAudio();
+      return;
+    }
+    pararAudio();
+    const texto = m.content.trim();
+    if (!texto) return;
+    try {
+      let url = audioCache.current.get(m.id);
+      if (!url) {
+        setAudioLoadingId(m.id);
+        const { audioBase64, mime } = await falar({ data: { texto } });
+        url = `data:${mime};base64,${audioBase64}`;
+        audioCache.current.set(m.id, url);
+      }
+      const audio = new Audio(url);
+      audioRef.current = audio;
+      audio.onended = () => setAudioId(null);
+      audio.onerror = () => setAudioId(null);
+      setAudioId(m.id);
+      await audio.play();
+    } catch (e) {
+      setAudioId(null);
+      toast.error(e instanceof Error ? e.message : "Não consegui gerar o áudio");
+    } finally {
+      setAudioLoadingId(null);
+    }
+  }
+
+  function alternarAutoVoz() {
+    setAutoVoz((v) => {
+      const novo = !v;
+      try {
+        localStorage.setItem("assessor-auto-voz", novo ? "1" : "0");
+      } catch {
+        /* noop */
+      }
+      if (!novo) pararAudio();
+      else toast.success("Respostas em áudio ativadas");
+      return novo;
+    });
+  }
 
   // Persist
   useEffect(() => {
@@ -370,6 +441,9 @@ function Assistente() {
       setMessages((m) =>
         m.map((x) => (x.id === assistantId ? { ...x, content: visivelFinal, results } : x)),
       );
+      if (autoVoz) {
+        void ouvir({ id: assistantId, role: "assistant", content: visivelFinal, ts: Date.now() });
+      }
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Erro desconhecido";
       toast.error(msg);
@@ -508,6 +582,16 @@ function Assistente() {
           <Button
             size="icon"
             variant="ghost"
+            onClick={alternarAutoVoz}
+            aria-label={autoVoz ? "Desativar respostas em áudio" : "Ativar respostas em áudio"}
+            title={autoVoz ? "Respostas em áudio: ativadas" : "Respostas em áudio: desativadas"}
+            className={autoVoz ? "text-primary" : "text-muted-foreground"}
+          >
+            {autoVoz ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+          </Button>
+          <Button
+            size="icon"
+            variant="ghost"
             onClick={novaConversa}
             aria-label="Nova conversa"
             title="Nova conversa"
@@ -639,8 +723,8 @@ function Assistente() {
 
                 {/* Meta row */}
                 <div
-                  className={`flex items-center gap-2 px-1 text-[10px] text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 ${
-                    m.role === "user" ? "justify-end" : "justify-start"
+                  className={`flex items-center gap-2 px-1 text-[10px] text-muted-foreground transition-opacity group-hover:opacity-100 ${
+                    m.role === "user" ? "justify-end opacity-0" : "justify-start opacity-80"
                   }`}
                 >
                   <span>
@@ -650,22 +734,45 @@ function Assistente() {
                     })}
                   </span>
                   {m.role === "assistant" && m.id !== "welcome" && (
-                    <button
-                      type="button"
-                      onClick={() => copiar(m)}
-                      className="inline-flex items-center gap-1 rounded px-1 py-0.5 hover:bg-muted"
-                      aria-label="Copiar"
-                    >
-                      {copiedId === m.id ? (
-                        <>
-                          <Check className="h-3 w-3" /> copiado
-                        </>
-                      ) : (
-                        <>
-                          <Copy className="h-3 w-3" /> copiar
-                        </>
-                      )}
-                    </button>
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => copiar(m)}
+                        className="inline-flex items-center gap-1 rounded px-1 py-0.5 hover:bg-muted"
+                        aria-label="Copiar"
+                      >
+                        {copiedId === m.id ? (
+                          <>
+                            <Check className="h-3 w-3" /> copiado
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="h-3 w-3" /> copiar
+                          </>
+                        )}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void ouvir(m)}
+                        disabled={audioLoadingId === m.id || streamingId === m.id}
+                        className="inline-flex items-center gap-1 rounded px-1 py-0.5 hover:bg-muted disabled:opacity-50"
+                        aria-label={audioId === m.id ? "Parar áudio" : "Ouvir resposta"}
+                      >
+                        {audioLoadingId === m.id ? (
+                          <>
+                            <Loader2 className="h-3 w-3 animate-spin" /> gerando
+                          </>
+                        ) : audioId === m.id ? (
+                          <>
+                            <Square className="h-3 w-3" /> parar
+                          </>
+                        ) : (
+                          <>
+                            <Volume2 className="h-3 w-3" /> ouvir
+                          </>
+                        )}
+                      </button>
+                    </>
                   )}
                 </div>
               </div>

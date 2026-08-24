@@ -192,3 +192,48 @@ export const transcreverAudio = createServerFn({ method: "POST" })
     const json = (await res.json()) as { text?: string };
     return { text: json.text ?? "" };
   });
+
+export const falarTexto = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { texto: string }) => {
+    if (!data?.texto?.trim()) throw new Error("texto required");
+    return data;
+  })
+  .handler(async ({ data }) => {
+    const key = process.env.LOVABLE_API_KEY;
+    if (!key) throw new Error("LOVABLE_API_KEY não configurada");
+
+    // remove markdown/emoji-ruído para a fala ficar natural
+    const limpo = data.texto
+      .replace(/```[\s\S]*?```/g, " ")
+      .replace(/[*_#>`|]/g, "")
+      .replace(/\s+/g, " ")
+      .trim()
+      .slice(0, 2500);
+
+    const res = await fetch("https://ai.gateway.lovable.dev/v1/audio/speech", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "openai/gpt-4o-mini-tts",
+        input: limpo,
+        voice: "alloy",
+        response_format: "mp3",
+        instructions: "Fale em português do Brasil, com tom natural, amigável e claro.",
+      }),
+    });
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      if (res.status === 429) throw new Error("Muitas requisições de voz. Tente em alguns segundos.");
+      if (res.status === 402) throw new Error("Créditos de IA esgotados.");
+      throw new Error(`Erro na voz (${res.status}): ${body.slice(0, 200)}`);
+    }
+    const buf = await res.arrayBuffer();
+    const bytes = new Uint8Array(buf);
+    let bin = "";
+    const chunk = 0x8000;
+    for (let i = 0; i < bytes.length; i += chunk) {
+      bin += String.fromCharCode(...bytes.subarray(i, i + chunk));
+    }
+    return { audioBase64: btoa(bin), mime: "audio/mpeg" };
+  });
