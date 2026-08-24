@@ -441,6 +441,9 @@ function Assistente() {
       setMessages((m) =>
         m.map((x) => (x.id === assistantId ? { ...x, content: visivelFinal, results } : x)),
       );
+      if (autoVoz) {
+        void ouvir({ id: assistantId, role: "assistant", content: visivelFinal, ts: Date.now() });
+      }
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Erro desconhecido";
       toast.error(msg);
