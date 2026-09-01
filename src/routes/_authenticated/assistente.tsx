@@ -628,6 +628,16 @@ function Assistente() {
           </div>
           <Button
             size="icon"
+            variant={modoVoz ? "default" : "ghost"}
+            onClick={alternarModoVoz}
+            aria-label={modoVoz ? "Desativar modo conversa por voz" : "Ativar modo conversa por voz"}
+            title={modoVoz ? "Modo voz: ativado (microfone aberto)" : "Modo voz: conversa por áudio contínua"}
+            className={modoVoz ? "" : "text-muted-foreground"}
+          >
+            <AudioLines className="h-4 w-4" />
+          </Button>
+          <Button
+            size="icon"
             variant="ghost"
             onClick={alternarAutoVoz}
             aria-label={autoVoz ? "Desativar respostas em áudio" : "Ativar respostas em áudio"}
