@@ -42,19 +42,24 @@ export const enviarBackupPorEmail = createServerFn({ method: "POST" })
       0,
     );
 
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { anexarFotosGastos, assinarFotosGastos } = await import("@/lib/comprovantes.server");
+    const gastosLista = (gastos ?? []) as unknown as import("@/lib/comprovantes.server").GastoComNota[];
+    const gastosComLink = await assinarFotosGastos(supabaseAdmin as never, gastosLista);
+    const gastosComFoto = await anexarFotosGastos(supabaseAdmin as never, gastosLista);
+
     const json = JSON.stringify(
       {
         versao: 1,
         geradoEm: hoje.toISOString(),
         diarias,
         adiantamentos,
-        gastos,
+        gastos: gastosComLink,
       },
       null,
       2,
     );
 
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const path = `${userId}/backup-manual-${Date.now()}.json`;
     const { error: upErr } = await supabaseAdmin.storage
       .from("backups")
@@ -76,6 +81,7 @@ export const enviarBackupPorEmail = createServerFn({ method: "POST" })
         periodo: `Fechamento gerado em ${hoje.toLocaleDateString("pt-BR")}`,
         diarias: (diarias ?? []) as never[],
         adiantamentos: (adiantamentos ?? []) as never[],
+        gastos: gastosComFoto as never[],
       });
       const pdfPath = `${userId}/fechamento-manual-${Date.now()}.pdf`;
       const { error: pdfErr } = await supabaseAdmin.storage
