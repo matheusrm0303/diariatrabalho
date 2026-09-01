@@ -38,6 +38,7 @@ export type GastoCategoria =
   | "pedagio"
   | "hospedagem"
   | "material"
+  | "alimentacao"
   | "outros";
 
 export type Gasto = {
@@ -55,6 +56,7 @@ export const GASTO_CATEGORIAS: { value: GastoCategoria; label: string }[] = [
   { value: "pedagio", label: "Pedágio" },
   { value: "hospedagem", label: "Hospedagem" },
   { value: "material", label: "Material" },
+  { value: "alimentacao", label: "Alimentação" },
   { value: "outros", label: "Outros" },
 ];
 
