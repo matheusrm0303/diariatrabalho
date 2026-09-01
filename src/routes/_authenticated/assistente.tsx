@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowLeft,
   Mic,
+  AudioLines,
   Send,
   Sparkles,
   Square,
@@ -133,6 +134,7 @@ function Assistente() {
   const [streamingId, setStreamingId] = useState<string | null>(null);
   const [anexos, setAnexos] = useState<Anexo[]>([]);
   const [autoVoz, setAutoVoz] = useState(false);
+  const [modoVoz, setModoVoz] = useState(false);
   const [audioId, setAudioId] = useState<string | null>(null);
   const [audioLoadingId, setAudioLoadingId] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -143,16 +145,23 @@ function Assistente() {
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const audioCache = useRef<Map<string, string>>(new Map());
+  const modoVozRef = useRef(false);
 
   useEffect(() => {
     try {
       setAutoVoz(localStorage.getItem("assessor-auto-voz") === "1");
+      if (localStorage.getItem("assessor-modo-voz") === "1") {
+        setModoVoz(true);
+        modoVozRef.current = true;
+        void iniciarGravacao();
+      }
     } catch {
       /* noop */
     }
     return () => {
       audioRef.current?.pause();
       audioRef.current = null;
+      mediaRef.current?.stop();
     };
   }, []);
 
@@ -180,7 +189,10 @@ function Assistente() {
       }
       const audio = new Audio(url);
       audioRef.current = audio;
-      audio.onended = () => setAudioId(null);
+      audio.onended = () => {
+        setAudioId(null);
+        if (modoVozRef.current) void iniciarGravacao();
+      };
       audio.onerror = () => setAudioId(null);
       setAudioId(m.id);
       await audio.play();
@@ -204,6 +216,30 @@ function Assistente() {
       else toast.success("Respostas em áudio ativadas");
       return novo;
     });
+  }
+
+  function alternarModoVoz() {
+    const novo = !modoVoz;
+    setModoVoz(novo);
+    modoVozRef.current = novo;
+    try {
+      localStorage.setItem("assessor-modo-voz", novo ? "1" : "0");
+    } catch {
+      /* noop */
+    }
+    if (novo) {
+      setAutoVoz(true);
+      try {
+        localStorage.setItem("assessor-auto-voz", "1");
+      } catch {
+        /* noop */
+      }
+      toast.success("Modo conversa por voz ativado — microfone aberto");
+      void iniciarGravacao();
+    } else {
+      mediaRef.current?.stop();
+      pararAudio();
+    }
   }
 
   // Persist
@@ -441,7 +477,7 @@ function Assistente() {
       setMessages((m) =>
         m.map((x) => (x.id === assistantId ? { ...x, content: visivelFinal, results } : x)),
       );
-      if (autoVoz) {
+      if (autoVoz || modoVozRef.current) {
         void ouvir({ id: assistantId, role: "assistant", content: visivelFinal, ts: Date.now() });
       }
     } catch (e) {
@@ -460,9 +496,21 @@ function Assistente() {
 
   async function toggleGravacao() {
     if (recording) {
+      modoVozRef.current = false;
+      setModoVoz(false);
+      try {
+        localStorage.setItem("assessor-modo-voz", "0");
+      } catch {
+        /* noop */
+      }
       mediaRef.current?.stop();
       return;
     }
+    await iniciarGravacao();
+  }
+
+  async function iniciarGravacao() {
+    if (mediaRef.current && recording) return;
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const mime = MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : "audio/mp4";
@@ -579,6 +627,16 @@ function Assistente() {
               <p className="truncate text-[11px] text-emerald-600 dark:text-emerald-400">● Online agora</p>
             </div>
           </div>
+          <Button
+            size="icon"
+            variant={modoVoz ? "default" : "ghost"}
+            onClick={alternarModoVoz}
+            aria-label={modoVoz ? "Desativar modo conversa por voz" : "Ativar modo conversa por voz"}
+            title={modoVoz ? "Modo voz: ativado (microfone aberto)" : "Modo voz: conversa por áudio contínua"}
+            className={modoVoz ? "" : "text-muted-foreground"}
+          >
+            <AudioLines className="h-4 w-4" />
+          </Button>
           <Button
             size="icon"
             variant="ghost"
