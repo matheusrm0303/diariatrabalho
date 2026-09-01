@@ -95,12 +95,14 @@ export function GastosTab() {
         .map((g, i) => {
           const v = Number(g["valor"]);
           const cat = String(g["categoria"] ?? "outros") as GastoCategoria;
+          const ref = String(g["refeicao"] ?? "").toLowerCase();
           return {
             key: `${Date.now()}-${i}`,
             data: /^\d{4}-\d{2}-\d{2}$/.test(String(g["data"] ?? ""))
               ? String(g["data"])
               : todayISO(),
             categoria: CATEGORIA_VALUES.includes(cat) ? cat : "outros",
+            refeicao: (ref.startsWith("jant") ? "janta" : "almoco") as Refeicao,
             descricao: String(g["descricao"] ?? ""),
             valor: Number.isFinite(v) && v > 0 ? String(v) : "",
           };
@@ -129,7 +131,7 @@ export function GastosTab() {
         await adicionar({
           data: d.data,
           categoria: d.categoria,
-          descricao: d.descricao.trim(),
+          descricao: comRefeicao(d),
           valor: parseFloat(d.valor.replace(",", ".")),
         });
       }
