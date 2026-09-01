@@ -476,7 +476,7 @@ function Assistente() {
       setMessages((m) =>
         m.map((x) => (x.id === assistantId ? { ...x, content: visivelFinal, results } : x)),
       );
-      if (autoVoz) {
+      if (autoVoz || modoVozRef.current) {
         void ouvir({ id: assistantId, role: "assistant", content: visivelFinal, ts: Date.now() });
       }
     } catch (e) {
