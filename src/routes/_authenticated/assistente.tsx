@@ -188,7 +188,10 @@ function Assistente() {
       }
       const audio = new Audio(url);
       audioRef.current = audio;
-      audio.onended = () => setAudioId(null);
+      audio.onended = () => {
+        setAudioId(null);
+        if (modoVozRef.current) void iniciarGravacao();
+      };
       audio.onerror = () => setAudioId(null);
       setAudioId(m.id);
       await audio.play();
@@ -212,6 +215,30 @@ function Assistente() {
       else toast.success("Respostas em áudio ativadas");
       return novo;
     });
+  }
+
+  function alternarModoVoz() {
+    const novo = !modoVoz;
+    setModoVoz(novo);
+    modoVozRef.current = novo;
+    try {
+      localStorage.setItem("assessor-modo-voz", novo ? "1" : "0");
+    } catch {
+      /* noop */
+    }
+    if (novo) {
+      setAutoVoz(true);
+      try {
+        localStorage.setItem("assessor-auto-voz", "1");
+      } catch {
+        /* noop */
+      }
+      toast.success("Modo conversa por voz ativado — microfone aberto");
+      void iniciarGravacao();
+    } else {
+      mediaRef.current?.stop();
+      pararAudio();
+    }
   }
 
   // Persist
