@@ -18,6 +18,7 @@ import {
   Camera,
   Loader2,
   Sparkles,
+  Image as ImageIcon,
 } from "lucide-react";
 import { lerNotasGastos } from "@/lib/gasto-ocr.functions";
 import {
@@ -149,6 +150,12 @@ export function GastosTab() {
     } finally {
       setSalvandoLote(false);
     }
+  }
+
+  async function verNota(path: string) {
+    const url = await urlComprovante(path);
+    if (url) window.open(url, "_blank", "noopener");
+    else toast.error("Não foi possível abrir a nota.");
   }
 
   function patchDetectado(key: string, patch: Partial<Detectado>) {
@@ -538,6 +545,15 @@ export function GastosTab() {
                       })}
                       {g.descricao ? ` • ${g.descricao}` : ""}
                     </p>
+                    {g.comprovantePath && (
+                      <button
+                        type="button"
+                        onClick={() => void verNota(g.comprovantePath!)}
+                        className="mt-1 inline-flex items-center gap-1 text-[11px] font-semibold text-primary hover:underline"
+                      >
+                        <ImageIcon className="h-3 w-3" /> Ver nota
+                      </button>
+                    )}
                   </div>
                   <div className="flex flex-col items-end gap-1">
                     <span className="font-display text-base font-bold text-amber-600 dark:text-amber-400">
