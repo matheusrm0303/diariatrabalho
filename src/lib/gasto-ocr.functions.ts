@@ -1,22 +1,23 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-const PROMPT = `Você lê fotos de notas fiscais, cupons, comprovantes e prints de corridas de aplicativo (Uber/99) e extrai os gastos.
+const PROMPT = `Você lê fotos de notas fiscais, cupons, comprovantes de restaurante e prints de corridas de aplicativo (Uber/99) e extrai os gastos.
 
 Você receberá UMA OU MAIS imagens. Cada imagem normalmente corresponde a UM gasto (se uma imagem tiver vários comprovantes, extraia todos).
 
 Responda SOMENTE JSON válido (sem markdown) no formato:
 {
   "gastos": [
-    { "indiceImagem": number, "data": "YYYY-MM-DD", "categoria": "uber"|"transporte"|"estacionamento"|"pedagio"|"hospedagem"|"material"|"outros", "descricao": string, "valor": number, "confianca": "alta"|"media"|"baixa" }
+    { "indiceImagem": number, "data": "YYYY-MM-DD", "categoria": "uber"|"transporte"|"estacionamento"|"pedagio"|"hospedagem"|"material"|"alimentacao"|"outros", "refeicao": "almoco"|"janta"|null, "descricao": string, "valor": number, "confianca": "alta"|"media"|"baixa" }
   ]
 }
 
 Regras:
 - valor: total pago, número (sem "R$", vírgula vira ponto). Se não achar o total, use o maior valor plausível.
 - data: converta qualquer formato para YYYY-MM-DD. Se não houver data legível, use a data de hoje informada.
-- categoria: "uber" para corridas de app; "transporte" para ônibus/táxi/combustível; use as demais conforme o comprovante; senão "outros".
-- descricao: curta, em português (ex.: "Uber - Centro até Arena", "Estacionamento Shopping X").
+- categoria: "uber" para corridas de app; "transporte" para ônibus/táxi/combustível; "alimentacao" para restaurantes, lanchonetes, padarias, self-service, delivery de comida; use as demais conforme o comprovante; senão "outros".
+- refeicao: só para categoria "alimentacao". Use o horário impresso no cupom: até 16:00 = "almoco", depois das 16:00 = "janta". Sem horário, deduza pelos itens (jantar/pizza/lanche noturno = "janta"; prato feito/self-service = "almoco"). Se não der para saber, use "almoco". Para outras categorias, null.
+- descricao: curta, em português (ex.: "Uber - Centro até Arena", "Restaurante Sabor Caseiro").
 - indiceImagem: índice (começando em 0) da imagem de onde veio o gasto.
 - Não invente gastos. Se uma imagem não for um comprovante, ignore-a.`;
 

@@ -34,13 +34,23 @@ function labelCategoria(c: GastoCategoria) {
 
 const CATEGORIA_VALUES = GASTO_CATEGORIAS.map((c) => c.value);
 
+type Refeicao = "almoco" | "janta";
+
 type Detectado = {
   key: string;
   data: string;
   categoria: GastoCategoria;
+  refeicao: Refeicao;
   descricao: string;
   valor: string;
 };
+
+function comRefeicao(d: Detectado) {
+  const base = d.descricao.trim().replace(/^(almo[çc]o|janta|jantar)\s*[-–—:]\s*/i, "");
+  if (d.categoria !== "alimentacao") return base;
+  const rot = d.refeicao === "janta" ? "Janta" : "Almoço";
+  return base ? `${rot} — ${base}` : rot;
+}
 
 async function comprimirImagem(file: File): Promise<string> {
   const bitmap = await createImageBitmap(file);
@@ -85,12 +95,14 @@ export function GastosTab() {
         .map((g, i) => {
           const v = Number(g["valor"]);
           const cat = String(g["categoria"] ?? "outros") as GastoCategoria;
+          const ref = String(g["refeicao"] ?? "").toLowerCase();
           return {
             key: `${Date.now()}-${i}`,
             data: /^\d{4}-\d{2}-\d{2}$/.test(String(g["data"] ?? ""))
               ? String(g["data"])
               : todayISO(),
             categoria: CATEGORIA_VALUES.includes(cat) ? cat : "outros",
+            refeicao: (ref.startsWith("jant") ? "janta" : "almoco") as Refeicao,
             descricao: String(g["descricao"] ?? ""),
             valor: Number.isFinite(v) && v > 0 ? String(v) : "",
           };
@@ -119,7 +131,7 @@ export function GastosTab() {
         await adicionar({
           data: d.data,
           categoria: d.categoria,
-          descricao: d.descricao.trim(),
+          descricao: comRefeicao(d),
           valor: parseFloat(d.valor.replace(",", ".")),
         });
       }
@@ -257,6 +269,25 @@ export function GastosTab() {
                     </button>
                   ))}
                 </div>
+                {d.categoria === "alimentacao" && (
+                  <div className="flex gap-1.5">
+                    {(["almoco", "janta"] as Refeicao[]).map((r) => (
+                      <button
+                        key={r}
+                        type="button"
+                        onClick={() => patchDetectado(d.key, { refeicao: r })}
+                        className={
+                          "flex-1 rounded-lg border px-2 py-1.5 text-[11px] font-semibold transition-colors " +
+                          (d.refeicao === r
+                            ? "border-amber-500 bg-amber-500 text-white"
+                            : "border-input bg-background hover:bg-accent")
+                        }
+                      >
+                        {r === "almoco" ? "Almoço" : "Janta"}
+                      </button>
+                    ))}
+                  </div>
+                )}
                 <div className="grid grid-cols-2 gap-2">
                   <Input
                     type="date"
