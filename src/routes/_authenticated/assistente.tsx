@@ -133,6 +133,7 @@ function Assistente() {
   const [streamingId, setStreamingId] = useState<string | null>(null);
   const [anexos, setAnexos] = useState<Anexo[]>([]);
   const [autoVoz, setAutoVoz] = useState(false);
+  const [modoVoz, setModoVoz] = useState(false);
   const [audioId, setAudioId] = useState<string | null>(null);
   const [audioLoadingId, setAudioLoadingId] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -143,6 +144,7 @@ function Assistente() {
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const audioCache = useRef<Map<string, string>>(new Map());
+  const modoVozRef = useRef(false);
 
   useEffect(() => {
     try {
