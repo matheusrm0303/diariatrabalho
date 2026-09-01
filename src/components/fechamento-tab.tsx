@@ -363,8 +363,10 @@ export function FechamentoTab() {
         const st = d.status === "pago" ? "✅ Pago" : "⏳ Pendente";
         if (d.status === "pago") subPago += total;
         else subPendente += total;
+        const alimRefeicao =
+          d.alimentacaoTipo === "almoco" ? " (almoço)" : d.alimentacaoTipo === "janta" ? " (janta)" : "";
         const alimTxt =
-          waIncluirAlim && d.alimentacao ? ` + alim. ${fmt.format(d.alimentacao)}` : "";
+          waIncluirAlim && d.alimentacao ? ` + alim.${alimRefeicao} ${fmt.format(d.alimentacao)}` : "";
         linhas.push(
           `${idx + 1}. ${formatarData(d.data)} — ${d.local || "(sem local)"} [${tipoLabel(d.tipo)}] — ${fmt.format(d.valor)}${alimTxt} = *${fmt.format(total)}* ${st}`,
         );
