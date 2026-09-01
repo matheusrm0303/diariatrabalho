@@ -34,13 +34,23 @@ function labelCategoria(c: GastoCategoria) {
 
 const CATEGORIA_VALUES = GASTO_CATEGORIAS.map((c) => c.value);
 
+type Refeicao = "almoco" | "janta";
+
 type Detectado = {
   key: string;
   data: string;
   categoria: GastoCategoria;
+  refeicao: Refeicao;
   descricao: string;
   valor: string;
 };
+
+function comRefeicao(d: Detectado) {
+  const base = d.descricao.trim().replace(/^(almo[çc]o|janta|jantar)\s*[-–—:]\s*/i, "");
+  if (d.categoria !== "alimentacao") return base;
+  const rot = d.refeicao === "janta" ? "Janta" : "Almoço";
+  return base ? `${rot} — ${base}` : rot;
+}
 
 async function comprimirImagem(file: File): Promise<string> {
   const bitmap = await createImageBitmap(file);
