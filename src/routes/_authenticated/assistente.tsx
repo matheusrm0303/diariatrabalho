@@ -149,12 +149,18 @@ function Assistente() {
   useEffect(() => {
     try {
       setAutoVoz(localStorage.getItem("assessor-auto-voz") === "1");
+      if (localStorage.getItem("assessor-modo-voz") === "1") {
+        setModoVoz(true);
+        modoVozRef.current = true;
+        void iniciarGravacao();
+      }
     } catch {
       /* noop */
     }
     return () => {
       audioRef.current?.pause();
       audioRef.current = null;
+      mediaRef.current?.stop();
     };
   }, []);
 
