@@ -495,9 +495,21 @@ function Assistente() {
 
   async function toggleGravacao() {
     if (recording) {
+      modoVozRef.current = false;
+      setModoVoz(false);
+      try {
+        localStorage.setItem("assessor-modo-voz", "0");
+      } catch {
+        /* noop */
+      }
       mediaRef.current?.stop();
       return;
     }
+    await iniciarGravacao();
+  }
+
+  async function iniciarGravacao() {
+    if (mediaRef.current && recording) return;
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const mime = MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : "audio/mp4";
