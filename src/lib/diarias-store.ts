@@ -503,3 +503,40 @@ export function useAdiantamentos() {
 
   return { adiantamentos, adicionar, remover, recarregar };
 }
+
+// ---------- Comprovantes (fotos das notas) ----------
+
+/** Envia a foto da nota (dataURL) para o armazenamento seguro e devolve o caminho. */
+export async function enviarComprovante(dataUrl: string): Promise<string | null> {
+  try {
+    const { data: userData } = await supabase.auth.getUser();
+    const user_id = userData.user?.id;
+    if (!user_id) return null;
+    const res = await fetch(dataUrl);
+    const blob = await res.blob();
+    const path = `${user_id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.jpg`;
+    const { error } = await supabase.storage
+      .from("recibos")
+      .upload(path, blob, { contentType: "image/jpeg", upsert: true });
+    if (error) {
+      console.error(error);
+      return null;
+    }
+    return path;
+  } catch (e) {
+    console.error(e);
+    return null;
+  }
+}
+
+/** Gera um link temporário para visualizar a foto da nota. */
+export async function urlComprovante(path: string, segundos = 3600): Promise<string | null> {
+  const { data, error } = await supabase.storage
+    .from("recibos")
+    .createSignedUrl(path, segundos);
+  if (error) {
+    console.error(error);
+    return null;
+  }
+  return data?.signedUrl ?? null;
+}
