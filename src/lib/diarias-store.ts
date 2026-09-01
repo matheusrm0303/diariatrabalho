@@ -14,7 +14,15 @@ export type Diaria = {
   status: Status;
   alimentacao?: number;
   alimentacaoObs?: string;
+  alimentacaoTipo?: AlimentacaoTipo;
 };
+
+export type AlimentacaoTipo = "almoco" | "janta";
+
+export const ALIMENTACAO_TIPOS: { value: AlimentacaoTipo; label: string }[] = [
+  { value: "almoco", label: "Almoço" },
+  { value: "janta", label: "Janta" },
+];
 
 export type Adiantamento = {
   id: string;
@@ -94,6 +102,7 @@ type DiariaRow = {
   status: string;
   alimentacao: number | string | null;
   alimentacao_obs: string | null;
+  alimentacao_tipo: string | null;
 };
 
 type AdiantRow = {
@@ -114,6 +123,7 @@ function mapDiaria(r: DiariaRow): Diaria {
     status: r.status as Status,
     alimentacao: r.alimentacao != null ? Number(r.alimentacao) : 0,
     alimentacaoObs: r.alimentacao_obs ?? "",
+    alimentacaoTipo: (r.alimentacao_tipo as "almoco" | "janta" | null) ?? undefined,
   };
 }
 
@@ -360,6 +370,7 @@ export function useDiarias() {
         status: d.status,
         alimentacao: d.alimentacao ?? 0,
         alimentacao_obs: d.alimentacaoObs ?? "",
+        alimentacao_tipo: d.alimentacaoTipo ?? null,
       } as never)
       .select()
       .single();
@@ -402,6 +413,8 @@ export function useDiarias() {
         payload.alimentacao = patch.alimentacao ?? 0;
       if (patch.alimentacaoObs !== undefined)
         payload.alimentacao_obs = patch.alimentacaoObs ?? "";
+      if (patch.alimentacaoTipo !== undefined)
+        payload.alimentacao_tipo = patch.alimentacaoTipo ?? null;
       const { error } = await supabase
         .from("diarias" as never)
         .update(payload as never)

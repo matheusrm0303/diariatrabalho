@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft } from "lucide-react";
-import { useDiarias, fmt, type Tipo, type Status } from "@/lib/diarias-store";
+import { useDiarias, fmt, ALIMENTACAO_TIPOS, type Tipo, type Status, type AlimentacaoTipo } from "@/lib/diarias-store";
 import { useMyDefaults } from "@/lib/admin";
 
 export const Route = createFileRoute("/_authenticated/editar/$id")({
@@ -54,6 +54,7 @@ function Editar() {
   const [incluiAlim, setIncluiAlim] = useState(false);
   const [alimentacao, setAlimentacao] = useState("");
   const [alimentacaoObs, setAlimentacaoObs] = useState("");
+  const [alimentacaoTipo, setAlimentacaoTipo] = useState<AlimentacaoTipo>("almoco");
   const [carregado, setCarregado] = useState(false);
 
   useEffect(() => {
@@ -68,6 +69,7 @@ function Editar() {
       setIncluiAlim(!!(atual.alimentacao || atual.alimentacaoObs));
       setAlimentacao(atual.alimentacao ? String(atual.alimentacao) : "");
       setAlimentacaoObs(atual.alimentacaoObs || "");
+      setAlimentacaoTipo(atual.alimentacaoTipo ?? "almoco");
       setCarregado(true);
     }
   }, [atual, carregado]);
@@ -103,6 +105,7 @@ function Editar() {
       status,
       alimentacao: incluiAlim ? parseNum(alimentacao) : 0,
       alimentacaoObs: incluiAlim ? alimentacaoObs.trim() : "",
+      alimentacaoTipo: incluiAlim ? alimentacaoTipo : undefined,
     });
     navigate({ to: "/" });
   }
@@ -239,6 +242,29 @@ function Editar() {
             </div>
             {incluiAlim && (
               <div className="grid gap-3">
+                <div className="grid gap-2">
+                  <Label>Refeição</Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {ALIMENTACAO_TIPOS.map((t) => {
+                      const active = alimentacaoTipo === t.value;
+                      return (
+                        <button
+                          key={t.value}
+                          type="button"
+                          onClick={() => setAlimentacaoTipo(t.value)}
+                          className={
+                            "rounded-md border px-3 py-2 text-sm transition-colors " +
+                            (active
+                              ? "border-primary bg-primary text-primary-foreground"
+                              : "border-input bg-background hover:bg-accent")
+                          }
+                        >
+                          {t.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
                 <div className="grid gap-2">
                   <Label htmlFor="alim">Valor alimentação (R$)</Label>
                   <Input

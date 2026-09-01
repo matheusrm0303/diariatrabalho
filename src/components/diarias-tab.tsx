@@ -298,6 +298,9 @@ export function DiariasTab() {
                         <p className="mt-1 inline-flex items-center gap-1 text-[11px] text-muted-foreground">
                           <Utensils className="h-3 w-3" />
                           {fmt.format(d.alimentacao)}
+                          {d.alimentacaoTipo
+                            ? ` — ${d.alimentacaoTipo === "almoco" ? "Almoço" : "Janta"}`
+                            : ""}
                           {d.alimentacaoObs ? ` — ${d.alimentacaoObs}` : ""}
                         </p>
                       ) : null}

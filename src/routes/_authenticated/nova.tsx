@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft, X } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { ptBR } from "date-fns/locale";
-import { useDiarias, todayISO, fmt, type Tipo, type Status } from "@/lib/diarias-store";
+import { useDiarias, todayISO, fmt, ALIMENTACAO_TIPOS, type Tipo, type Status, type AlimentacaoTipo } from "@/lib/diarias-store";
 import { useMyDefaults } from "@/lib/admin";
 
 function isoFromDate(d: Date) {
@@ -54,6 +54,7 @@ function Nova() {
   const [incluiAlim, setIncluiAlim] = useState(false);
   const [alimentacao, setAlimentacao] = useState("");
   const [alimentacaoObs, setAlimentacaoObs] = useState("");
+  const [alimentacaoTipo, setAlimentacaoTipo] = useState<AlimentacaoTipo>("almoco");
 
   // When defaults load, refresh preset value if user hasn't chosen custom
   useEffect(() => {
@@ -100,6 +101,7 @@ function Nova() {
         status,
         alimentacao: alim,
         alimentacaoObs: alimObs,
+        alimentacaoTipo: incluiAlim ? alimentacaoTipo : undefined,
       });
     }
     navigate({ to: "/" });
@@ -272,6 +274,29 @@ function Nova() {
             </div>
             {incluiAlim && (
               <div className="grid gap-3">
+                <div className="grid gap-2">
+                  <Label>Refeição</Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {ALIMENTACAO_TIPOS.map((t) => {
+                      const active = alimentacaoTipo === t.value;
+                      return (
+                        <button
+                          key={t.value}
+                          type="button"
+                          onClick={() => setAlimentacaoTipo(t.value)}
+                          className={
+                            "rounded-md border px-3 py-2 text-sm transition-colors " +
+                            (active
+                              ? "border-primary bg-primary text-primary-foreground"
+                              : "border-input bg-background hover:bg-accent")
+                          }
+                        >
+                          {t.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
                 <div className="grid gap-2">
                   <Label htmlFor="alim">Valor alimentação (R$)</Label>
                   <Input
