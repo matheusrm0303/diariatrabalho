@@ -269,6 +269,25 @@ export function GastosTab() {
                     </button>
                   ))}
                 </div>
+                {d.categoria === "alimentacao" && (
+                  <div className="flex gap-1.5">
+                    {(["almoco", "janta"] as Refeicao[]).map((r) => (
+                      <button
+                        key={r}
+                        type="button"
+                        onClick={() => patchDetectado(d.key, { refeicao: r })}
+                        className={
+                          "flex-1 rounded-lg border px-2 py-1.5 text-[11px] font-semibold transition-colors " +
+                          (d.refeicao === r
+                            ? "border-amber-500 bg-amber-500 text-white"
+                            : "border-input bg-background hover:bg-accent")
+                        }
+                      >
+                        {r === "almoco" ? "Almoço" : "Janta"}
+                      </button>
+                    ))}
+                  </div>
+                )}
                 <div className="grid grid-cols-2 gap-2">
                   <Input
                     type="date"
