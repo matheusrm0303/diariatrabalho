@@ -283,6 +283,7 @@ export function useGastos() {
         categoria: g.categoria,
         descricao: g.descricao ?? "",
         valor: g.valor,
+        comprovante_path: g.comprovantePath ?? null,
       } as never)
       .select()
       .single();
@@ -297,13 +298,19 @@ export function useGastos() {
 
   const remover = useCallback(async (id: string) => {
     const backup = gastosStore.get();
+    const alvo = backup.find((x) => x.id === id);
     gastosStore.set((prev) => prev.filter((x) => x.id !== id));
     const { error } = await supabase.from("gastos" as never).delete().eq("id", id);
     if (error) {
       console.error(error);
       gastosStore.set(backup);
+      return;
+    }
+    if (alvo?.comprovantePath) {
+      await supabase.storage.from("recibos").remove([alvo.comprovantePath]);
     }
   }, []);
+
 
   const atualizar = useCallback(
     async (id: string, patch: Partial<Omit<Gasto, "id">>) => {
