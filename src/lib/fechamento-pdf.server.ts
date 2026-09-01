@@ -14,6 +14,15 @@ export type PdfAdiantamento = {
   valor: number | string
 }
 
+export type PdfGasto = {
+  data: string
+  categoria: string
+  descricao: string | null
+  valor: number | string
+  /** Foto da nota em dataURL (image/jpeg ou image/png), opcional. */
+  imagem?: string | null
+}
+
 const fmt = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
 
 function dataBR(iso: string) {
@@ -27,6 +36,7 @@ export async function gerarFechamentoPDF(opts: {
   periodo: string
   diarias: PdfDiaria[]
   adiantamentos: PdfAdiantamento[]
+  gastos?: PdfGasto[]
 }): Promise<Uint8Array> {
   const { jsPDF } = await import('jspdf')
   const autoTable = (await import('jspdf-autotable')).default
@@ -52,7 +62,9 @@ export async function gerarFechamentoPDF(opts: {
     .reduce((a, d) => a + Number(d.valor) + Number(d.alimentacao ?? 0), 0)
   const totalPendente = totalDiarias - totalPago
   const totalAdiantado = opts.adiantamentos.reduce((a, x) => a + Number(x.valor), 0)
-  const saldo = totalPendente - totalAdiantado
+  const gastos = opts.gastos ?? []
+  const totalGastos = gastos.reduce((a, g) => a + Number(g.valor), 0)
+  const saldo = totalPendente + totalGastos - totalAdiantado
 
   doc.setTextColor(15, 23, 42)
   autoTable(doc, {
@@ -65,11 +77,12 @@ export async function gerarFechamentoPDF(opts: {
       [`Total em diárias (${opts.diarias.length})`, fmt.format(totalDiarias)],
       ['Total pago', fmt.format(totalPago)],
       ['Total pendente', fmt.format(totalPendente)],
+      [`Gastos a reembolsar (${gastos.length})`, fmt.format(totalGastos)],
       [`Adiantamentos (${opts.adiantamentos.length})`, fmt.format(totalAdiantado)],
       ['Saldo a receber', fmt.format(saldo)],
     ],
     didParseCell: (data) => {
-      if (data.section === 'body' && data.row.index === 4) {
+      if (data.section === 'body' && data.row.index === 5) {
         data.cell.styles.fontStyle = 'bold'
         data.cell.styles.textColor = saldo < 0 ? [220, 38, 38] : [22, 101, 52]
       }
@@ -109,6 +122,62 @@ export async function gerarFechamentoPDF(opts: {
         .sort((a, b) => String(a.data).localeCompare(String(b.data)))
         .map((a) => [dataBR(a.data), a.observacao || '-', fmt.format(Number(a.valor))]),
     })
+  }
+
+  if (gastos.length) {
+    const afterAnterior = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable
+      .finalY
+    autoTable(doc, {
+      startY: afterAnterior + 24,
+      theme: 'striped',
+      headStyles: { fillColor: [217, 119, 6], textColor: [255, 255, 255] },
+      styles: { fontSize: 9, cellPadding: 5 },
+      head: [['Data', 'Categoria', 'Descrição', 'Nota', 'Valor']],
+      body: [...gastos]
+        .sort((a, b) => String(a.data).localeCompare(String(b.data)))
+        .map((g) => [
+          dataBR(g.data),
+          g.categoria || '-',
+          g.descricao || '-',
+          g.imagem ? 'Sim' : '-',
+          fmt.format(Number(g.valor)),
+        ]),
+    })
+
+    const comFoto = gastos.filter((g) => !!g.imagem)
+    if (comFoto.length) {
+      const alturaPag = doc.internal.pageSize.getHeight()
+      const maxLargura = largura - 80
+      const maxAltura = 300
+      doc.addPage()
+      doc.setFontSize(14)
+      doc.setTextColor(15, 23, 42)
+      doc.text('Comprovantes (fotos das notas)', 40, 48)
+      let y = 70
+      for (const g of comFoto) {
+        const legenda = `${dataBR(g.data)} • ${g.descricao || g.categoria} • ${fmt.format(Number(g.valor))}`
+        if (y + maxAltura + 40 > alturaPag - 40) {
+          doc.addPage()
+          y = 60
+        }
+        doc.setFontSize(9)
+        doc.setTextColor(71, 85, 105)
+        doc.text(legenda, 40, y)
+        y += 10
+        try {
+          const props = doc.getImageProperties(g.imagem as string)
+          const escala = Math.min(maxLargura / props.width, maxAltura / props.height, 1)
+          const w = props.width * escala
+          const h = props.height * escala
+          doc.addImage(g.imagem as string, 'JPEG', 40, y, w, h)
+          y += h + 24
+        } catch (e) {
+          console.error('PDF: falha ao inserir comprovante', e)
+          doc.text('(não foi possível carregar a imagem)', 40, y + 12)
+          y += 36
+        }
+      }
+    }
   }
 
   const paginas = doc.getNumberOfPages()

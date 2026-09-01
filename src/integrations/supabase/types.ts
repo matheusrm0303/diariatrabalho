@@ -92,6 +92,7 @@ export type Database = {
       gastos: {
         Row: {
           categoria: string
+          comprovante_path: string | null
           created_at: string
           data: string
           descricao: string
@@ -101,6 +102,7 @@ export type Database = {
         }
         Insert: {
           categoria?: string
+          comprovante_path?: string | null
           created_at?: string
           data: string
           descricao?: string
@@ -110,6 +112,7 @@ export type Database = {
         }
         Update: {
           categoria?: string
+          comprovante_path?: string | null
           created_at?: string
           data?: string
           descricao?: string

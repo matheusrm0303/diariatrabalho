@@ -47,6 +47,7 @@ export type Gasto = {
   categoria: GastoCategoria;
   descricao: string;
   valor: number;
+  comprovantePath?: string | null;
 };
 
 export const GASTO_CATEGORIAS: { value: GastoCategoria; label: string }[] = [
@@ -66,6 +67,7 @@ type GastoRow = {
   categoria: string;
   descricao: string | null;
   valor: number | string;
+  comprovante_path?: string | null;
 };
 
 function mapGasto(r: GastoRow): Gasto {
@@ -75,8 +77,10 @@ function mapGasto(r: GastoRow): Gasto {
     categoria: (r.categoria as GastoCategoria) ?? "outros",
     descricao: r.descricao ?? "",
     valor: Number(r.valor),
+    comprovantePath: r.comprovante_path ?? null,
   };
 }
+
 
 
 export const fmt = new Intl.NumberFormat("pt-BR", {
@@ -279,6 +283,7 @@ export function useGastos() {
         categoria: g.categoria,
         descricao: g.descricao ?? "",
         valor: g.valor,
+        comprovante_path: g.comprovantePath ?? null,
       } as never)
       .select()
       .single();
@@ -293,13 +298,19 @@ export function useGastos() {
 
   const remover = useCallback(async (id: string) => {
     const backup = gastosStore.get();
+    const alvo = backup.find((x) => x.id === id);
     gastosStore.set((prev) => prev.filter((x) => x.id !== id));
     const { error } = await supabase.from("gastos" as never).delete().eq("id", id);
     if (error) {
       console.error(error);
       gastosStore.set(backup);
+      return;
+    }
+    if (alvo?.comprovantePath) {
+      await supabase.storage.from("recibos").remove([alvo.comprovantePath]);
     }
   }, []);
+
 
   const atualizar = useCallback(
     async (id: string, patch: Partial<Omit<Gasto, "id">>) => {
@@ -491,4 +502,41 @@ export function useAdiantamentos() {
   }, []);
 
   return { adiantamentos, adicionar, remover, recarregar };
+}
+
+// ---------- Comprovantes (fotos das notas) ----------
+
+/** Envia a foto da nota (dataURL) para o armazenamento seguro e devolve o caminho. */
+export async function enviarComprovante(dataUrl: string): Promise<string | null> {
+  try {
+    const { data: userData } = await supabase.auth.getUser();
+    const user_id = userData.user?.id;
+    if (!user_id) return null;
+    const res = await fetch(dataUrl);
+    const blob = await res.blob();
+    const path = `${user_id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.jpg`;
+    const { error } = await supabase.storage
+      .from("recibos")
+      .upload(path, blob, { contentType: "image/jpeg", upsert: true });
+    if (error) {
+      console.error(error);
+      return null;
+    }
+    return path;
+  } catch (e) {
+    console.error(e);
+    return null;
+  }
+}
+
+/** Gera um link temporário para visualizar a foto da nota. */
+export async function urlComprovante(path: string, segundos = 3600): Promise<string | null> {
+  const { data, error } = await supabase.storage
+    .from("recibos")
+    .createSignedUrl(path, segundos);
+  if (error) {
+    console.error(error);
+    return null;
+  }
+  return data?.signedUrl ?? null;
 }

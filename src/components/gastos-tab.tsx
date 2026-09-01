@@ -18,10 +18,13 @@ import {
   Camera,
   Loader2,
   Sparkles,
+  Image as ImageIcon,
 } from "lucide-react";
 import { lerNotasGastos } from "@/lib/gasto-ocr.functions";
 import {
   useGastos,
+  enviarComprovante,
+  urlComprovante,
   GASTO_CATEGORIAS,
   fmt,
   todayISO,
@@ -43,6 +46,7 @@ type Detectado = {
   refeicao: Refeicao;
   descricao: string;
   valor: string;
+  foto?: string;
 };
 
 function comRefeicao(d: Detectado) {
@@ -94,6 +98,9 @@ export function GastosTab() {
       const itens: Detectado[] = brutos
         .map((g, i) => {
           const v = Number(g["valor"]);
+          const idxImg = Number(g["indiceImagem"]);
+          const foto =
+            imagens[Number.isFinite(idxImg) && idxImg >= 0 ? idxImg : i] ?? imagens[0];
           const cat = String(g["categoria"] ?? "outros") as GastoCategoria;
           const ref = String(g["refeicao"] ?? "").toLowerCase();
           return {
@@ -105,6 +112,7 @@ export function GastosTab() {
             refeicao: (ref.startsWith("jant") ? "janta" : "almoco") as Refeicao,
             descricao: String(g["descricao"] ?? ""),
             valor: Number.isFinite(v) && v > 0 ? String(v) : "",
+            foto,
           };
         })
         .filter((g) => g.valor !== "");
@@ -128,11 +136,13 @@ export function GastosTab() {
     setSalvandoLote(true);
     try {
       for (const d of validos) {
+        const comprovantePath = d.foto ? await enviarComprovante(d.foto) : null;
         await adicionar({
           data: d.data,
           categoria: d.categoria,
           descricao: comRefeicao(d),
           valor: parseFloat(d.valor.replace(",", ".")),
+          comprovantePath,
         });
       }
       setDetectados([]);
@@ -140,6 +150,12 @@ export function GastosTab() {
     } finally {
       setSalvandoLote(false);
     }
+  }
+
+  async function verNota(path: string) {
+    const url = await urlComprovante(path);
+    if (url) window.open(url, "_blank", "noopener");
+    else toast.error("Não foi possível abrir a nota.");
   }
 
   function patchDetectado(key: string, patch: Partial<Detectado>) {
@@ -529,6 +545,15 @@ export function GastosTab() {
                       })}
                       {g.descricao ? ` • ${g.descricao}` : ""}
                     </p>
+                    {g.comprovantePath && (
+                      <button
+                        type="button"
+                        onClick={() => void verNota(g.comprovantePath!)}
+                        className="mt-1 inline-flex items-center gap-1 text-[11px] font-semibold text-primary hover:underline"
+                      >
+                        <ImageIcon className="h-3 w-3" /> Ver nota
+                      </button>
+                    )}
                   </div>
                   <div className="flex flex-col items-end gap-1">
                     <span className="font-display text-base font-bold text-amber-600 dark:text-amber-400">

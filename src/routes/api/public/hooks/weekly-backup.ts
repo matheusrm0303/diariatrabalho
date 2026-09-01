@@ -1,6 +1,11 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { createClient } from '@supabase/supabase-js'
 import { sendTemplateEmail } from '@/lib/email-templates/send-email'
+import {
+  anexarFotosGastos,
+  assinarFotosGastos,
+  type GastoComNota,
+} from '@/lib/comprovantes.server'
 
 const fmt = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
 
@@ -44,13 +49,24 @@ async function handler(request: Request) {
   for (const user of usersPage.users) {
     if (!user.email || !user.email_confirmed_at) continue
     try {
-      const [{ data: diarias }, { data: adiantamentos }] = await Promise.all([
+      const [{ data: diarias }, { data: adiantamentos }, { data: gastos }] = await Promise.all([
         supabase.from('diarias').select('*').eq('user_id', user.id),
         supabase.from('adiantamentos').select('*').eq('user_id', user.id),
+        supabase.from('gastos').select('*').eq('user_id', user.id),
       ])
 
+      const gastosLista = (gastos ?? []) as unknown as GastoComNota[]
+      const gastosComLink = await assinarFotosGastos(supabase as never, gastosLista)
+      const gastosComFoto = await anexarFotosGastos(supabase as never, gastosLista)
+      const totalGastos = gastosLista.reduce((acc, g) => acc + Number(g.valor), 0)
+
       const listaDiarias = (diarias ?? []) as unknown as DiariaRow[]
-      if (listaDiarias.length === 0 && (adiantamentos ?? []).length === 0) continue
+      if (
+        listaDiarias.length === 0 &&
+        (adiantamentos ?? []).length === 0 &&
+        (gastos ?? []).length === 0
+      )
+        continue
 
       const total = listaDiarias.reduce(
         (acc, d) => acc + Number(d.valor) + Number(d.alimentacao ?? 0),
@@ -58,7 +74,7 @@ async function handler(request: Request) {
       )
 
       const backup = JSON.stringify(
-        { versao: 1, geradoEm: hoje.toISOString(), diarias, adiantamentos },
+        { versao: 1, geradoEm: hoje.toISOString(), diarias, adiantamentos, gastos: gastosComLink },
         null,
         2,
       )
@@ -86,6 +102,7 @@ async function handler(request: Request) {
           periodo: `Fechamento gerado em ${hoje.toLocaleDateString('pt-BR')}`,
           diarias: (diarias ?? []) as never[],
           adiantamentos: (adiantamentos ?? []) as never[],
+          gastos: gastosComFoto as never[],
         })
         const pdfPath = `${user.id}/fechamento-${stamp}.pdf`
         const { error: pdfUpErr } = await supabase.storage
@@ -118,7 +135,7 @@ async function handler(request: Request) {
           qtdDiarias: listaDiarias.length,
           qtdAdiantamentos: (adiantamentos ?? []).length,
           totalDiarias: fmt.format(total),
-          saldoReceber: fmt.format(pendente - totalAdiantado),
+          saldoReceber: fmt.format(pendente + totalGastos - totalAdiantado),
           downloadUrl: signed?.signedUrl,
           pdfUrl,
         },
