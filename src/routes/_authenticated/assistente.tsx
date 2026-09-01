@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowLeft,
   Mic,
+  AudioLines,
   Send,
   Sparkles,
   Square,
