@@ -185,6 +185,8 @@ export async function gerarRelatorioPDF(opts: ReportOptions): Promise<void> {
         const total = d.valor + (d.alimentacao || 0);
         const extras: string[] = [];
         if (d.descricao) extras.push(d.descricao);
+        if (d.alimentacaoTipo)
+          extras.push(`Refeição: ${d.alimentacaoTipo === "almoco" ? "Almoço" : "Janta"}`);
         if (d.alimentacaoObs) extras.push(`Alim.: ${d.alimentacaoObs}`);
         if (d.alimentacao)
           extras.unshift(
