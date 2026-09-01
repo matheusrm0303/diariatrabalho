@@ -47,6 +47,7 @@ export type Gasto = {
   categoria: GastoCategoria;
   descricao: string;
   valor: number;
+  comprovantePath?: string | null;
 };
 
 export const GASTO_CATEGORIAS: { value: GastoCategoria; label: string }[] = [
@@ -66,6 +67,7 @@ type GastoRow = {
   categoria: string;
   descricao: string | null;
   valor: number | string;
+  comprovante_path?: string | null;
 };
 
 function mapGasto(r: GastoRow): Gasto {
@@ -75,8 +77,10 @@ function mapGasto(r: GastoRow): Gasto {
     categoria: (r.categoria as GastoCategoria) ?? "outros",
     descricao: r.descricao ?? "",
     valor: Number(r.valor),
+    comprovantePath: r.comprovante_path ?? null,
   };
 }
+
 
 
 export const fmt = new Intl.NumberFormat("pt-BR", {
