@@ -1,0 +1,1 @@
+ALTER TABLE public.diarias ADD COLUMN IF NOT EXISTS alimentacao_tipo text;

@@ -45,6 +45,7 @@ export type Database = {
         Row: {
           alimentacao: number | null
           alimentacao_obs: string | null
+          alimentacao_tipo: string | null
           created_at: string
           data: string
           descricao: string
@@ -59,6 +60,7 @@ export type Database = {
         Insert: {
           alimentacao?: number | null
           alimentacao_obs?: string | null
+          alimentacao_tipo?: string | null
           created_at?: string
           data: string
           descricao?: string
@@ -73,6 +75,7 @@ export type Database = {
         Update: {
           alimentacao?: number | null
           alimentacao_obs?: string | null
+          alimentacao_tipo?: string | null
           created_at?: string
           data?: string
           descricao?: string
