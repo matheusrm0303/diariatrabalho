@@ -50,7 +50,9 @@ export type Database = {
           data: string
           descricao: string
           id: string
+          latitude: number | null
           local: string
+          longitude: number | null
           status: string
           tipo: string
           updated_at: string
@@ -65,7 +67,9 @@ export type Database = {
           data: string
           descricao?: string
           id?: string
+          latitude?: number | null
           local?: string
+          longitude?: number | null
           status?: string
           tipo: string
           updated_at?: string
@@ -80,7 +84,9 @@ export type Database = {
           data?: string
           descricao?: string
           id?: string
+          latitude?: number | null
           local?: string
+          longitude?: number | null
           status?: string
           tipo?: string
           updated_at?: string
