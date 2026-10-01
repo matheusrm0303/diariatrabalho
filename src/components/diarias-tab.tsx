@@ -5,8 +5,9 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
-import { Trash2, Plus, Utensils, Pencil, ArrowUpRight, TriangleAlert, CheckSquare, X, ListFilter } from "lucide-react";
+import { Trash2, Plus, Utensils, Pencil, ArrowUpRight, TriangleAlert, CheckSquare, X, ListFilter, MapPin } from "lucide-react";
 import { useDiarias, useAdiantamentos, useGastos, fmt } from "@/lib/diarias-store";
+import { linkMapa } from "@/lib/geolocalizacao";
 
 export function DiariasTab() {
   const { diarias, remover, atualizar } = useDiarias();
@@ -289,6 +290,18 @@ export function DiariasTab() {
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-semibold">
                         {d.local || "(sem local)"}
+                        {d.latitude != null && d.longitude != null && (
+                          <a
+                            href={linkMapa(d.latitude, d.longitude)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            aria-label="Abrir localização no mapa"
+                            className="ml-1.5 inline-flex align-middle text-primary hover:opacity-80"
+                          >
+                            <MapPin className="h-3.5 w-3.5" />
+                          </a>
+                        )}
                       </p>
                       <p className="text-xs text-muted-foreground">
                         {new Date(d.data + "T00:00:00").toLocaleDateString("pt-BR")}

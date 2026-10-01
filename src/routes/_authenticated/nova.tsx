@@ -6,11 +6,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, X } from "lucide-react";
+import { ArrowLeft, X, MapPin, Loader2 } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { ptBR } from "date-fns/locale";
 import { useDiarias, todayISO, fmt, ALIMENTACAO_TIPOS, type Tipo, type Status, type AlimentacaoTipo } from "@/lib/diarias-store";
 import { useMyDefaults } from "@/lib/admin";
+import { obterLocalizacaoAtual, type Coordenadas } from "@/lib/geolocalizacao";
+import { toast } from "sonner";
 
 function isoFromDate(d: Date) {
   const tz = d.getTimezoneOffset() * 60000;
@@ -55,6 +57,21 @@ function Nova() {
   const [alimentacao, setAlimentacao] = useState("");
   const [alimentacaoObs, setAlimentacaoObs] = useState("");
   const [alimentacaoTipo, setAlimentacaoTipo] = useState<AlimentacaoTipo>("almoco");
+  const [coords, setCoords] = useState<Coordenadas | null>(null);
+  const [buscandoLocal, setBuscandoLocal] = useState(false);
+
+  async function capturarLocalizacao() {
+    setBuscandoLocal(true);
+    try {
+      const c = await obterLocalizacaoAtual();
+      setCoords(c);
+      toast.success("Localização capturada!");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Não foi possível obter a localização.");
+    } finally {
+      setBuscandoLocal(false);
+    }
+  }
 
   // When defaults load, refresh preset value if user hasn't chosen custom
   useEffect(() => {
@@ -102,6 +119,8 @@ function Nova() {
         alimentacao: alim,
         alimentacaoObs: alimObs,
         alimentacaoTipo: incluiAlim ? alimentacaoTipo : undefined,
+        latitude: coords?.latitude ?? null,
+        longitude: coords?.longitude ?? null,
       });
     }
     navigate({ to: "/" });
@@ -137,6 +156,40 @@ function Nova() {
                 onChange={(e) => setLocal(e.target.value)}
                 required
               />
+            </div>
+            <div className="grid gap-2">
+              <Label>Localização no mapa</Label>
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={capturarLocalizacao}
+                  disabled={buscandoLocal}
+                >
+                  {buscandoLocal ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <MapPin className="h-4 w-4" />
+                  )}
+                  {coords ? "Atualizar localização" : "Usar minha localização"}
+                </Button>
+                {coords && (
+                  <button
+                    type="button"
+                    onClick={() => setCoords(null)}
+                    className="text-xs text-muted-foreground underline"
+                  >
+                    Remover
+                  </button>
+                )}
+              </div>
+              {coords && (
+                <p className="text-xs text-muted-foreground">
+                  <MapPin className="mr-1 inline h-3 w-3 text-primary" />
+                  Localização salva ({coords.latitude.toFixed(5)}, {coords.longitude.toFixed(5)})
+                </p>
+              )}
             </div>
             <div className="grid gap-2">
               <Label>Dias</Label>
