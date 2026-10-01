@@ -60,7 +60,7 @@ if (nodeProcess && typeof nodeProcess.on === "function") {
   if (nodeProcess.versions?.node) {
     import("node:http")
       .then((http) => {
-        type Handler = (...args: unknown[]) => boolean;
+        type Handler = (event: string, ...args: unknown[]) => boolean;
         const proto = http.Server.prototype as unknown as {
           emit: Handler;
           __abortPatched?: boolean;
