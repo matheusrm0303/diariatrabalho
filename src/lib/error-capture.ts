@@ -38,7 +38,7 @@ if (typeof globalThis.addEventListener === "function") {
 
 // Dev (Node) only: socket aborts surface as process-level uncaught exceptions
 // from node:_http_server and would otherwise blank the preview.
-type NodeProcessLike = { on?: (event: string, listener: (arg: unknown) => void) => void };
+type NodeProcessLike = { on?: (event: string, listener: (arg: unknown) => void) => void; versions?: { node?: string } };
 const nodeProcess = (globalThis as { process?: NodeProcessLike }).process;
 if (nodeProcess && typeof nodeProcess.on === "function") {
   nodeProcess.on("uncaughtException", (error: unknown) => {
@@ -51,6 +51,37 @@ if (nodeProcess && typeof nodeProcess.on === "function") {
     record(reason);
     console.error(reason);
   });
+
+  // Root-cause fix: Node's http server throws "Error: aborted" (from
+  // abortIncoming in node:_http_server) when the client socket closes
+  // mid-request and the IncomingMessage has no 'error' listener. Attach a
+  // noop listener to every request/response so the abort is absorbed at the
+  // source instead of becoming an uncaught exception.
+  if (nodeProcess.versions?.node) {
+    import("node:http")
+      .then((http) => {
+        type Handler = (...args: unknown[]) => boolean;
+        const proto = http.Server.prototype as unknown as {
+          emit: Handler;
+          __abortPatched?: boolean;
+        };
+        if (proto.__abortPatched) return;
+        proto.__abortPatched = true;
+        const origEmit = proto.emit;
+        proto.emit = function (this: unknown, event: string, ...args: unknown[]) {
+          if (event === "request") {
+            const [req, res] = args as [
+              { on?: (e: string, l: () => void) => void } | undefined,
+              { on?: (e: string, l: () => void) => void } | undefined,
+            ];
+            req?.on?.("error", () => {});
+            res?.on?.("error", () => {});
+          }
+          return origEmit.call(this, event, ...args);
+        };
+      })
+      .catch(() => {});
+  }
 }
 
 export function consumeLastCapturedError(): unknown {
