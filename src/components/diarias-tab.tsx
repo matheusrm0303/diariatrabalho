@@ -7,7 +7,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import { Trash2, Plus, Utensils, Pencil, ArrowUpRight, TriangleAlert, CheckSquare, X, ListFilter, MapPin } from "lucide-react";
 import { useDiarias, useAdiantamentos, useGastos, fmt } from "@/lib/diarias-store";
-import { linkMapa } from "@/lib/geolocalizacao";
+import { linkMapa, linkMapaEndereco } from "@/lib/geolocalizacao";
 
 export function DiariasTab() {
   const { diarias, remover, atualizar } = useDiarias();
