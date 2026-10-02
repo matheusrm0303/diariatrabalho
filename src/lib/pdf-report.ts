@@ -192,9 +192,10 @@ export async function gerarRelatorioPDF(opts: ReportOptions): Promise<void> {
           extras.unshift(
             `Diária ${fmt.format(d.valor)} + alim. ${fmt.format(d.alimentacao)}`,
           );
-        const localBloco =
-          (d.local || "(sem local)") +
-          (extras.length ? `\n${extras.join(" • ")}` : "");
+        const linhasLocal: string[] = [d.local || "(sem local)"];
+        if (d.endereco?.trim()) linhasLocal.push(`End.: ${d.endereco.trim()}`);
+        if (extras.length) linhasLocal.push(extras.join(" • "));
+        const localBloco = linhasLocal.join("\n");
         return [
           String(idx + 1),
           formatarData(d.data),
