@@ -49,6 +49,7 @@ export type Database = {
           created_at: string
           data: string
           descricao: string
+          endereco: string | null
           id: string
           latitude: number | null
           local: string
@@ -66,6 +67,7 @@ export type Database = {
           created_at?: string
           data: string
           descricao?: string
+          endereco?: string | null
           id?: string
           latitude?: number | null
           local?: string
@@ -83,6 +85,7 @@ export type Database = {
           created_at?: string
           data?: string
           descricao?: string
+          endereco?: string | null
           id?: string
           latitude?: number | null
           local?: string
