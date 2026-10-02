@@ -164,6 +164,9 @@ type DiariaRow = {
   status: string;
   alimentacao: number | string | null;
   alimentacao_obs: string | null;
+  endereco: string | null;
+  latitude: number | string | null;
+  longitude: number | string | null;
 };
 
 type AdiantamentoRow = {

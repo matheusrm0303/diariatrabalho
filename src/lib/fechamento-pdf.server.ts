@@ -6,6 +6,20 @@ export type PdfDiaria = {
   valor: number | string
   alimentacao: number | string | null
   status: string
+  endereco?: string | null
+  latitude?: number | string | null
+  longitude?: number | string | null
+}
+
+/** Endereço por extenso, senão as coordenadas, senão traço. */
+function localTxt(d: PdfDiaria): string {
+  const end = String(d.endereco ?? '').trim()
+  if (end) return end
+  const lat = d.latitude != null ? Number(d.latitude) : null
+  const lng = d.longitude != null ? Number(d.longitude) : null
+  if (lat != null && lng != null && !Number.isNaN(lat) && !Number.isNaN(lng))
+    return `${lat.toFixed(5).replace('.', ',')}, ${lng.toFixed(5).replace('.', ',')}`
+  return '-'
 }
 
 export type PdfAdiantamento = {
