@@ -290,9 +290,13 @@ export function DiariasTab() {
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-semibold">
                         {d.local || "(sem local)"}
-                        {d.latitude != null && d.longitude != null && (
+                        {((d.latitude != null && d.longitude != null) || d.endereco) && (
                           <a
-                            href={linkMapa(d.latitude, d.longitude)}
+                            href={
+                              d.latitude != null && d.longitude != null
+                                ? linkMapa(d.latitude, d.longitude)
+                                : linkMapaEndereco(d.endereco!)
+                            }
                             target="_blank"
                             rel="noopener noreferrer"
                             onClick={(e) => e.stopPropagation()}
@@ -303,6 +307,9 @@ export function DiariasTab() {
                           </a>
                         )}
                       </p>
+                      {d.endereco && (
+                        <p className="truncate text-xs text-muted-foreground">{d.endereco}</p>
+                      )}
                       <p className="text-xs text-muted-foreground">
                         {new Date(d.data + "T00:00:00").toLocaleDateString("pt-BR")}
                         {d.descricao ? ` • ${d.descricao}` : ""}

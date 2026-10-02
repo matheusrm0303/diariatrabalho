@@ -6,11 +6,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, MapPin, Loader2 } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { useDiarias, fmt, ALIMENTACAO_TIPOS, type Tipo, type Status, type AlimentacaoTipo } from "@/lib/diarias-store";
 import { useMyDefaults } from "@/lib/admin";
-import { obterLocalizacaoAtual, type Coordenadas } from "@/lib/geolocalizacao";
-import { toast } from "sonner";
+import { type Coordenadas } from "@/lib/geolocalizacao";
+import { LocalizacaoField } from "@/components/localizacao-field";
 
 export const Route = createFileRoute("/_authenticated/editar/$id")({
   head: () => ({
@@ -58,21 +58,8 @@ function Editar() {
   const [alimentacaoObs, setAlimentacaoObs] = useState("");
   const [alimentacaoTipo, setAlimentacaoTipo] = useState<AlimentacaoTipo>("almoco");
   const [coords, setCoords] = useState<Coordenadas | null>(null);
-  const [buscandoLocal, setBuscandoLocal] = useState(false);
+  const [endereco, setEndereco] = useState("");
   const [carregado, setCarregado] = useState(false);
-
-  async function capturarLocalizacao() {
-    setBuscandoLocal(true);
-    try {
-      const c = await obterLocalizacaoAtual();
-      setCoords(c);
-      toast.success("Localização capturada!");
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Não foi possível obter a localização.");
-    } finally {
-      setBuscandoLocal(false);
-    }
-  }
 
   useEffect(() => {
     if (atual && !carregado) {
@@ -92,6 +79,7 @@ function Editar() {
           ? { latitude: atual.latitude, longitude: atual.longitude }
           : null,
       );
+      setEndereco(atual.endereco ?? "");
       setCarregado(true);
     }
   }, [atual, carregado]);
@@ -130,6 +118,7 @@ function Editar() {
       alimentacaoTipo: incluiAlim ? alimentacaoTipo : undefined,
       latitude: coords?.latitude ?? null,
       longitude: coords?.longitude ?? null,
+      endereco: endereco.trim(),
     });
     navigate({ to: "/" });
   }
@@ -173,40 +162,12 @@ function Editar() {
                 required
               />
             </div>
-            <div className="grid gap-2">
-              <Label>Localização no mapa</Label>
-              <div className="flex items-center gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={capturarLocalizacao}
-                  disabled={buscandoLocal}
-                >
-                  {buscandoLocal ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <MapPin className="h-4 w-4" />
-                  )}
-                  {coords ? "Atualizar localização" : "Usar minha localização"}
-                </Button>
-                {coords && (
-                  <button
-                    type="button"
-                    onClick={() => setCoords(null)}
-                    className="text-xs text-muted-foreground underline"
-                  >
-                    Remover
-                  </button>
-                )}
-              </div>
-              {coords && (
-                <p className="text-xs text-muted-foreground">
-                  <MapPin className="mr-1 inline h-3 w-3 text-primary" />
-                  Localização salva ({coords.latitude.toFixed(5)}, {coords.longitude.toFixed(5)})
-                </p>
-              )}
-            </div>
+            <LocalizacaoField
+              coords={coords}
+              setCoords={setCoords}
+              endereco={endereco}
+              setEndereco={setEndereco}
+            />
             <div className="grid gap-2">
               <Label htmlFor="status">Status</Label>
               <div className="grid grid-cols-2 gap-2">
