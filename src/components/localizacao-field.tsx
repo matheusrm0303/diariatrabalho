@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useDiarias } from "@/lib/diarias-store";
 import {
   Select,
@@ -10,9 +10,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { MapPin, Loader2 } from "lucide-react";
+import { MapPin, Loader2, Search } from "lucide-react";
 import { toast } from "sonner";
 import { obterLocalizacaoAtual, buscarEndereco, type Coordenadas } from "@/lib/geolocalizacao";
+import { sugerirEnderecos, detalhesEndereco, type SugestaoEndereco } from "@/lib/endereco.functions";
 
 type Props = {
   coords: Coordenadas | null;
