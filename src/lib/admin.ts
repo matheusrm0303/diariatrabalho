@@ -180,7 +180,7 @@ export async function gerarPDFDoUsuario(user: AdminUser) {
   const [diariasRes, adiantamentosRes] = await Promise.all([
     supabase
       .from("diarias")
-      .select("id,data,local,descricao,valor,tipo,status,alimentacao,alimentacao_obs")
+      .select("id,data,local,descricao,valor,tipo,status,alimentacao,alimentacao_obs,alimentacao_tipo,endereco,latitude,longitude")
       .eq("user_id", user.id)
       .order("data", { ascending: true }),
     supabase
@@ -259,7 +259,7 @@ export async function carregarDetalhesDoUsuario(userId: string): Promise<Detalhe
   const [diariasRes, adiantamentosRes] = await Promise.all([
     supabase
       .from("diarias")
-      .select("id,data,local,descricao,valor,tipo,status,alimentacao,alimentacao_obs")
+      .select("id,data,local,descricao,valor,tipo,status,alimentacao,alimentacao_obs,alimentacao_tipo,endereco,latitude,longitude")
       .eq("user_id", userId)
       .order("data", { ascending: false }),
     supabase

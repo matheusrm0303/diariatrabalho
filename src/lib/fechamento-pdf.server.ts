@@ -110,12 +110,13 @@ export async function gerarFechamentoPDF(opts: {
     theme: 'striped',
     headStyles: { fillColor: [29, 78, 216], textColor: [255, 255, 255] },
     styles: { fontSize: 9, cellPadding: 5 },
-    head: [['Data', 'Local', 'Tipo', 'Alimentação', 'Valor', 'Status']],
+    head: [['Data', 'Local', 'Endereço', 'Tipo', 'Alimentação', 'Valor', 'Status']],
     body: [...opts.diarias]
       .sort((a, b) => String(a.data).localeCompare(String(b.data)))
       .map((d) => [
         dataBR(d.data),
         d.local || '-',
+        localTxt(d),
         d.descricao || d.tipo,
         Number(d.alimentacao ?? 0) ? fmt.format(Number(d.alimentacao)) : '-',
         fmt.format(Number(d.valor)),

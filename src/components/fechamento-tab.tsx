@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
+import { linhaWhatsAppLocalizacao, textoLocalizacao } from "@/lib/geolocalizacao";
 import {
   
   FileDown,
@@ -116,6 +117,7 @@ interface WaTemplate {
   incluirPendentes: boolean;
   incluirAlim: boolean;
   incluirObs: boolean;
+  incluirLocal?: boolean;
 }
 const TPL_KEY = "wa-templates-v1";
 const PIX_KEY = "pix-fechamento-v1";
@@ -227,6 +229,7 @@ export function FechamentoTab() {
   const [waIncluirPendentes, setWaIncluirPendentes] = useState(true);
   const [waIncluirAlim, setWaIncluirAlim] = useState(true);
   const [waIncluirObs, setWaIncluirObs] = useState(true);
+  const [waIncluirLocal, setWaIncluirLocal] = useState(true);
   const [mesesExpandidos, setMesesExpandidos] = useState<Set<string>>(new Set());
   const [templates, setTemplates] = useState<WaTemplate[]>([]);
   const [tplNome, setTplNome] = useState("");
@@ -370,6 +373,10 @@ export function FechamentoTab() {
         linhas.push(
           `${idx + 1}. ${formatarData(d.data)} — ${d.local || "(sem local)"} [${tipoLabel(d.tipo)}] — ${fmt.format(d.valor)}${alimTxt} = *${fmt.format(total)}* ${st}`,
         );
+        if (waIncluirLocal) {
+          const loc = linhaWhatsAppLocalizacao(d);
+          if (loc) linhas.push(`   ${loc}`);
+        }
         if (waIncluirObs && waIncluirAlim && d.alimentacaoObs)
           linhas.push(`   _Obs alim.: ${d.alimentacaoObs}_`);
         if (waIncluirObs && d.descricao) linhas.push(`   _Obs: ${d.descricao}_`);
@@ -458,6 +465,7 @@ export function FechamentoTab() {
     waIncluirPendentes,
     waIncluirAlim,
     waIncluirObs,
+    waIncluirLocal,
     pixChave,
     pixTipo,
     pixTitular,
@@ -532,6 +540,7 @@ export function FechamentoTab() {
       incluirPendentes: waIncluirPendentes,
       incluirAlim: waIncluirAlim,
       incluirObs: waIncluirObs,
+      incluirLocal: waIncluirLocal,
     };
     const restantes = templates.filter((t) => t.nome !== nome);
     const proximo = [...restantes, novo].sort((a, b) => a.nome.localeCompare(b.nome));
@@ -550,6 +559,7 @@ export function FechamentoTab() {
     setWaIncluirPendentes(t.incluirPendentes);
     setWaIncluirAlim(t.incluirAlim);
     setWaIncluirObs(t.incluirObs);
+    setWaIncluirLocal(t.incluirLocal ?? true);
   }
   function excluirTemplate(nome: string) {
     const proximo = templates.filter((t) => t.nome !== nome);
@@ -602,7 +612,7 @@ export function FechamentoTab() {
     const wb = XLSX.utils.book_new();
 
     const linhas: (string | number)[][] = [
-      ["#", "Data", "Local", "Tipo", "Valor", "Alimentação", "Total", "Status", "Obs alim.", "Observação"],
+      ["#", "Data", "Local", "Endereço", "Tipo", "Valor", "Alimentação", "Total", "Status", "Obs alim.", "Observação"],
     ];
     const todasOrdenadas = [...diarias].sort((a, b) =>
       a.data < b.data ? -1 : a.data > b.data ? 1 : 0,
@@ -612,6 +622,7 @@ export function FechamentoTab() {
         idx + 1,
         formatarData(d.data),
         d.local || "",
+        textoLocalizacao(d),
         tipoLabel(d.tipo),
         d.valor,
         d.alimentacao || 0,
@@ -623,7 +634,7 @@ export function FechamentoTab() {
     });
     const wsDiarias = XLSX.utils.aoa_to_sheet(linhas);
     wsDiarias["!cols"] = [
-      { wch: 5 }, { wch: 12 }, { wch: 24 }, { wch: 10 }, { wch: 10 },
+      { wch: 5 }, { wch: 12 }, { wch: 24 }, { wch: 36 }, { wch: 10 }, { wch: 10 },
       { wch: 12 }, { wch: 10 }, { wch: 10 }, { wch: 24 }, { wch: 24 },
     ];
     XLSX.utils.book_append_sheet(wb, wsDiarias, "Diárias");
@@ -1197,6 +1208,13 @@ export function FechamentoTab() {
                     onCheckedChange={(v) => setWaIncluirObs(v === true)}
                   />
                   Observações
+                </label>
+                <label className="flex items-center gap-2 text-xs">
+                  <Checkbox
+                    checked={waIncluirLocal}
+                    onCheckedChange={(v) => setWaIncluirLocal(v === true)}
+                  />
+                  Local / endereço
                 </label>
                 <label className="flex items-center gap-2 text-xs">
                   <Checkbox
