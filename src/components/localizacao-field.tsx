@@ -25,7 +25,57 @@ type Props = {
 
 export function LocalizacaoField({ coords, setCoords, endereco, setEndereco, setLocal }: Props) {
   const [buscando, setBuscando] = useState(false);
+  const [sugestoes, setSugestoes] = useState<SugestaoEndereco[]>([]);
+  const [buscandoSugestoes, setBuscandoSugestoes] = useState(false);
+  const [mostrarSugestoes, setMostrarSugestoes] = useState(false);
+  const sessionTokenRef = useRef(crypto.randomUUID());
+  const ignorarBuscaRef = useRef(false);
   const { diarias } = useDiarias();
+
+  // Busca sugestões no Google enquanto digita (com pausa de 350ms).
+  useEffect(() => {
+    const texto = endereco.trim();
+    if (ignorarBuscaRef.current) {
+      ignorarBuscaRef.current = false;
+      setSugestoes([]);
+      return;
+    }
+    if (texto.length < 3) {
+      setSugestoes([]);
+      return;
+    }
+    const timer = setTimeout(async () => {
+      setBuscandoSugestoes(true);
+      try {
+        const lista = await sugerirEnderecos({ data: { texto, sessionToken: sessionTokenRef.current } });
+        setSugestoes(lista);
+        setMostrarSugestoes(lista.length > 0);
+      } catch {
+        setSugestoes([]);
+      } finally {
+        setBuscandoSugestoes(false);
+      }
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [endereco]);
+
+  async function escolherSugestao(s: SugestaoEndereco) {
+    ignorarBuscaRef.current = true;
+    setMostrarSugestoes(false);
+    setSugestoes([]);
+    setEndereco(s.texto);
+    try {
+      const det = await detalhesEndereco({ data: { placeId: s.placeId, sessionToken: sessionTokenRef.current } });
+      if (det.endereco) setEndereco(det.endereco);
+      if (det.latitude != null && det.longitude != null)
+        setCoords({ latitude: det.latitude, longitude: det.longitude });
+      if (setLocal && det.nome) setLocal(det.nome);
+    } catch {
+      // Mantém o texto digitado mesmo se os detalhes falharem.
+    } finally {
+      sessionTokenRef.current = crypto.randomUUID();
+    }
+  }
 
   // Locais já usados: um por nome+endereço, do mais recente para o mais antigo.
   const salvos = useMemo(() => {
