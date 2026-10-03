@@ -132,15 +132,47 @@ export function LocalizacaoField({ coords, setCoords, endereco, setEndereco, set
           </SelectContent>
         </Select>
       )}
-      <Input
-        id="endereco"
-        placeholder="Digite o endereço ou use sua localização"
-        value={endereco}
-        onChange={(e) => {
-          setEndereco(e.target.value);
-          if (coords) setCoords(null);
-        }}
-      />
+      <div className="relative">
+        <Input
+          id="endereco"
+          placeholder="Digite o endereço ou use sua localização"
+          value={endereco}
+          autoComplete="off"
+          onChange={(e) => {
+            setEndereco(e.target.value);
+            if (coords) setCoords(null);
+          }}
+          onFocus={() => {
+            if (sugestoes.length > 0) setMostrarSugestoes(true);
+          }}
+          onBlur={() => {
+            // Pequeno atraso para permitir o clique na sugestão.
+            setTimeout(() => setMostrarSugestoes(false), 200);
+          }}
+        />
+        {buscandoSugestoes && (
+          <Loader2 className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground" />
+        )}
+        {mostrarSugestoes && sugestoes.length > 0 && (
+          <ul className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-md border bg-popover p-1 shadow-md">
+            {sugestoes.map((s) => (
+              <li key={s.placeId}>
+                <button
+                  type="button"
+                  className="flex w-full items-start gap-2 rounded-sm px-2 py-1.5 text-left text-sm hover:bg-accent"
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    void escolherSugestao(s);
+                  }}
+                >
+                  <Search className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                  <span>{s.texto}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
       <div className="flex items-center gap-2">
         <Button type="button" variant="outline" size="sm" onClick={capturar} disabled={buscando}>
           {buscando ? <Loader2 className="h-4 w-4 animate-spin" /> : <MapPin className="h-4 w-4" />}
