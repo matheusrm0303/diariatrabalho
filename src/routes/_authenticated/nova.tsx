@@ -150,6 +150,7 @@ function Nova() {
               setCoords={setCoords}
               endereco={endereco}
               setEndereco={setEndereco}
+              setLocal={setLocal}
             />
             <div className="grid gap-2">
               <Label>Dias</Label>
