@@ -92,7 +92,7 @@ export function DiariasTab() {
 
 
   return (
-    <div className="pb-28">
+    <div className={cn("min-w-0 pb-28", selecionando && "pb-60")} data-diarias-selection={selecionando}>
       {/* Bento KPI grid */}
       <div className="mb-6 grid grid-cols-2 gap-3">
         {/* Hero tile — Saldo */}
@@ -163,7 +163,7 @@ export function DiariasTab() {
       </div>
 
       {/* History */}
-      <section>
+      <section className="min-w-0">
         <div className="mb-3 flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <h2 className="font-display text-lg font-bold">Histórico</h2>
@@ -260,13 +260,13 @@ export function DiariasTab() {
                   key={d.id}
                   onClick={selecionando ? () => toggleSelecionado(d.id) : undefined}
                   className={
-                    "rounded-2xl border-transparent p-4 shadow-sm animate-fade-up transition-transform hover:-translate-y-0.5 hover:shadow-md " +
+                    "min-w-0 w-full rounded-2xl border-transparent p-4 shadow-sm animate-fade-up transition-transform hover:-translate-y-0.5 hover:shadow-md " +
                     (selecionando ? "cursor-pointer " : "") +
                     (marcado ? "ring-2 ring-primary" : "")
                   }
                   style={{ animationDelay: `${Math.min(i * 50, 400)}ms` }}
                 >
-                  <div className="flex items-start gap-3">
+                  <div className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-2 sm:gap-3">
                     {selecionando ? (
                       <div className="grid h-10 w-10 shrink-0 place-items-center">
                         <Checkbox
@@ -295,7 +295,7 @@ export function DiariasTab() {
                             href={
                               d.latitude != null && d.longitude != null
                                 ? linkMapa(d.latitude, d.longitude)
-                                : linkMapaEndereco(d.endereco!)
+                                : linkMapaEndereco(d.endereco ?? "")
                             }
                             target="_blank"
                             rel="noopener noreferrer"
@@ -310,23 +310,25 @@ export function DiariasTab() {
                       {d.endereco && (
                         <p className="truncate text-xs text-muted-foreground">{d.endereco}</p>
                       )}
-                      <p className="text-xs text-muted-foreground">
+                      <p className="break-words text-xs text-muted-foreground">
                         {new Date(d.data + "T00:00:00").toLocaleDateString("pt-BR")}
                         {d.descricao ? ` • ${d.descricao}` : ""}
                       </p>
                       {d.alimentacao ? (
-                        <p className="mt-1 inline-flex items-center gap-1 text-[11px] text-muted-foreground">
-                          <Utensils className="h-3 w-3" />
+                        <p className="mt-1 flex items-start gap-1 break-words text-[11px] text-muted-foreground">
+                          <Utensils className="h-3 w-3 shrink-0" />
+                          <span className="min-w-0">
                           {fmt.format(d.alimentacao)}
                           {d.alimentacaoTipo
                             ? ` — ${d.alimentacaoTipo === "almoco" ? "Almoço" : "Janta"}`
                             : ""}
                           {d.alimentacaoObs ? ` — ${d.alimentacaoObs}` : ""}
+                          </span>
                         </p>
                       ) : null}
                     </div>
-                    <div className="flex flex-col items-end gap-1.5">
-                      <span className="font-display text-sm font-bold">
+                    <div className="flex shrink-0 flex-col items-end gap-1.5">
+                      <span className="whitespace-nowrap font-display text-sm font-bold">
                         {fmt.format(totalItem)}
                       </span>
                       <button
@@ -383,7 +385,7 @@ export function DiariasTab() {
       </section>
 
       {/* Floating action bar */}
-      <div className="fixed inset-x-0 bottom-4 z-40 px-4">
+      <div className={cn("fixed inset-x-0 bottom-[calc(1rem+env(safe-area-inset-bottom))] z-40 px-4", !selecionando && "pr-20 sm:pr-4")}>
         <div className="mx-auto max-w-2xl">
           {selecionando ? (
             <div className="rounded-2xl border bg-card/95 p-3 shadow-xl backdrop-blur">
