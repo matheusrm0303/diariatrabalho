@@ -28,6 +28,10 @@ export const Route = createFileRoute("/_authenticated/")({
     meta: [
       { title: "Controle de Diárias" },
       { name: "description", content: "Registre e acompanhe suas diárias, adiantamentos e fechamentos." },
+      { property: "og:title", content: "Controle de Diárias" },
+      { property: "og:description", content: "Registre e acompanhe suas diárias, adiantamentos e fechamentos." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: Index,
@@ -124,7 +128,7 @@ function Index() {
 
         <Link
           to="/assistente"
-          className="fixed bottom-24 right-4 z-50 grid h-14 w-14 place-items-center rounded-full bg-primary text-primary-foreground shadow-xl shadow-primary/40 transition-transform hover:scale-105 active:scale-95"
+          className="assessor-fab fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] right-4 z-50 grid h-14 w-14 place-items-center rounded-full bg-primary text-primary-foreground shadow-xl shadow-primary/40 transition-transform hover:scale-105 active:scale-95 sm:bottom-[calc(6rem+env(safe-area-inset-bottom))]"
           aria-label="Abrir Assessor IA"
         >
           <Sparkles className="h-6 w-6" />

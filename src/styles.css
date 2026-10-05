@@ -514,6 +514,11 @@ button:active, a[role="button"]:active, [data-slot="button"]:active {
   display: none;
 }
 
+/* Keep the assistant clear of the expanded bulk-action dock. */
+body:has([data-diarias-selection="true"]) .assessor-fab {
+  display: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.001ms !important;
