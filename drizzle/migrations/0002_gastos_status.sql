@@ -1,0 +1,1 @@
+ALTER TABLE public.gastos ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'pendente' CHECK (status IN ('pago','pendente'));
