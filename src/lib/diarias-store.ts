@@ -51,6 +51,7 @@ export type Gasto = {
   descricao: string;
   valor: number;
   comprovantePath?: string | null;
+  status?: "pago" | "pendente";
 };
 
 export const GASTO_CATEGORIAS: { value: GastoCategoria; label: string }[] = [
@@ -71,6 +72,7 @@ type GastoRow = {
   descricao: string | null;
   valor: number | string;
   comprovante_path?: string | null;
+  status?: string | null;
 };
 
 function mapGasto(r: GastoRow): Gasto {
@@ -81,6 +83,7 @@ function mapGasto(r: GastoRow): Gasto {
     descricao: r.descricao ?? "",
     valor: Number(r.valor),
     comprovantePath: r.comprovante_path ?? null,
+    status: r.status === "pago" ? "pago" : "pendente",
   };
 }
 
@@ -293,6 +296,7 @@ export function useGastos() {
         descricao: g.descricao ?? "",
         valor: g.valor,
         comprovante_path: g.comprovantePath ?? null,
+        status: g.status ?? "pendente",
       } as never)
       .select()
       .single();
