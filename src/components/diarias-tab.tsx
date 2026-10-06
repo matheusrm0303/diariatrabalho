@@ -127,9 +127,9 @@ export function DiariasTab() {
               <ArrowUpRight className="h-3 w-3" />
               {diarias.length} {diarias.length === 1 ? "diária" : "diárias"} registradas
             </span>
-            {totalGastos > 0 && (
+            {gastosPendentes > 0 && (
               <span className="inline-flex items-center gap-1 rounded-lg bg-white/20 px-2 py-1 text-[10px] font-medium">
-                {fmt.format(totalGastos)} em gastos
+                inclui {fmt.format(gastosPendentes)} em gastos pendentes
               </span>
             )}
           </div>
