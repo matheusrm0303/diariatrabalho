@@ -38,8 +38,12 @@ export function DiariasTab() {
     () => gastos.reduce((s, g) => s + g.valor, 0),
     [gastos],
   );
-  // Saldo a receber = apenas diárias ainda pendentes (o que já foi pago/adiantado não entra)
-  const saldo = totalPendente;
+  const gastosPendentes = useMemo(
+    () => gastos.filter((g) => g.status !== "pago").reduce((s, g) => s + g.valor, 0),
+    [gastos],
+  );
+  // Saldo a receber = diárias pendentes + gastos pendentes
+  const saldo = totalPendente + gastosPendentes;
 
   const ordenadas = useMemo(() => {
     const lista = [...diarias].sort((a, b) => b.data.localeCompare(a.data));
@@ -123,9 +127,9 @@ export function DiariasTab() {
               <ArrowUpRight className="h-3 w-3" />
               {diarias.length} {diarias.length === 1 ? "diária" : "diárias"} registradas
             </span>
-            {totalGastos > 0 && (
+            {gastosPendentes > 0 && (
               <span className="inline-flex items-center gap-1 rounded-lg bg-white/20 px-2 py-1 text-[10px] font-medium">
-                {fmt.format(totalGastos)} em gastos
+                inclui {fmt.format(gastosPendentes)} em gastos pendentes
               </span>
             )}
           </div>

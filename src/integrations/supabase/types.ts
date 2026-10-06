@@ -106,6 +106,7 @@ export type Database = {
           data: string
           descricao: string
           id: string
+          status: string
           user_id: string
           valor: number
         }
@@ -116,6 +117,7 @@ export type Database = {
           data: string
           descricao?: string
           id?: string
+          status?: string
           user_id: string
           valor?: number
         }
@@ -126,6 +128,7 @@ export type Database = {
           data?: string
           descricao?: string
           id?: string
+          status?: string
           user_id?: string
           valor?: number
         }

@@ -559,6 +559,21 @@ export function GastosTab() {
                     <span className="font-display text-base font-bold text-amber-600 dark:text-amber-400">
                       {fmt.format(g.valor)}
                     </span>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        void atualizar(g.id, { status: g.status === "pago" ? "pendente" : "pago" })
+                      }
+                      className={
+                        "rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide transition-colors " +
+                        (g.status === "pago"
+                          ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300"
+                          : "bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300")
+                      }
+                      title="Toque para alternar entre Pago e Pendente"
+                    >
+                      {g.status === "pago" ? "Pago" : "Pendente"}
+                    </button>
                     <div className="flex items-center gap-1">
                       <Button
                         size="icon"

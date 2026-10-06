@@ -15,6 +15,13 @@
       "when": 1790907982335,
       "tag": "0001_add_endereco_diarias",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791246189009,
+      "tag": "0002_gastos_status",
+      "breakpoints": true
     }
   ]
 }
