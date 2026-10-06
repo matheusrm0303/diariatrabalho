@@ -38,7 +38,7 @@ export function DiariasTab() {
     () => gastos.reduce((s, g) => s + g.valor, 0),
     [gastos],
   );
-  const saldo = total + totalGastos - totalAdiant;
+  const saldo = totalPendente + totalGastos - totalAdiant;
 
   const ordenadas = useMemo(() => {
     const lista = [...diarias].sort((a, b) => b.data.localeCompare(a.data));
