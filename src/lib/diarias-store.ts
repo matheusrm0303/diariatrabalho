@@ -340,6 +340,7 @@ export function useGastos() {
           ...(patch.categoria !== undefined ? { categoria: patch.categoria } : {}),
           ...(patch.descricao !== undefined ? { descricao: patch.descricao } : {}),
           ...(patch.valor !== undefined ? { valor: patch.valor } : {}),
+          ...(patch.status !== undefined ? { status: patch.status } : {}),
         } as never)
         .eq("id", id);
       if (error) {
