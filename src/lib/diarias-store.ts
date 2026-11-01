@@ -411,6 +411,7 @@ export function useDiarias() {
     }
     const nova = mapDiaria((data as unknown) as DiariaRow);
     diariasStore.set((prev) => prev.map((x) => (x.id === tempId ? nova : x)));
+    return nova;
   }, []);
 
   const remover = useCallback(async (id: string) => {
