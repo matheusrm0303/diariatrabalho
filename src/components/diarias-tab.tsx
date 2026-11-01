@@ -5,9 +5,11 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
-import { Trash2, Plus, Utensils, Pencil, ArrowUpRight, TriangleAlert, CheckSquare, X, ListFilter } from "lucide-react";
+import { Trash2, Plus, Utensils, Pencil, ArrowUpRight, TriangleAlert, CheckSquare, X, ListFilter, Copy, Zap } from "lucide-react";
 import { useDiarias, useAdiantamentos, useGastos, fmt } from "@/lib/diarias-store";
 import { AbrirLocalizacao } from "@/components/abrir-localizacao";
+import { DiariaRapidaDialog } from "@/components/diaria-rapida-dialog";
+import type { Diaria } from "@/lib/diarias-store";
 
 export function DiariasTab() {
   const { diarias, remover, atualizar } = useDiarias();
@@ -17,6 +19,7 @@ export function DiariasTab() {
   const [selecionados, setSelecionados] = useState<string[]>([]);
   const [filtroStatus, setFiltroStatus] = useState<"todas" | "pago" | "pendente">("todas");
   const [apagando, setApagando] = useState(false);
+  const [criacaoRapida, setCriacaoRapida] = useState<{ origem?: Diaria } | null>(null);
 
   const total = useMemo(
     () => diarias.reduce((s, d) => s + d.valor + (d.alimentacao || 0), 0),
@@ -168,6 +171,14 @@ export function DiariasTab() {
       </div>
 
       {/* History */}
+      {!selecionando && (
+        <div className="mb-5 flex items-center justify-between gap-3 border-b pb-4">
+          <h2 className="font-display text-sm font-semibold">Novo lançamento</h2>
+          <Button variant="outline" onClick={() => setCriacaoRapida({})}>
+            <Zap className="h-4 w-4" /> Diária rápida
+          </Button>
+        </div>
+      )}
       <section className="min-w-0">
         <div className="mb-3 flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
@@ -357,6 +368,9 @@ export function DiariasTab() {
                   </div>
                   {!selecionando && (
                     <div className="mt-2 flex justify-end gap-1 border-t border-border/60 pt-2">
+                      <Button size="sm" variant="ghost" className="h-7 px-2 text-xs font-medium" disabled={d.id.startsWith("tmp-")} onClick={() => setCriacaoRapida({ origem: d })}>
+                        <Copy className="h-3.5 w-3.5" /> Duplicar
+                      </Button>
                       <Button
                         asChild
                         size="sm"
@@ -436,7 +450,7 @@ export function DiariasTab() {
           )}
         </div>
       </div>
-
+      {criacaoRapida && <DiariaRapidaDialog origem={criacaoRapida.origem} onClose={() => setCriacaoRapida(null)} />}
     </div>
   );
 }

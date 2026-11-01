@@ -1,0 +1,3 @@
+- [ ] Adicionar criação rápida com valores padrão, local e data.
+- [ ] Adicionar duplicação com conferência, sem alterar a diária original.
+- [ ] Testar gravação, histórico e disposição no celular.
