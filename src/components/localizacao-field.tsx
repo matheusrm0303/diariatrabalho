@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { MapPin, Loader2, Search } from "lucide-react";
 import { toast } from "sonner";
 import { obterLocalizacaoAtual, buscarEndereco, type Coordenadas } from "@/lib/geolocalizacao";
+import { AbrirLocalizacao } from "@/components/abrir-localizacao";
 import { sugerirEnderecos, detalhesEndereco, type SugestaoEndereco } from "@/lib/endereco.functions";
 
 type Props = {
@@ -173,11 +174,25 @@ export function LocalizacaoField({ coords, setCoords, endereco, setEndereco, set
           </ul>
         )}
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <Button type="button" variant="outline" size="sm" onClick={capturar} disabled={buscando}>
           {buscando ? <Loader2 className="h-4 w-4 animate-spin" /> : <MapPin className="h-4 w-4" />}
           {coords ? "Atualizar localização" : "Usar minha localização"}
         </Button>
+        {(coords || endereco) && (
+          <AbrirLocalizacao
+            info={{
+              endereco,
+              latitude: coords?.latitude ?? null,
+              longitude: coords?.longitude ?? null,
+            }}
+            ariaLabel="Abrir este endereço no mapa"
+            className="inline-flex h-9 items-center gap-1.5 rounded-md border border-input bg-background px-3 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
+          >
+            <MapPin className="h-4 w-4" />
+            Abrir no mapa
+          </AbrirLocalizacao>
+        )}
         {(coords || endereco) && (
           <button
             type="button"
