@@ -67,6 +67,27 @@ export function linhaWhatsAppLocalizacao(d: LocalizacaoInfo): string {
   return link ? `📍 ${texto} — ${link}` : `📍 ${texto}`;
 }
 
+/** Há alguma localização salva (endereço digitado ou coordenadas do GPS)? */
+export function temLocalizacao(d: LocalizacaoInfo): boolean {
+  return (d.latitude != null && d.longitude != null) || !!(d.endereco ?? "").trim();
+}
+
+/** Link do Google Maps para navegar até o local (rota a partir de onde você está). */
+export function linkMapaRota(d: LocalizacaoInfo): string {
+  if (d.latitude != null && d.longitude != null)
+    return `https://www.google.com/maps/dir/?api=1&destination=${d.latitude},${d.longitude}`;
+  const end = (d.endereco ?? "").trim();
+  return end ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(end)}` : "";
+}
+
+/** Link do Waze para navegar até o local. */
+export function linkWazeRota(d: LocalizacaoInfo): string {
+  if (d.latitude != null && d.longitude != null)
+    return `https://waze.com/ul?ll=${d.latitude},${d.longitude}&navigate=yes`;
+  const end = (d.endereco ?? "").trim();
+  return end ? `https://waze.com/ul?q=${encodeURIComponent(end)}&navigate=yes` : "";
+}
+
 /** Converte coordenadas em endereço legível (OpenStreetMap). */
 export async function buscarEndereco(c: Coordenadas): Promise<string> {
   try {

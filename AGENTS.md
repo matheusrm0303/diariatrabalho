@@ -11,3 +11,4 @@
 
 - Daily-history rows use a zero-minimum grid text track, and tab panels allow shrinking, so long addresses cannot widen the page.
 - Mobile daily-action and assistant buttons share the bottom dock with safe-area spacing; hide the assistant during bulk selection to avoid overlapping controls.
+- Any address or GPS location shown in the UI is rendered through the shared `AbrirLocalizacao` trigger (`src/components/abrir-localizacao.tsx`), which opens directions in Google Maps or Waze, so map links stay identical across screens.
