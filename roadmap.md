@@ -1,3 +1,4 @@
-- [ ] Adicionar criação rápida com valores padrão, local e data.
-- [ ] Adicionar duplicação com conferência, sem alterar a diária original.
+- [x] Adicionar criação rápida com valores padrão, local e data.
+- [x] Adicionar duplicação com conferência, sem alterar a diária original.
 - [ ] Testar gravação, histórico e disposição no celular.
+- [x] Botão "Cobrar": mensagem de WhatsApp com valor pendente e chave Pix.
