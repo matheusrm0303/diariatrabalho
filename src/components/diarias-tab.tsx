@@ -10,6 +10,7 @@ import { useDiarias, useAdiantamentos, useGastos, fmt } from "@/lib/diarias-stor
 import { AbrirLocalizacao } from "@/components/abrir-localizacao";
 import { DiariaRapidaDialog } from "@/components/diaria-rapida-dialog";
 import { CobrarDialog } from "@/components/cobrar-dialog";
+import { PainelVisual } from "@/components/painel-visual";
 import type { Diaria } from "@/lib/diarias-store";
 
 export function DiariasTab() {
@@ -192,6 +193,7 @@ export function DiariasTab() {
           </div>
         </div>
       )}
+      <PainelVisual diarias={diarias} />
       <section className="min-w-0">
         <div className="mb-3 flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
