@@ -464,6 +464,7 @@ export function DiariasTab() {
         </div>
       </div>
       {criacaoRapida && <DiariaRapidaDialog origem={criacaoRapida.origem} onClose={() => setCriacaoRapida(null)} />}
+      {cobrarAberto && <CobrarDialog onClose={() => setCobrarAberto(false)} />}
     </div>
   );
 }
