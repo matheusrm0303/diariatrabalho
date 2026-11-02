@@ -21,6 +21,7 @@ export function DiariasTab() {
   const [filtroStatus, setFiltroStatus] = useState<"todas" | "pago" | "pendente">("todas");
   const [apagando, setApagando] = useState(false);
   const [criacaoRapida, setCriacaoRapida] = useState<{ origem?: Diaria } | null>(null);
+  const [cobrarAberto, setCobrarAberto] = useState(false);
 
   const total = useMemo(
     () => diarias.reduce((s, d) => s + d.valor + (d.alimentacao || 0), 0),
@@ -175,9 +176,20 @@ export function DiariasTab() {
       {!selecionando && (
         <div className="mb-5 flex items-center justify-between gap-3 border-b pb-4">
           <h2 className="font-display text-sm font-semibold">Novo lançamento</h2>
-          <Button variant="outline" onClick={() => setCriacaoRapida({})}>
-            <Zap className="h-4 w-4" /> Diária rápida
-          </Button>
+          <div className="flex items-center gap-2">
+            {saldo > 0 && (
+              <Button
+                variant="outline"
+                className="border-emerald-600 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-700 dark:text-emerald-400 dark:hover:bg-emerald-950/40"
+                onClick={() => setCobrarAberto(true)}
+              >
+                <MessageCircle className="h-4 w-4" /> Cobrar
+              </Button>
+            )}
+            <Button variant="outline" onClick={() => setCriacaoRapida({})}>
+              <Zap className="h-4 w-4" /> Diária rápida
+            </Button>
+          </div>
         </div>
       )}
       <section className="min-w-0">
