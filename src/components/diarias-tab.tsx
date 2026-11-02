@@ -5,10 +5,11 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
-import { Trash2, Plus, Utensils, Pencil, ArrowUpRight, TriangleAlert, CheckSquare, X, ListFilter, Copy, Zap } from "lucide-react";
+import { Trash2, Plus, Utensils, Pencil, ArrowUpRight, TriangleAlert, CheckSquare, X, ListFilter, Copy, Zap, MessageCircle } from "lucide-react";
 import { useDiarias, useAdiantamentos, useGastos, fmt } from "@/lib/diarias-store";
 import { AbrirLocalizacao } from "@/components/abrir-localizacao";
 import { DiariaRapidaDialog } from "@/components/diaria-rapida-dialog";
+import { CobrarDialog } from "@/components/cobrar-dialog";
 import type { Diaria } from "@/lib/diarias-store";
 
 export function DiariasTab() {
