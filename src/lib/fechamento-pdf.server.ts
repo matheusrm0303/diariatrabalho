@@ -35,6 +35,7 @@ export type PdfGasto = {
   valor: number | string
   /** Foto da nota em dataURL (image/jpeg ou image/png), opcional. */
   imagem?: string | null
+  status?: string | null
 }
 
 const fmt = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -77,8 +78,8 @@ export async function gerarFechamentoPDF(opts: {
   const totalPendente = totalDiarias - totalPago
   const totalAdiantado = opts.adiantamentos.reduce((a, x) => a + Number(x.valor), 0)
   const gastos = opts.gastos ?? []
-  const totalGastos = gastos.reduce((a, g) => a + Number(g.valor), 0)
-  const saldo = totalPendente + totalGastos - totalAdiantado
+  const totalGastos = gastos.filter((g) => g.status !== 'pago').reduce((a, g) => a + Number(g.valor), 0)
+  const saldo = totalPendente + totalGastos
 
   doc.setTextColor(15, 23, 42)
   autoTable(doc, {
