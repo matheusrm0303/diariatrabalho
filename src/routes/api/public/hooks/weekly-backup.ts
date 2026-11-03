@@ -58,7 +58,7 @@ async function handler(request: Request) {
       const gastosLista = (gastos ?? []) as unknown as GastoComNota[]
       const gastosComLink = await assinarFotosGastos(supabase as never, gastosLista)
       const gastosComFoto = await anexarFotosGastos(supabase as never, gastosLista)
-      const totalGastos = gastosLista.reduce((acc, g) => acc + Number(g.valor), 0)
+      const totalGastos = gastosLista.filter((g) => (g as unknown as { status?: string }).status !== 'pago').reduce((acc, g) => acc + Number(g.valor), 0)
 
       const listaDiarias = (diarias ?? []) as unknown as DiariaRow[]
       if (
@@ -135,7 +135,11 @@ async function handler(request: Request) {
           qtdDiarias: listaDiarias.length,
           qtdAdiantamentos: (adiantamentos ?? []).length,
           totalDiarias: fmt.format(total),
-          saldoReceber: fmt.format(pendente + totalGastos - totalAdiantado),
+          qtdGastos: gastosLista.length,
+          diariasPendentes: fmt.format(pendente),
+          gastosPendentes: fmt.format(totalGastos),
+          totalAdiantado: fmt.format(totalAdiantado),
+          saldoReceber: fmt.format(pendente + totalGastos),
           downloadUrl: signed?.signedUrl,
           pdfUrl,
         },
