@@ -19,6 +19,12 @@ interface Props {
   qtdAdiantamentos?: number
   totalDiarias?: string
   downloadUrl?: string
+  pdfUrl?: string
+  qtdGastos?: number
+  diariasPendentes?: string
+  gastosPendentes?: string
+  totalAdiantado?: string
+  saldoReceber?: string
 }
 
 const Email = ({
@@ -27,6 +33,12 @@ const Email = ({
   qtdAdiantamentos = 0,
   totalDiarias = 'R$ 0,00',
   downloadUrl,
+  pdfUrl,
+  qtdGastos = 0,
+  diariasPendentes = 'R$ 0,00',
+  gastosPendentes = 'R$ 0,00',
+  totalAdiantado = 'R$ 0,00',
+  saldoReceber = 'R$ 0,00',
 }: Props) => (
   <Html lang="pt-BR" dir="ltr">
     <Head />
@@ -39,6 +51,14 @@ const Email = ({
           {periodo ? ` (${periodo})` : ''}. Guarde este arquivo em um lugar seguro.
         </Text>
 
+        <Section style={saldoCard}>
+          <Text style={saldoLabel}>Saldo a receber</Text>
+          <Text style={saldoValor}>{saldoReceber}</Text>
+          <Text style={saldoSub}>
+            Diárias pendentes {diariasPendentes} + gastos pendentes {gastosPendentes}
+          </Text>
+        </Section>
+
         <Section style={card}>
           <Text style={row}>
             <strong>Diárias registradas:</strong> {qtdDiarias}
@@ -49,10 +69,22 @@ const Email = ({
           <Text style={row}>
             <strong>Total em diárias:</strong> {totalDiarias}
           </Text>
+          <Text style={row}>
+            <strong>Gastos registrados:</strong> {qtdGastos}
+          </Text>
+          <Text style={row}>
+            <strong>Total adiantado:</strong> {totalAdiantado}
+          </Text>
         </Section>
 
         {downloadUrl ? (
           <Section style={{ textAlign: 'center', margin: '28px 0' }}>
+            {pdfUrl ? (
+              <Button style={{ ...button, marginBottom: '12px' }} href={pdfUrl}>
+                Ver fechamento (PDF)
+              </Button>
+            ) : null}
+            <br />
             <Button style={button} href={downloadUrl}>
               Baixar backup (.json)
             </Button>
@@ -83,6 +115,12 @@ export const template = {
     qtdAdiantamentos: 8,
     totalDiarias: 'R$ 8.200,00',
     downloadUrl: 'https://example.com/backup.json',
+    pdfUrl: 'https://example.com/fechamento.pdf',
+    qtdGastos: 5,
+    diariasPendentes: 'R$ 1.900,00',
+    gastosPendentes: 'R$ 120,00',
+    totalAdiantado: 'R$ 14.800,00',
+    saldoReceber: 'R$ 2.020,00',
   },
 } satisfies TemplateEntry
 
@@ -108,3 +146,7 @@ const button = {
 }
 const hr = { borderColor: '#e2e8f0', margin: '24px 0' }
 const small = { fontSize: '12px', color: '#64748b' }
+const saldoCard = { backgroundColor: '#1d4ed8', borderRadius: '12px', padding: '16px 20px', margin: '20px 0' }
+const saldoLabel = { fontSize: '13px', color: '#dbeafe', margin: 0 }
+const saldoValor = { fontSize: '28px', fontWeight: 700, color: '#ffffff', margin: '4px 0' }
+const saldoSub = { fontSize: '12px', color: '#dbeafe', margin: 0 }
