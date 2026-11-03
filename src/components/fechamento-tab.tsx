@@ -206,10 +206,10 @@ export function FechamentoTab() {
     [adiantamentos],
   );
   const totalGastos = useMemo(
-    () => gastos.reduce((s, g) => s + g.valor, 0),
+    () => gastos.filter((g) => g.status !== "pago").reduce((s, g) => s + g.valor, 0),
     [gastos],
   );
-  const saldoAReceber = totalGeralPendente + totalGastos - totalAdiantamentos;
+  const saldoAReceber = totalGeralPendente + totalGastos;
 
   const adiantOrdenados = () =>
     [...adiantamentos].sort((a, b) => (a.data < b.data ? 1 : -1));
@@ -415,12 +415,9 @@ export function FechamentoTab() {
       if (totalGastos > 0) {
         linhas.push(`*Gastos a reembolsar:* ${fmt.format(totalGastos)}`);
       }
-      if (waIncluirAdiant && totalAdiantamentos > 0) {
-        linhas.push(`*Adiantamentos:* ${fmt.format(totalAdiantamentos)}`);
-        linhas.push(
-          `*Saldo a receber:* ${fmt.format(totalPendenteSel + totalGastos - totalAdiantamentos)}`,
-        );
-      }
+      linhas.push(
+        `*Saldo a receber:* ${fmt.format(totalPendenteSel + totalGastos)}`,
+      );
     }
     if (pixInfo) {
       linhas.push("");
