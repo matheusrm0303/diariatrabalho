@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Calculator, ChevronDown, ChevronUp, Copy, Minus, Plus, TriangleAlert, Trash2 } from "lucide-react";
+import { Calculator, ChevronDown, Copy, Minus, Plus, TriangleAlert, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
