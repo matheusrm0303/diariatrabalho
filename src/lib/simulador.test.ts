@@ -48,7 +48,7 @@ describe("calculadora de simulação", () => {
       { valor_rua: 200, valor_deposito: 100 },
     );
     assert.equal(r.alimentacao, 90);
-    assert.equal(r.total, 690);
+    assert.equal(r.total, 590);
   });
 
   test("sem dias simulados o total é zero e não divide por zero", () => {
@@ -75,7 +75,7 @@ describe("calculadora de simulação", () => {
   });
 
   test("dias úteis restantes ignoram o que já passou e contam meses futuros", () => {
-    assert.equal(diasUteisRestantes("2026-11", "2026-11-27"), 4);
+    assert.equal(diasUteisRestantes("2026-11", "2026-11-27"), 2);
     assert.equal(diasUteisRestantes("2026-10", "2026-11-27"), 0);
     assert.equal(diasUteisRestantes("2026-12", "2026-11-27"), 23);
   });
