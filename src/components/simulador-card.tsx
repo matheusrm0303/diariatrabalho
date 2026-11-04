@@ -110,7 +110,7 @@ function Passo({
   );
 }
 
-export function SimuladorCard({ diarias }: { diarias: Diaria[] }) {
+export function SimuladorCard({ diarias, embutido = false }: { diarias: Diaria[]; embutido?: boolean }) {
   const defaults = useMyDefaults();
   const valores = useMemo(() => defaults ?? VALORES_PADRAO, [defaults]);
 
@@ -182,9 +182,11 @@ export function SimuladorCard({ diarias }: { diarias: Diaria[] }) {
       .catch(() => toast.error("Não foi possível copiar."));
   }
 
+  const mostrar = embutido || aberto;
+
   return (
-    <Card className="mb-6 min-w-0 overflow-hidden rounded-3xl border-transparent p-0 shadow-sm">
-      <button
+    <Card className={cn("min-w-0 overflow-hidden rounded-3xl border-transparent p-0 shadow-sm", embutido ? "shadow-none pt-1" : "mb-6")}>
+      {!embutido && <button
         type="button"
         onClick={() => setAberto((a) => !a)}
         aria-expanded={aberto}
@@ -202,9 +204,9 @@ export function SimuladorCard({ diarias }: { diarias: Diaria[] }) {
           </span>
         </span>
         <ChevronDown className={cn("h-4 w-4 shrink-0 text-muted-foreground transition-transform", aberto && "rotate-180")} />
-      </button>
+      </button>}
 
-      {aberto && (
+      {mostrar && (
         <div className="space-y-3 px-3 pb-3 sm:px-4 sm:pb-4">
           <div className="flex items-center justify-between gap-2 rounded-xl bg-muted/50 px-2 py-1">
             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setMes((m) => moverMes(m, -1))} aria-label="Mês anterior">

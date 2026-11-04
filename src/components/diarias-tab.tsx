@@ -5,7 +5,8 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
-import { Trash2, Plus, Utensils, Pencil, ArrowUpRight, TriangleAlert, CheckSquare, X, ListFilter, Copy, Zap, MessageCircle } from "lucide-react";
+import { Trash2, Plus, Utensils, Pencil, ArrowUpRight, TriangleAlert, CheckSquare, X, ListFilter, Copy, Zap, MessageCircle, Calculator } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useDiarias, useAdiantamentos, useGastos, fmt } from "@/lib/diarias-store";
 import { AbrirLocalizacao } from "@/components/abrir-localizacao";
 import { DiariaRapidaDialog } from "@/components/diaria-rapida-dialog";
@@ -24,6 +25,7 @@ export function DiariasTab() {
   const [apagando, setApagando] = useState(false);
   const [criacaoRapida, setCriacaoRapida] = useState<{ origem?: Diaria } | null>(null);
   const [cobrarAberto, setCobrarAberto] = useState(false);
+  const [simuladorAberto, setSimuladorAberto] = useState(false);
 
   const total = useMemo(
     () => diarias.reduce((s, d) => s + d.valor + (d.alimentacao || 0), 0),
@@ -178,7 +180,7 @@ export function DiariasTab() {
       {!selecionando && (
         <div className="mb-5 flex items-center justify-between gap-3 border-b pb-4">
           <h2 className="font-display text-sm font-semibold">Novo lançamento</h2>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center justify-end gap-2">
             {saldo > 0 && (
               <Button
                 variant="outline"
@@ -188,6 +190,9 @@ export function DiariasTab() {
                 <MessageCircle className="h-4 w-4" /> Cobrar
               </Button>
             )}
+            <Button variant="outline" onClick={() => setSimuladorAberto(true)} aria-label="Simular dias futuros">
+              <Calculator className="h-4 w-4" /> Simular
+            </Button>
             <Button variant="outline" onClick={() => setCriacaoRapida({})}>
               <Zap className="h-4 w-4" /> Diária rápida
             </Button>
@@ -195,7 +200,6 @@ export function DiariasTab() {
         </div>
       )}
       <PainelVisual diarias={diarias} />
-      <SimuladorCard diarias={diarias} />
       <section className="min-w-0">
         <div className="mb-3 flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
@@ -468,6 +472,14 @@ export function DiariasTab() {
         </div>
       </div>
       {criacaoRapida && <DiariaRapidaDialog origem={criacaoRapida.origem} onClose={() => setCriacaoRapida(null)} />}
+      <Dialog open={simuladorAberto} onOpenChange={setSimuladorAberto}>
+        <DialogContent className="max-h-[90dvh] w-[calc(100vw-1.5rem)] max-w-lg overflow-y-auto rounded-3xl p-3 sm:p-4">
+          <DialogHeader>
+            <DialogTitle className="font-display">Simular dias futuros</DialogTitle>
+          </DialogHeader>
+          {simuladorAberto && <SimuladorCard diarias={diarias} embutido />}
+        </DialogContent>
+      </Dialog>
       {cobrarAberto && <CobrarDialog onClose={() => setCobrarAberto(false)} />}
     </div>
   );
