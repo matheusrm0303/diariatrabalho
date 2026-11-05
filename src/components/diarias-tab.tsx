@@ -102,6 +102,12 @@ export function DiariasTab() {
   }
 
 
+  async function verComprovante(path: string) {
+    const url = await urlComprovante(path);
+    if (url) window.open(url, "_blank", "noopener");
+    else toast.error("Não foi possível abrir o comprovante.");
+  }
+
   useEffect(() => {
     setSelecionados([]);
   }, [filtroStatus]);
@@ -395,6 +401,16 @@ export function DiariasTab() {
                   </div>
                   {!selecionando && (
                     <div className="mt-2 flex justify-end gap-1 border-t border-border/60 pt-2">
+                      {d.comprovantePath && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 px-2 text-xs font-medium"
+                          onClick={() => verComprovante(d.comprovantePath!)}
+                        >
+                          <Receipt className="h-3.5 w-3.5" /> Comprovante
+                        </Button>
+                      )}
                       <Button size="sm" variant="ghost" className="h-7 px-2 text-xs font-medium" disabled={d.id.startsWith("tmp-")} onClick={() => setCriacaoRapida({ origem: d })}>
                         <Copy className="h-3.5 w-3.5" /> Duplicar
                       </Button>
