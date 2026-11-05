@@ -76,7 +76,7 @@ Regras:
 - valor: total pago, número sem "R$" (vírgula vira ponto).
 - data: a do comprovante em YYYY-MM-DD. Sem data legível, use a data de hoje informada.
 - pago: true apenas se o comprovante mostrar pagamento confirmado, concluído, enviado ou recebido. Cobrança, orçamento, pedido ou boleto não pago = false.
-- quemPagou: nome da pessoa ou empresa que pagou (ex.: "Esquilo"), ou "" se não aparecer.
+- quemPagou: nome da pessoa ou empresa citada no comprovante, seja como quem pagou ou como quem recebeu (ex.: "Esquilo"), ou "" se nenhum nome aparecer.
 - Não invente dados. Se a imagem não for um comprovante de pagamento, devolva valor 0, pago false e confianca "baixa".`;
 
 function promptLancamento(hoje: string, valorRua: number, valorDeposito: number) {
