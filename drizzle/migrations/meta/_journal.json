@@ -22,6 +22,13 @@
       "when": 1791246189009,
       "tag": "0002_gastos_status",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1793900588499,
+      "tag": "0003_add_comprovante_to_diarias",
+      "breakpoints": true
     }
   ]
 }

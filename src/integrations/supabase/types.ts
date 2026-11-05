@@ -46,6 +46,7 @@ export type Database = {
           alimentacao: number | null
           alimentacao_obs: string | null
           alimentacao_tipo: string | null
+          comprovante_path: string | null
           created_at: string
           data: string
           descricao: string
@@ -64,6 +65,7 @@ export type Database = {
           alimentacao?: number | null
           alimentacao_obs?: string | null
           alimentacao_tipo?: string | null
+          comprovante_path?: string | null
           created_at?: string
           data: string
           descricao?: string
@@ -82,6 +84,7 @@ export type Database = {
           alimentacao?: number | null
           alimentacao_obs?: string | null
           alimentacao_tipo?: string | null
+          comprovante_path?: string | null
           created_at?: string
           data?: string
           descricao?: string
