@@ -29,6 +29,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useServerFn } from "@tanstack/react-start";
+import { transcreverAudio } from "@/lib/assistente.functions";
 import { useMyDefaults } from "@/lib/admin";
 import {
   enviarComprovante,
@@ -69,10 +70,7 @@ export function LancamentoIaDialog({ onClose }: { onClose: () => void }) {
 
   const lerPix = useServerFn(lerComprovantePix);
   const interpretar = useServerFn(interpretarLancamento);
-  const transcrever = useServerFn(
-    // @ts-expect-error -- imported below to keep the audio helper in one place
-    (await import("@/lib/assistente.functions")).transcreverAudio,
-  );
+  const transcrever = useServerFn(transcreverAudio);
 
   const [foto, setFoto] = useState<string | null>(null);
   const [lendo, setLendo] = useState(false);
@@ -337,8 +335,10 @@ export function LancamentoIaDialog({ onClose }: { onClose: () => void }) {
             >
               {processando ? (
                 <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+              ) : gravando ? (
+                <Square className="mr-2 h-5 w-5" />
               ) : (
-                {gravando ? <Square className="mr-2 h-5 w-5" /> : <Mic className="mr-2 h-5 w-5" />}
+                <Mic className="mr-2 h-5 w-5" />
               )}
               {processando
                 ? "Entendendo…"
