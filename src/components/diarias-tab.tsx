@@ -5,11 +5,13 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
-import { Trash2, Plus, Utensils, Pencil, ArrowUpRight, TriangleAlert, CheckSquare, X, ListFilter, Copy, Zap, MessageCircle, Calculator } from "lucide-react";
+import { Trash2, Plus, Utensils, Pencil, ArrowUpRight, TriangleAlert, CheckSquare, X, ListFilter, Copy, Zap, MessageCircle, Calculator, Wand2, Receipt } from "lucide-react";
+import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { useDiarias, useAdiantamentos, useGastos, fmt } from "@/lib/diarias-store";
+import { useDiarias, useAdiantamentos, useGastos, fmt, urlComprovante } from "@/lib/diarias-store";
 import { AbrirLocalizacao } from "@/components/abrir-localizacao";
 import { DiariaRapidaDialog } from "@/components/diaria-rapida-dialog";
+import { LancamentoIaDialog } from "@/components/lancamento-ia-dialog";
 import { CobrarDialog } from "@/components/cobrar-dialog";
 import { PainelVisual } from "@/components/painel-visual";
 import { SimuladorCard } from "@/components/simulador-card";
@@ -26,6 +28,7 @@ export function DiariasTab() {
   const [criacaoRapida, setCriacaoRapida] = useState<{ origem?: Diaria } | null>(null);
   const [cobrarAberto, setCobrarAberto] = useState(false);
   const [simuladorAberto, setSimuladorAberto] = useState(false);
+  const [lancamentoIaAberto, setLancamentoIaAberto] = useState(false);
 
   const total = useMemo(
     () => diarias.reduce((s, d) => s + d.valor + (d.alimentacao || 0), 0),
@@ -190,6 +193,9 @@ export function DiariasTab() {
                 <MessageCircle className="h-4 w-4" /> Cobrar
               </Button>
             )}
+            <Button variant="outline" onClick={() => setLancamentoIaAberto(true)}>
+              <Wand2 className="h-4 w-4" /> Foto ou voz
+            </Button>
             <Button variant="outline" onClick={() => setSimuladorAberto(true)} aria-label="Simular dias futuros">
               <Calculator className="h-4 w-4" /> Simular
             </Button>
@@ -472,6 +478,7 @@ export function DiariasTab() {
         </div>
       </div>
       {criacaoRapida && <DiariaRapidaDialog origem={criacaoRapida.origem} onClose={() => setCriacaoRapida(null)} />}
+      {lancamentoIaAberto && <LancamentoIaDialog onClose={() => setLancamentoIaAberto(false)} />}
       <Dialog open={simuladorAberto} onOpenChange={setSimuladorAberto}>
         <DialogContent className="max-h-[90dvh] w-[calc(100vw-1.5rem)] max-w-lg overflow-y-auto rounded-3xl p-3 sm:p-4">
           <DialogHeader>
