@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Camera,
   Check,
@@ -77,6 +77,7 @@ export function LancamentoIaDialog({ onClose }: { onClose: () => void }) {
   const [rascunho, setRascunho] = useState<RascunhoLancamento | null>(null);
   const [transcricao, setTranscricao] = useState("");
   const [gravando, setGravando] = useState(false);
+  const [textoDigitado, setTextoDigitado] = useState("");
   const [processando, setProcessando] = useState(false);
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState("");
@@ -137,7 +138,28 @@ export function LancamentoIaDialog({ onClose }: { onClose: () => void }) {
     mediaRef.current?.stop();
   }
 
-  const iniciarGravacao = useCallback(async () => {
+  async function interpretarFrase(falado: string) {
+    const { json } = await interpretar({
+      data: {
+        texto: falado,
+        hoje: todayISO(),
+        valorRua: defaults?.valor_rua ?? 200,
+        valorDeposito: defaults?.valor_deposito ?? 100,
+      },
+    });
+    const novo = normalizarRascunho(JSON.parse(json), {
+      hoje: todayISO(),
+      valorRua: defaults?.valor_rua ?? 200,
+      valorDeposito: defaults?.valor_deposito ?? 100,
+    });
+    if (!novo) {
+      setErro("Não deu para montar o lançamento. Informe o valor e o local.");
+      return;
+    }
+    setRascunho(novo);
+  }
+
+  async function iniciarGravacao() {
     if (mediaRef.current && gravando) return;
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -169,24 +191,7 @@ export function LancamentoIaDialog({ onClose }: { onClose: () => void }) {
             return;
           }
           setTranscricao(falado);
-          const { json } = await interpretar({
-            data: {
-              texto: falado,
-              hoje: todayISO(),
-              valorRua: defaults?.valor_rua ?? 200,
-              valorDeposito: defaults?.valor_deposito ?? 100,
-            },
-          });
-          const novo = normalizarRascunho(JSON.parse(json), {
-            hoje: todayISO(),
-            valorRua: defaults?.valor_rua ?? 200,
-            valorDeposito: defaults?.valor_deposito ?? 100,
-          });
-          if (!novo) {
-            setErro("Não deu para montar o lançamento. Tente falar o valor e o local.");
-            return;
-          }
-          setRascunho(novo);
+          await interpretarFrase(falado);
         } catch (err) {
           setErro(err instanceof Error ? err.message : "Falha ao entender a fala.");
         } finally {
@@ -199,7 +204,7 @@ export function LancamentoIaDialog({ onClose }: { onClose: () => void }) {
     } catch {
       toast.error("Não foi possível acessar o microfone.");
     }
-  }, [defaults, gravando, interpretar, transcrever]);
+  }
 
   async function salvar() {
     if (!rascunho || salvando) return;
@@ -351,6 +356,36 @@ export function LancamentoIaDialog({ onClose }: { onClose: () => void }) {
                 Você disse: "{transcricao}"
               </p>
             )}
+            <div className="grid gap-1.5">
+              <Label htmlFor="ia-texto">Ou escreva o lançamento</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="ia-texto"
+                  value={textoDigitado}
+                  onChange={(e) => setTextoDigitado(e.target.value)}
+                  placeholder="Ex.: diária de rua hoje no Esquilo"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={processando || !textoDigitado.trim()}
+                  onClick={async () => {
+                    setProcessando(true);
+                    setErro("");
+                    try {
+                      await interpretarFrase(textoDigitado.trim());
+                    } catch (err) {
+                      setErro(err instanceof Error ? err.message : "Falha ao entender.");
+                    } finally {
+                      setProcessando(false);
+                    }
+                  }}
+                >
+                  {processando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
+                  <span className="sr-only sm:not-sr-only sm:ml-1">Entender</span>
+                </Button>
+              </div>
+            </div>
           </TabsContent>
         </Tabs>
 
