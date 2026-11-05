@@ -18,6 +18,7 @@ export type Diaria = {
   latitude?: number | null;
   longitude?: number | null;
   endereco?: string;
+  comprovantePath?: string | null;
 };
 
 export type AlimentacaoTipo = "almoco" | "janta";
@@ -118,6 +119,7 @@ type DiariaRow = {
   latitude: number | string | null;
   longitude: number | string | null;
   endereco?: string | null;
+  comprovante_path?: string | null;
 };
 
 type AdiantRow = {
@@ -142,6 +144,7 @@ function mapDiaria(r: DiariaRow): Diaria {
     latitude: r.latitude != null ? Number(r.latitude) : null,
     longitude: r.longitude != null ? Number(r.longitude) : null,
     endereco: r.endereco ?? "",
+    comprovantePath: r.comprovante_path ?? null,
   };
 }
 
@@ -401,6 +404,7 @@ export function useDiarias() {
         latitude: d.latitude ?? null,
         longitude: d.longitude ?? null,
         endereco: d.endereco || null,
+        comprovante_path: d.comprovantePath ?? null,
       } as never)
       .select()
       .single();
@@ -450,6 +454,8 @@ export function useDiarias() {
       if (patch.longitude !== undefined)
         payload.longitude = patch.longitude ?? null;
       if (patch.endereco !== undefined) payload.endereco = patch.endereco || null;
+      if (patch.comprovantePath !== undefined)
+        payload.comprovante_path = patch.comprovantePath ?? null;
       const { error } = await supabase
         .from("diarias" as never)
         .update(payload as never)
