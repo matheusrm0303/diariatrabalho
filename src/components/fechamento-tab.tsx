@@ -29,7 +29,10 @@ import {
   QrCode,
   Eye,
   Check,
+  Plus,
+  X,
 } from "lucide-react";
+import { usePixChaves, useContatosFechamento } from "@/lib/fechamento-salvos";
 import { useDiarias, useAdiantamentos, useGastos, fmt, type Diaria } from "@/lib/diarias-store";
 import {
   filtrarPorPeriodo,
@@ -219,6 +222,7 @@ export function FechamentoTab() {
   const [waSaudacao, setWaSaudacao] = useState("Olá! Segue o fechamento das diárias:");
   const [waEncerramento, setWaEncerramento] = useState("Qualquer dúvida, me avise. Obrigado!");
   const [waTelefone, setWaTelefone] = useState("");
+  const [contatoNome, setContatoNome] = useState("");
   const [waMensagem, setWaMensagem] = useState("");
   const [waDataDe, setWaDataDe] = useState<string>("");
   const [waDataAte, setWaDataAte] = useState<string>("");
@@ -240,6 +244,10 @@ export function FechamentoTab() {
   const [pixTitular, setPixTitular] = useState("");
   const [pixBanco, setPixBanco] = useState("");
   const [pixIncluir, setPixIncluir] = useState(true);
+
+  // Chaves Pix e contatos salvos no banco (por usuário)
+  const pixSalvas = usePixChaves();
+  const contatosFech = useContatosFechamento();
 
   useEffect(() => {
     setTemplates(loadTpls());
