@@ -787,11 +787,12 @@ export function FechamentoTab() {
                       setPixIncluir(true);
                     }}
                   >
-                    {p.rotulo || p.chave}
+                    {p.banco || p.rotulo || p.chave}
+                    {p.banco && p.tipo ? ` · ${p.tipo}` : ""}
                   </button>
                   <button
                     type="button"
-                    aria-label={`Remover chave ${p.rotulo || p.chave}`}
+                    aria-label={`Remover chave ${p.banco || p.rotulo || p.chave}`}
                     onClick={() => pixSalvas.remover(p.id)}
                   >
                     <X className="h-3 w-3 text-muted-foreground" />
@@ -807,7 +808,8 @@ export function FechamentoTab() {
                     className="h-7 rounded-full text-[11px]"
                     onClick={() =>
                       pixSalvas.adicionar({
-                        rotulo: pixTitular.trim() || pixChave.trim(),
+                        rotulo:
+                          pixBanco.trim() || pixTitular.trim() || pixChave.trim(),
                         tipo: pixTipo,
                         chave: pixChave.trim(),
                         titular: pixTitular.trim(),
