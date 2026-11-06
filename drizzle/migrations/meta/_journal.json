@@ -29,6 +29,13 @@
       "when": 1793900588499,
       "tag": "0003_add_comprovante_to_diarias",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1793945783542,
+      "tag": "0004_create_pix_chaves_e_contatos_fechamento",
+      "breakpoints": true
     }
   ]
 }

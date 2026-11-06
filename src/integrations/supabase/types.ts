@@ -41,6 +41,30 @@ export type Database = {
         }
         Relationships: []
       }
+      contatos_fechamento: {
+        Row: {
+          created_at: string
+          id: string
+          nome: string
+          telefone: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nome: string
+          telefone: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nome?: string
+          telefone?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       diarias: {
         Row: {
           alimentacao: number | null
@@ -134,6 +158,39 @@ export type Database = {
           status?: string
           user_id?: string
           valor?: number
+        }
+        Relationships: []
+      }
+      pix_chaves: {
+        Row: {
+          banco: string
+          chave: string
+          created_at: string
+          id: string
+          rotulo: string
+          tipo: string
+          titular: string
+          user_id: string
+        }
+        Insert: {
+          banco?: string
+          chave: string
+          created_at?: string
+          id?: string
+          rotulo?: string
+          tipo?: string
+          titular?: string
+          user_id: string
+        }
+        Update: {
+          banco?: string
+          chave?: string
+          created_at?: string
+          id?: string
+          rotulo?: string
+          tipo?: string
+          titular?: string
+          user_id?: string
         }
         Relationships: []
       }
