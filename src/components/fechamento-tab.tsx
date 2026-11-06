@@ -418,6 +418,11 @@ export function FechamentoTab() {
       linhas.push(
         `*Saldo a receber:* ${fmt.format(totalPendenteSel + totalGastos)}`,
       );
+      if (saldoAReceber !== totalPendenteSel + totalGastos) {
+        linhas.push(
+          `*Total geral a receber (tudo que está pendente):* ${fmt.format(saldoAReceber)}`,
+        );
+      }
     }
     if (pixInfo) {
       linhas.push("");
