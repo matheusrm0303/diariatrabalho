@@ -769,6 +769,57 @@ export function FechamentoTab() {
               className="h-10 rounded-xl text-xs"
             />
           </div>
+          {(pixSalvas.itens.length > 0 || pixChave.trim()) && (
+            <div className="flex flex-wrap items-center gap-1.5">
+              {pixSalvas.itens.map((p) => (
+                <span
+                  key={p.id}
+                  className="inline-flex items-center gap-1 rounded-full border bg-muted/40 px-2 py-1 text-[11px]"
+                >
+                  <button
+                    type="button"
+                    className="font-medium hover:underline"
+                    onClick={() => {
+                      setPixTipo(p.tipo);
+                      setPixChave(p.chave);
+                      setPixTitular(p.titular);
+                      setPixBanco(p.banco);
+                      setPixIncluir(true);
+                    }}
+                  >
+                    {p.rotulo || p.chave}
+                  </button>
+                  <button
+                    type="button"
+                    aria-label={`Remover chave ${p.rotulo || p.chave}`}
+                    onClick={() => pixSalvas.remover(p.id)}
+                  >
+                    <X className="h-3 w-3 text-muted-foreground" />
+                  </button>
+                </span>
+              ))}
+              {pixChave.trim() &&
+                !pixSalvas.itens.some((p) => p.chave === pixChave.trim()) && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="h-7 rounded-full text-[11px]"
+                    onClick={() =>
+                      pixSalvas.adicionar({
+                        rotulo: pixTitular.trim() || pixChave.trim(),
+                        tipo: pixTipo,
+                        chave: pixChave.trim(),
+                        titular: pixTitular.trim(),
+                        banco: pixBanco.trim(),
+                      })
+                    }
+                  >
+                    <Plus className="h-3 w-3" /> Salvar chave
+                  </Button>
+                )}
+            </div>
+          )}
         </div>
       </Card>
 
@@ -1045,6 +1096,62 @@ export function FechamentoTab() {
                 onChange={(e) => setWaTelefone(e.target.value)}
                 inputMode="tel"
               />
+              {(contatosFech.itens.length > 0 || waTelefone.trim()) && (
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {contatosFech.itens.map((c) => (
+                    <span
+                      key={c.id}
+                      className="inline-flex items-center gap-1 rounded-full border bg-muted/40 px-2 py-1 text-[11px]"
+                    >
+                      <button
+                        type="button"
+                        className="font-medium hover:underline"
+                        onClick={() => setWaTelefone(c.telefone)}
+                      >
+                        {c.nome}
+                      </button>
+                      <button
+                        type="button"
+                        aria-label={`Remover contato ${c.nome}`}
+                        onClick={() => contatosFech.remover(c.id)}
+                      >
+                        <X className="h-3 w-3 text-muted-foreground" />
+                      </button>
+                    </span>
+                  ))}
+                  {waTelefone.trim() &&
+                    !contatosFech.itens.some(
+                      (c) =>
+                        c.telefone.replace(/\D/g, "") ===
+                        waTelefone.replace(/\D/g, ""),
+                    ) && (
+                      <span className="inline-flex items-center gap-1">
+                        <Input
+                          value={contatoNome}
+                          onChange={(e) => setContatoNome(e.target.value)}
+                          placeholder="Nome p/ salvar"
+                          className="h-7 w-28 rounded-full text-[11px]"
+                        />
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          className="h-7 rounded-full text-[11px]"
+                          disabled={!contatoNome.trim()}
+                          onClick={() => {
+                            contatosFech.adicionar({
+                              nome: contatoNome.trim(),
+                              telefone: waTelefone.trim(),
+                            });
+                            setContatoNome("");
+                          }}
+                        >
+                          <Plus className="h-3 w-3" /> Salvar contato
+                        </Button>
+                      </span>
+                    )}
+                </div>
+              )}
             </div>
 
             {/* Faixa de datas */}
