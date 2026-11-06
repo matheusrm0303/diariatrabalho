@@ -244,6 +244,7 @@ export function FechamentoTab() {
   const [pixTitular, setPixTitular] = useState("");
   const [pixBanco, setPixBanco] = useState("");
   const [pixIncluir, setPixIncluir] = useState(true);
+  const [pixSelId, setPixSelId] = useState("");
 
   // Chaves Pix e contatos salvos no banco (por usuário)
   const pixSalvas = usePixChaves();
@@ -769,59 +770,72 @@ export function FechamentoTab() {
               className="h-10 rounded-xl text-xs"
             />
           </div>
-          {(pixSalvas.itens.length > 0 || pixChave.trim()) && (
-            <div className="flex flex-wrap items-center gap-1.5">
-              {pixSalvas.itens.map((p) => (
-                <span
-                  key={p.id}
-                  className="inline-flex items-center gap-1 rounded-full border bg-muted/40 px-2 py-1 text-[11px]"
+          {pixSalvas.itens.length > 0 && (
+            <div className="flex items-center gap-1.5">
+              <Select
+                value={pixSelId}
+                onValueChange={(id) => {
+                  setPixSelId(id);
+                  const p = pixSalvas.itens.find((x) => x.id === id);
+                  if (p) {
+                    setPixTipo(p.tipo);
+                    setPixChave(p.chave);
+                    setPixTitular(p.titular);
+                    setPixBanco(p.banco);
+                    setPixIncluir(true);
+                  }
+                }}
+              >
+                <SelectTrigger className="h-9 rounded-xl text-xs">
+                  <SelectValue placeholder="Usar uma chave salva" />
+                </SelectTrigger>
+                <SelectContent>
+                  {pixSalvas.itens.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.banco || p.rotulo || p.chave}
+                      {p.tipo ? ` · ${p.tipo}` : ""}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {pixSelId && (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  aria-label="Remover chave salva selecionada"
+                  className="h-9 px-2"
+                  onClick={() => {
+                    pixSalvas.remover(pixSelId);
+                    setPixSelId("");
+                  }}
                 >
-                  <button
-                    type="button"
-                    className="font-medium hover:underline"
-                    onClick={() => {
-                      setPixTipo(p.tipo);
-                      setPixChave(p.chave);
-                      setPixTitular(p.titular);
-                      setPixBanco(p.banco);
-                      setPixIncluir(true);
-                    }}
-                  >
-                    {p.banco || p.rotulo || p.chave}
-                    {p.banco && p.tipo ? ` · ${p.tipo}` : ""}
-                  </button>
-                  <button
-                    type="button"
-                    aria-label={`Remover chave ${p.banco || p.rotulo || p.chave}`}
-                    onClick={() => pixSalvas.remover(p.id)}
-                  >
-                    <X className="h-3 w-3 text-muted-foreground" />
-                  </button>
-                </span>
-              ))}
-              {pixChave.trim() &&
-                !pixSalvas.itens.some((p) => p.chave === pixChave.trim()) && (
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    className="h-7 rounded-full text-[11px]"
-                    onClick={() =>
-                      pixSalvas.adicionar({
-                        rotulo:
-                          pixBanco.trim() || pixTitular.trim() || pixChave.trim(),
-                        tipo: pixTipo,
-                        chave: pixChave.trim(),
-                        titular: pixTitular.trim(),
-                        banco: pixBanco.trim(),
-                      })
-                    }
-                  >
-                    <Plus className="h-3 w-3" /> Salvar chave
-                  </Button>
-                )}
+                  <Trash2 className="h-4 w-4 text-muted-foreground" />
+                </Button>
+              )}
             </div>
           )}
+          {pixChave.trim() &&
+            !pixSalvas.itens.some((p) => p.chave === pixChave.trim()) && (
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="h-8 w-fit rounded-xl text-[11px]"
+                onClick={() =>
+                  pixSalvas.adicionar({
+                    rotulo:
+                      pixBanco.trim() || pixTitular.trim() || pixChave.trim(),
+                    tipo: pixTipo,
+                    chave: pixChave.trim(),
+                    titular: pixTitular.trim(),
+                    banco: pixBanco.trim(),
+                  })
+                }
+              >
+                <Plus className="h-3 w-3" /> Salvar esta chave
+              </Button>
+            )}
         </div>
       </Card>
 
